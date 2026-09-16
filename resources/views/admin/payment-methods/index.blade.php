@@ -107,7 +107,7 @@
                                             <div class="font-medium text-gray-900">{{ $method->display_name }}</div>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
-                                            <span class="px-2 py-1 text-xs font-medium rounded-full 
+                                            <span class="px-2 py-1 text-xs font-medium rounded-full
                                                 @if($method->type === 'bank_transfer') bg-blue-100 text-blue-800
                                                 @else bg-green-100 text-green-800 @endif">
                                                 {{ $method->type === 'bank_transfer' ? 'Transfer Bank' : 'QRIS' }}
@@ -126,7 +126,7 @@
                                             @endif
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
-                                            <span class="px-2 py-1 text-xs font-medium rounded-full 
+                                            <span class="px-2 py-1 text-xs font-medium rounded-full
                                                 @if($method->is_active) bg-green-100 text-green-800
                                                 @else bg-red-100 text-red-800 @endif">
                                                 {{ $method->is_active ? 'Aktif' : 'Nonaktif' }}
@@ -158,7 +158,7 @@
                 @csrf
                 @method('PUT')
                 <input type="hidden" name="payment_method_id" id="edit-id">
-                
+
                 <div>
                     <x-input-label for="edit_display_name" :value="__('Nama Tampilan') <span class=\"text-red-500\">*</span>" />
                     <x-text-input id="edit_display_name" name="display_name" required class="mt-1 block w-full" />
@@ -185,7 +185,7 @@
 
                 <div id="edit-qris-fields" class="hidden space-y-4">
                     <div>
-                        <x-input-label for="edit_qr_image" :value="__('Gambar QR Code') (kosongkan jika tidak diubah)" />
+                        <x-input-label for="edit_qr_image" :value="__('Gambar QR Code (kosongkan jika tidak diubah)')" />
                         <input type="file" name="qr_image" id="edit_qr_image" accept="image/*" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" />
                         <x-input-error :messages="$errors->get('qr_image')" class="mt-2" />
                     </div>
@@ -219,7 +219,7 @@
         function toggleFields(type) {
             const bankFields = document.getElementById('bank-fields');
             const qrisFields = document.getElementById('qris-fields');
-            
+
             if (type === 'bank_transfer') {
                 bankFields.classList.remove('hidden');
                 qrisFields.classList.add('hidden');
@@ -244,13 +244,13 @@
             document.getElementById('edit-id').value = id;
             document.getElementById('edit_display_name').value = displayName;
             document.getElementById('edit_is_active').value = isActive ? '1' : '0';
-            
+
             const editForm = document.getElementById('edit-form');
             editForm.action = `{{ route('admin.payment-methods.update', ':id') }}`.replace(':id', id);
-            
+
             const bankFields = document.getElementById('edit-bank-fields');
             const qrisFields = document.getElementById('edit-qris-fields');
-            
+
             if (type === 'bank_transfer') {
                 bankFields.classList.remove('hidden');
                 qrisFields.classList.add('hidden');
@@ -267,7 +267,7 @@
                     document.getElementById('edit-qr-preview').classList.add('hidden');
                 }
             }
-            
+
             document.getElementById('edit-modal').classList.remove('hidden');
             document.getElementById('edit-modal').classList.add('flex');
         }
@@ -282,7 +282,7 @@
             const file = e.target.files[0];
             const preview = document.getElementById('qr-preview');
             const img = document.getElementById('qr-preview-img');
-            
+
             if (file) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
