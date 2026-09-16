@@ -20,8 +20,7 @@
         <div>
             <div class="grid grid-cols-3 gap-3">
                 @foreach ($category['options'] as $option)
-                    <a href="{{ route('guest.service-requests.create', ['service' => $option['id']]) }}"
-                       class="bg-white rounded-xl shadow-sm border border-gray-100 p-3 flex flex-col items-center gap-2 hover:shadow-md transition-shadow">
+                    <a href="{{ route('guest.services.show', $category['slug']) }}" class="bg-white rounded-xl shadow-sm border border-gray-100 p-3 flex flex-col items-center gap-2 hover:shadow-md transition-shadow">
                         <div class="w-12 h-12 {{ $category['bg'] }} rounded-lg flex items-center justify-center">
                             {!! $option['icon'] !!}
                         </div>
@@ -48,7 +47,7 @@
                                     {!! $category['options'][0]['icon'] !!}
                                 </div>
                                 <div class="flex-1 min-w-0">
-                                    <p class="text-xs text-gray-500">Order No. {{ $request->order_number ?? str_pad($request->id, 7, '0', STR_PAD_LEFT) }}</p>
+                                    <p class="text-xs text-gray-500">Order #{{ str_pad($request->id, 7, '0', STR_PAD_LEFT) }}</p>
                                     <h4 class="font-medium text-gray-900 truncate">{{ $request->service->name }}</h4>
                                 </div>
                                 <span class="shrink-0 px-2 py-1 text-xs font-medium rounded-full
@@ -65,7 +64,7 @@
             @endif
         </div>
 
-        <a href="{{ route('guest.service-requests.create', ['category' => $category['slug']]) }}"
+        <a href="{{ route('guest.services.show', $category['slug']) }}"
            class="block w-full px-4 py-3 bg-indigo-600 text-white text-center rounded-lg font-medium hover:bg-indigo-700 transition-colors">
             + Ajukan {{ $category['title'] }} Baru
         </a>

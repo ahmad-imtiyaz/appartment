@@ -79,7 +79,7 @@ class ServiceRequestController extends Controller
         $activeRequests = auth()->user()->serviceRequests()
             ->with(['service', 'worker', 'feedback'])
             ->whereHas('service', function ($q) use ($category) {
-                $q->where('category', $category); // sesuaikan dengan kolom kategori di tabel services
+                $q->where('services.slug', $category); // fix: use slug instead of category
             })
             ->whereNotIn('status', ['completed', 'rejected'])
             ->latest()
@@ -89,6 +89,19 @@ class ServiceRequestController extends Controller
             'category' => $categoryData,
             'activeRequests' => $activeRequests,
         ]);
+    }
+
+    public function serviceDetail(string $slug): View
+    {
+        $service = Service::where('slug', $slug)->where('is_active', true)->firstOrFail();
+
+        $requests = auth()->user()->serviceRequests()
+            ->where('service_id', $service->id)
+            ->with(['service', 'worker', 'feedback'])
+            ->latest()
+            ->get();
+
+        return view('guest.service-requests.service-detail', compact('service', 'requests'));
     }
 
     public function create(): View
@@ -164,5 +177,18 @@ class ServiceRequestController extends Controller
         return redirect()
             ->route('guest.service-requests.index')
             ->with('success', 'Permintaan jasa "' . $service->name . '" berhasil diajukan, menunggu diproses admin.');
+    }
+
+    public function destroy(ServiceRequest $serviceRequest): RedirectResponse
+    {
+        abort_unless($serviceRequest->user_id === auth()->id(), 403);
+        abort_unless(in_array($serviceRequest->status, ['pending', 'assigned']), 422, 'Hanya pesanan pending atau assigned yang bisa dibatalkan.');
+
+        $serviceName = $serviceRequest->service->name;
+        $serviceRequest->delete();
+
+        return redirect()
+            ->back()
+            ->with('success', 'Pesanan "' . $serviceName . '" berhasil dibatalkan.');
     }
 }

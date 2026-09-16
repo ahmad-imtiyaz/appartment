@@ -118,6 +118,16 @@ Route::middleware(['auth', 'role:guest'])
         Route::get('/service-requests/{serviceRequest}', [GuestServiceRequestController::class, 'show'])
             ->name('service-requests.show');
 
+        Route::delete('/service-requests/{serviceRequest}', [GuestServiceRequestController::class, 'destroy'])
+            ->name('service-requests.destroy');
+
+        /*
+        | Service Detail (per service type)
+        */
+
+        Route::get('/services/{slug}', [GuestServiceRequestController::class, 'serviceDetail'])
+            ->name('services.show');
+
         /*
         | Feedback
         */
