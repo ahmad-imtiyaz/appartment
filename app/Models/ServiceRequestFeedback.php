@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ServiceRequestFeedback extends Model
 {
+    protected $table = 'service_request_feedbacks';
     protected $fillable = [
         'service_request_id',
         'worker_id',
