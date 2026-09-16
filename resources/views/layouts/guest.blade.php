@@ -11,10 +11,11 @@
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
 
         @vite(['resources/css/app.css', 'resources/js/app.js'])
+        @stack('styles')
     </head>
     <body class="font-sans text-gray-900 antialiased bg-gray-200">
 
-        <!-- Mobile app shell: max width, centered, full height, jadi acuan posisi navbar -->
+        <!-- Mobile app shell: max width, centered, full height -->
         <div class="max-w-md mx-auto min-h-screen bg-gray-50 relative flex flex-col shadow-xl">
 
             <!-- Header (opsional, per halaman) -->
@@ -31,8 +32,8 @@
                 @yield('content')
             </main>
 
-            <!-- Bottom Navigation Bar: absolute terhadap wadah max-w-md di atas, BUKAN fixed terhadap viewport -->
-            <nav class="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-[0_-2px_10px_rgba(0,0,0,0.05)] z-30">
+            <!-- Bottom Navigation Bar: fixed terhadap viewport, lebar dikunci sama seperti shell max-w-md -->
+            <nav class="fixed bottom-0 left-0 right-0 mx-auto max-w-md bg-white border-t border-gray-200 shadow-[0_-2px_10px_rgba(0,0,0,0.05)] z-30">
                 <div class="grid grid-cols-4">
 
                     <a href="{{ route('guest.home') }}"

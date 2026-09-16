@@ -54,6 +54,11 @@ Route::middleware(['auth', 'role:guest'])
 
         Route::get('/service-requests', [GuestServiceRequestController::class, 'index'])
             ->name('service-requests.index');
+
+        // Halaman kategori jasa (Laundry, Cleaning, Repair & Maintenance, AC)
+        Route::get('/service-requests/category/{category}', [GuestServiceRequestController::class, 'category'])
+            ->name('service-requests.category');
+
         Route::get('/service-requests/create', [GuestServiceRequestController::class, 'create'])
             ->name('service-requests.create');
         Route::post('/service-requests', [GuestServiceRequestController::class, 'store'])
