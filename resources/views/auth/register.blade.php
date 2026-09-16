@@ -16,6 +16,20 @@
             <x-input-error :messages="$errors->get('email')" class="mt-2" />
         </div>
 
+        <!-- Phone -->
+        <div class="mt-4">
+            <x-input-label for="phone" :value="__('Phone Number')" />
+            <x-text-input id="phone" class="block mt-1 w-full" type="tel" name="phone" :value="old('phone')" autocomplete="tel" />
+            <x-input-error :messages="$errors->get('phone')" class="mt-2" />
+        </div>
+
+        <!-- Apartment Unit Number -->
+        <div class="mt-4">
+            <x-input-label for="apartment_unit_number" :value="__('Unit Number')" />
+            <x-text-input id="apartment_unit_number" class="block mt-1 w-full" type="text" name="apartment_unit_number" :value="old('apartment_unit_number')" autocomplete="off" placeholder="e.g., A-1203" />
+            <x-input-error :messages="$errors->get('apartment_unit_number')" class="mt-2" />
+        </div>
+
         <!-- Password -->
         <div class="mt-4">
             <x-input-label for="password" :value="__('Password')" />

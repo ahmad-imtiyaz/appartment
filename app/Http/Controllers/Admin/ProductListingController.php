@@ -17,6 +17,15 @@ class ProductListingController extends Controller
         return view('admin.product-listings.index', compact('listings'));
     }
 
+    public function publicIndex(Request $request)
+    {
+        $listings = ProductListing::where('is_active', true)
+            ->latest()
+            ->paginate(12);
+
+        return view('product-listings.index', compact('listings'));
+    }
+
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([

@@ -8,6 +8,7 @@ use App\Models\ServiceRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\View\View;
 
 class TaskController extends Controller
 {
@@ -19,6 +20,15 @@ class TaskController extends Controller
             ->get();
 
         return view('worker.tasks.index', compact('tasks'));
+    }
+
+    public function show(ServiceRequest $serviceRequest): View
+    {
+        abort_unless($serviceRequest->worker_id === auth()->id(), 403);
+
+        $serviceRequest->load(['service', 'user', 'maintenanceDetail', 'photos']);
+
+        return view('worker.tasks.show', compact('serviceRequest'));
     }
 
     public function accept(ServiceRequest $serviceRequest): RedirectResponse

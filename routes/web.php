@@ -22,6 +22,10 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+// Public product listings (accessible to everyone)
+Route::get('/product-listings', [AdminProductListingController::class, 'publicIndex'])
+    ->name('product-listings.index');
+
 Route::get('/dashboard', function () {
     return view('dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
@@ -44,16 +48,25 @@ Route::middleware(['auth', 'role:guest'])
     ->group(function () {
         Route::get('/service-requests', [GuestServiceRequestController::class, 'index'])
             ->name('service-requests.index');
+        Route::get('/service-requests/create', [GuestServiceRequestController::class, 'create'])
+            ->name('service-requests.create');
         Route::post('/service-requests', [GuestServiceRequestController::class, 'store'])
             ->name('service-requests.store');
+        Route::get('/service-requests/{serviceRequest}', [GuestServiceRequestController::class, 'show'])
+            ->name('service-requests.show');
 
         Route::post('/service-requests/{serviceRequest}/feedback', [FeedbackController::class, 'store'])
             ->name('service-requests.feedback');
 
         Route::get('/topups', [GuestTopupController::class, 'index'])
             ->name('topups.index');
+        Route::get('/topups/create', [GuestTopupController::class, 'create'])
+            ->name('topups.create');
         Route::post('/topups', [GuestTopupController::class, 'store'])
             ->name('topups.store');
+
+        Route::get('/balance', [GuestTopupController::class, 'balance'])
+            ->name('balance');
     });
 
 /*
@@ -66,6 +79,12 @@ Route::middleware(['auth', 'role:admin'])
     ->prefix('admin')
     ->name('admin.')
     ->group(function () {
+        Route::get('/', function () {
+            return view('admin.dashboard');
+        })->name('dashboard');
+
+        Route::get('/workers', [WorkerController::class, 'index'])
+            ->name('workers.index');
         Route::post('/workers', [WorkerController::class, 'store'])
             ->name('workers.store');
 
@@ -114,6 +133,8 @@ Route::middleware(['auth', 'role:pekerja'])
     ->group(function () {
         Route::get('/tasks', [TaskController::class, 'index'])
             ->name('tasks.index');
+        Route::get('/tasks/{serviceRequest}', [TaskController::class, 'show'])
+            ->name('tasks.show');
         Route::post('/tasks/{serviceRequest}/accept', [TaskController::class, 'accept'])
             ->name('tasks.accept');
         Route::post('/tasks/{serviceRequest}/complete', [TaskController::class, 'complete'])

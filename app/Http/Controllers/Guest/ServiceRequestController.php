@@ -10,6 +10,7 @@ use App\Models\ServiceRequestPhoto;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\View\View;
 
 class ServiceRequestController extends Controller
 {
@@ -21,6 +22,22 @@ class ServiceRequestController extends Controller
             ->get();
 
         return view('guest.service-requests.index', compact('requests'));
+    }
+
+    public function create(): View
+    {
+        $services = Service::where('is_active', true)->get();
+
+        return view('guest.service-requests.create', compact('services'));
+    }
+
+    public function show(ServiceRequest $serviceRequest): View
+    {
+        abort_unless($serviceRequest->user_id === auth()->id(), 403);
+
+        $serviceRequest->load(['service', 'worker', 'maintenanceDetail', 'photos', 'feedback']);
+
+        return view('guest.service-requests.show', compact('serviceRequest'));
     }
 
     public function store(Request $request): RedirectResponse

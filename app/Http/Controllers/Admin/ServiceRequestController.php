@@ -24,8 +24,9 @@ class ServiceRequestController extends Controller
     public function show(ServiceRequest $serviceRequest)
     {
         $serviceRequest->load(['service', 'user', 'worker', 'maintenanceDetail', 'photos', 'feedback']);
+        $workers = User::where('role', 'pekerja')->get();
 
-        return view('admin.service-requests.show', compact('serviceRequest'));
+        return view('admin.service-requests.show', compact('serviceRequest', 'workers'));
     }
 
     public function assign(Request $request, ServiceRequest $serviceRequest): RedirectResponse

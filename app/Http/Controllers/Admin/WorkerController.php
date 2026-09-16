@@ -6,11 +6,19 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\View\View;
 
 class WorkerController extends Controller
 {
     // password default untuk semua akun pekerja yang dibuat admin
     private const DEFAULT_WORKER_PASSWORD = 'password';
+
+    public function index(): View
+    {
+        $workers = User::where('role', 'pekerja')->latest()->get();
+
+        return view('admin.workers.index', compact('workers'));
+    }
 
     public function store(Request $request): RedirectResponse
     {
