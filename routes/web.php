@@ -238,6 +238,17 @@ Route::middleware(['auth', 'role:admin'])
             ->name('laundry-pricings.update');
 
         /*
+        | Cleaning Pricing
+        */
+
+        Route::resource('cleaning-pricings', \App\Http\Controllers\Admin\CleaningPricingController::class)
+            ->parameters(['cleaning-pricings' => 'pricing'])
+            ->except(['show', 'update']);
+
+        Route::put('/cleaning-pricings/{pricing}', [\App\Http\Controllers\Admin\CleaningPricingController::class, 'update'])
+            ->name('cleaning-pricings.update');
+
+        /*
         | Product Listings
         */
 

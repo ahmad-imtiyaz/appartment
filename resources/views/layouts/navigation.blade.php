@@ -25,6 +25,7 @@
                                 ['route' => 'admin.dashboard', 'label' => 'Dashboard'],
                                 ['route' => 'admin.service-requests.index', 'label' => 'Service Request'],
                                 ['route' => 'admin.laundry-pricings.index', 'label' => 'Harga Layanan'],
+                                ['route' => 'admin.cleaning-pricings.index', 'label' => 'Harga Cleaning'],
                                 ['route' => 'admin.topups.index', 'label' => 'Top Up'],
                                 ['route' => 'admin.workers.index', 'label' => 'Pekerja'],
                                 ['route' => 'admin.payment-methods.index', 'label' => 'Payment Method'],
