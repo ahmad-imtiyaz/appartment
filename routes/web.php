@@ -46,6 +46,12 @@ Route::middleware(['auth', 'role:guest'])
     ->prefix('guest')
     ->name('guest.')
     ->group(function () {
+
+        // Home / dashboard guest — dipakai sebagai landing tab "Home" di bottom navbar
+        Route::get('/home', function () {
+            return view('guest.home');
+        })->name('home');
+
         Route::get('/service-requests', [GuestServiceRequestController::class, 'index'])
             ->name('service-requests.index');
         Route::get('/service-requests/create', [GuestServiceRequestController::class, 'create'])
