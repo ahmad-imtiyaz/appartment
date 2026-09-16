@@ -32,9 +32,6 @@
         </div>
         <div class="flex items-center justify-between">
             <p class="text-sm opacity-80">Balance : <span class="font-bold">Rp{{ number_format(auth()->user()->balance, 0, ',', '.') }}</span></p>
-            <a href="{{ route('guest.services.show', $service->slug) }}" class="px-4 py-2 bg-white/20 backdrop-blur-sm rounded-lg text-sm font-medium hover:bg-white/30 transition-colors">
-                + Pesan Sekarang
-            </a>
         </div>
     </div>
 
@@ -46,13 +43,139 @@
         <div class="p-3 bg-red-50 text-red-800 rounded-lg text-sm">{{ session('error') }}</div>
     @endif
 
+    {{-- Laundry Type/Duration Selection --}}
+    @if($service->slug === 'laundry' && $laundryPricings->isNotEmpty())
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 space-y-5">
+            <div>
+                <h3 class="font-bold text-gray-900 mb-1">Pilih Jenis Laundry</h3>
+                <p class="text-xs text-gray-400">Jenis layanan cuci yang kamu inginkan</p>
+            </div>
+
+            {{-- Jenis Laundry Cards --}}
+            <div class="grid grid-cols-3 gap-3">
+                @php
+                    $typeConfig = [
+                        'cuci'       => ['label' => 'Cuci',       'icon' => '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 3v1.5M4.5 8.25H3m18 0h-1.5M4.5 12h15m-15 6h-1.5m19.5 0h-1.5M5.25 6h13.5M5.25 12h13.5m-13.5 6h13.5"/></svg>', 'color' => 'blue'],
+                        'cuci_setrika' => ['label' => 'Cuci + Setrika', 'icon' => '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>', 'color' => 'indigo'],
+                        'setrika'    => ['label' => 'Setrika',     'icon' => '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 15.75V18m-7.5-6.75h.008v.008H8.25v-.008zm0 2.25h.008v.008H8.25V13.5zm0 2.25h.008v.008H8.25v-.008zm0 2.25h.008v.008H8.25V18zm2.498-6.75h.007v.008h-.007v-.008zm0 2.25h.007v.008h-.007V13.5zm0 2.25h.007v.008h-.007v-.008zm0 2.25h.007v.008h-.007V18zm2.504-6.75h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008V13.5zm0 2.25h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008V18zm2.498-6.75h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008V13.5zM8.25 6h7.5v2.25h-7.5V6zM12 3a9 9 0 100 18 9 9 0 000-18z"/></svg>', 'color' => 'purple'],
+                    ];
+                @endphp
+                @foreach(['cuci', 'cuci_setrika', 'setrika'] as $type)
+                    @php
+                        $cfg = $typeConfig[$type];
+                        $checked = old('laundry_type') === $type ? 'checked' : '';
+                        $typeId = 'type-' . $type;
+                    @endphp
+                    <label class="group relative cursor-pointer" for="{{ $typeId }}">
+                        <input type="radio" name="laundry_type" value="{{ $type }}" {{ $checked }}
+                            id="{{ $typeId }}"
+                            class="laundry-type-radio absolute opacity-0 pointer-events-none peer"
+                            data-type="{{ $type }}">
+                        <div class="flex flex-col items-center gap-2 p-3 rounded-xl border-2 border-gray-100 bg-gray-50
+                            peer-checked:border-indigo-500 peer-checked:bg-indigo-50 peer-checked:shadow-md
+                            hover:border-gray-300 hover:bg-white hover:shadow-sm
+                            transition-all duration-200">
+                            <div class="w-10 h-10 rounded-full bg-{{ $cfg['color'] }}/10 flex items-center justify-center text-{{ $cfg['color'] }} group-hover:bg-{{ $cfg['color'] }}/20 transition-colors">
+                                {!! $cfg['icon'] !!}
+                            </div>
+                            <span class="text-xs font-semibold text-gray-700">{{ $cfg['label'] }}</span>
+                            @if($checked)
+                                <div class="absolute top-1.5 right-1.5 w-4 h-4 bg-indigo-500 rounded-full flex items-center justify-center">
+                                    <svg class="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                                </div>
+                            @endif
+                        </div>
+                    </label>
+                @endforeach
+            </div>
+
+            {{-- Durasi Section --}}
+            <div class="pt-2 border-t border-gray-100">
+                <div>
+                    <h3 class="font-bold text-gray-900 mb-1">Pilih Durasi</h3>
+                    <p class="text-xs text-gray-400">Lama pengerjaan cucian</p>
+                </div>
+                <div class="grid grid-cols-2 gap-3 mt-3">
+                    @php
+                        $durConfig = [
+                            'reguler' => ['label' => 'Reguler',   'desc' => '3 Hari',  'icon' => '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>', 'color' => 'emerald'],
+                            'express' => ['label' => 'Express',   'desc' => '1 Hari',  'icon' => '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>', 'color' => 'amber'],
+                        ];
+                    @endphp
+                    @foreach(['reguler', 'express'] as $duration)
+                        @php
+                            $dcfg = $durConfig[$duration];
+                            $checked = old('laundry_duration') === $duration ? 'checked' : '';
+                            $durId = 'duration-' . $duration;
+                        @endphp
+                        <label class="group relative cursor-pointer" for="{{ $durId }}">
+                            <input type="radio" name="laundry_duration" value="{{ $duration }}" {{ $checked }}
+                                id="{{ $durId }}"
+                                class="laundry-duration-radio absolute opacity-0 pointer-events-none peer"
+                                data-duration="{{ $duration }}">
+                            <div class="flex items-center gap-3 p-3 rounded-xl border-2 border-gray-100 bg-gray-50
+                                peer-checked:border-indigo-500 peer-checked:bg-indigo-50 peer-checked:shadow-md
+                                hover:border-gray-300 hover:bg-white hover:shadow-sm
+                                transition-all duration-200">
+                                <div class="w-9 h-9 rounded-full bg-{{ $dcfg['color'] }}/10 flex items-center justify-center text-{{ $dcfg['color'] }}">
+                                    {!! $dcfg['icon'] !!}
+                                </div>
+                                <div>
+                                    <span class="text-sm font-bold text-gray-800">{{ $dcfg['label'] }}</span>
+                                    <p class="text-[11px] text-gray-400">{{ $dcfg['desc'] }}</p>
+                                </div>
+                                @if($checked)
+                                    <div class="ml-auto w-4 h-4 bg-indigo-500 rounded-full flex items-center justify-center">
+                                        <svg class="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                                    </div>
+                                @endif
+                            </div>
+                        </label>
+                    @endforeach
+                </div>
+            </div>
+
+            {{-- Price Display Box --}}
+            <div id="price-info" class="hidden bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl p-4 border border-indigo-100">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-xs text-indigo-500 font-medium">Harga per Kilogram</p>
+                        <p class="text-xl font-bold text-indigo-700" id="selected-price-display">Rp 0</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-[11px] text-gray-400" id="selected-desc-display">Pilih jenis & durasi</p>
+                        <p class="text-xs text-orange-500 font-medium mt-0.5">⚠️ Harga bisa berubah setelah ditimbang</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
     {{-- Form Pesanan --}}
-    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-        <h3 class="font-semibold text-gray-900 mb-3">Buat Pesanan Baru</h3>
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+        <h3 class="font-bold text-gray-900 mb-3">Buat Pesanan</h3>
         <form method="POST" action="{{ route('guest.service-requests.store') }}" enctype="multipart/form-data" class="space-y-4">
             @csrf
 
+            @if ($errors->any())
+                <div class="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+                    <p class="font-medium mb-1">Silakan perbaiki kesalahan berikut:</p>
+                    <ul class="list-disc list-inside space-y-0.5">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+
             <input type="hidden" name="service_id" value="{{ $service->id }}">
+
+            {{-- Laundry hidden fields --}}
+            @if($service->slug === 'laundry')
+                <input type="hidden" name="laundry_type" id="form-laundry-type" value="{{ old('laundry_type') }}">
+                <input type="hidden" name="laundry_duration" id="form-laundry-duration" value="{{ old('laundry_duration') }}">
+                <input type="hidden" name="snapshot_price_per_kg" id="form-price-per-kg" value="{{ old('snapshot_price_per_kg') }}">
+            @endif
 
             <!-- Scheduled Date -->
             <div>
@@ -64,7 +187,7 @@
             <!-- Notes -->
             <div>
                 <x-input-label for="notes" :value="__('Catatan')" />
-                <textarea name="notes" id="notes" rows="2" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-4 py-2" placeholder="Contoh: unit A-1203, kunci di lobi, dsb.">{{ old('notes') }}</textarea>
+                <textarea name="notes" id="notes" rows="2" class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-4 py-2.5" placeholder="Contoh: unit A-1203, kunci di lobi, dsb.">{{ old('notes') }}</textarea>
                 <x-input-error :messages="$errors->get('notes')" class="mt-2" />
             </div>
 
@@ -75,7 +198,7 @@
                     <div>
                         <x-input-label for="damage_category" :value="__('Kategori Kerusakan') <span class=\"text-red-500\">*</span>" />
                         <select name="damage_category" id="damage_category"
-                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-4 py-2 bg-white">
+                                class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-4 py-2.5 bg-white">
                             <option value="">-- Pilih Kategori --</option>
                             <option value="cat_luntur">Cat Luntur / Rontok</option>
                             <option value="kebocoran">Kebocoran Air / Pipa</option>
@@ -96,7 +219,7 @@
 
                     <div>
                         <x-input-label for="urgency" :value="__('Tingkat Urgensi')" />
-                        <select name="urgency" id="urgency" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-4 py-2 bg-white">
+                        <select name="urgency" id="urgency" class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-4 py-2.5 bg-white">
                             <option value="low">Rendah (bisa ditunda)</option>
                             <option value="medium" selected>Sedang (1-2 hari)</option>
                             <option value="high">Tinggi (segera / darurat)</option>
@@ -113,17 +236,23 @@
                 </div>
             @endif
 
-            <button type="submit" class="w-full px-4 py-3 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors">
+            @if($service->slug === 'laundry')
+                <p class="text-xs text-orange-600 bg-orange-50 p-2.5 rounded-lg">
+                    ⚠️ Harga final akan ditentukan setelah Worker menimbang pakaian Anda.
+                </p>
+            @endif
+
+            <button type="submit" class="w-full py-3 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700 transition-colors text-sm">
                 Ajukan Pesanan
             </button>
         </form>
     </div>
 
     {{-- Daftar Pesanan --}}
-    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
         <div class="flex items-center justify-between mb-3">
-            <h3 class="font-semibold text-gray-900">Daftar Pesanan</h3>
-            <span class="text-xs text-gray-500">{{ $requests->count() }} pesanan</span>
+            <h3 class="font-bold text-gray-900">Daftar Pesanan</h3>
+            <span class="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded-full">{{ $requests->count() }} pesanan</span>
         </div>
 
         @if ($requests->isEmpty())
@@ -140,6 +269,13 @@
                         <div class="flex-1 min-w-0">
                             <p class="text-xs text-gray-500">Order #{{ str_pad($request->id, 7, '0', STR_PAD_LEFT) }}</p>
                             <p class="text-sm font-medium text-gray-900">{{ $request->service->name }}</p>
+                            @if($request->laundry_type)
+                                <p class="text-xs text-gray-400">
+                                    {{ $request->laundry_type }} / {{ $request->laundry_duration }}
+                                    @if($request->billable_weight) — {{ $request->billable_weight }} kg, Rp{{ number_format($request->total_price ?? 0, 0, ',', '.') }}
+                                    @endif
+                                </p>
+                            @endif
                             <p class="text-xs font-medium status-{{ $request->status }}">
                                 {{ ucfirst(str_replace('_', ' ', $request->status)) }}
                             </p>
@@ -168,3 +304,62 @@
 
 </div>
 @endsection
+
+@push('scripts')
+<script>
+    const typeRadios = document.querySelectorAll('.laundry-type-radio');
+    const durationRadios = document.querySelectorAll('.laundry-duration-radio');
+    const priceInfo = document.getElementById('price-info');
+    const priceDisplay = document.getElementById('selected-price-display');
+    const descDisplay = document.getElementById('selected-desc-display');
+    const formType = document.getElementById('form-laundry-type');
+    const formDuration = document.getElementById('form-laundry-duration');
+    const formPrice = document.getElementById('form-price-per-kg');
+
+    const pricingData = @json($laundryPricings);
+
+    const typeLabels = {
+        cuci: 'Cuci',
+        cuci_setrika: 'Cuci + Setrika',
+        setrika: 'Setrika'
+    };
+    const durLabels = {
+        reguler: 'Reguler (3 Hari)',
+        express: 'Express (1 Hari)'
+    };
+
+    function updatePrice() {
+        const type = document.querySelector('input[name="laundry_type"]:checked')?.value;
+        const duration = document.querySelector('input[name="laundry_duration"]:checked')?.value;
+
+        if (!type || !duration) {
+            priceInfo.classList.add('hidden');
+            formType.value = '';
+            formDuration.value = '';
+            formPrice.value = '';
+            return;
+        }
+
+        const match = pricingData.find(p => p.type === type && p.duration === duration);
+        if (match) {
+            priceInfo.classList.remove('hidden');
+            priceDisplay.textContent = 'Rp ' + Number(match.price_per_kg).toLocaleString('id-ID');
+            descDisplay.textContent = typeLabels[type] + ' • ' + durLabels[duration];
+            formType.value = type;
+            formDuration.value = duration;
+            formPrice.value = match.price_per_kg;
+        } else {
+            priceInfo.classList.add('hidden');
+            formType.value = '';
+            formDuration.value = '';
+            formPrice.value = '';
+        }
+    }
+
+    typeRadios.forEach(r => r.addEventListener('change', updatePrice));
+    durationRadios.forEach(r => r.addEventListener('change', updatePrice));
+
+    // Initialize on page load (handles old values and ensures hidden fields are synced)
+    updatePrice();
+</script>
+@endpush

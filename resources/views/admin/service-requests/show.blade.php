@@ -20,16 +20,20 @@
                 </div>
             @endif
 
+            @php
+                $statusBadgeClass = match($serviceRequest->status) {
+                    'pending' => 'bg-yellow-100 text-yellow-800',
+                    'assigned' => 'bg-blue-100 text-blue-800',
+                    'in_progress' => 'bg-purple-100 text-purple-800',
+                    'completed' => 'bg-green-100 text-green-800',
+                    'rejected' => 'bg-red-100 text-red-800',
+                    default => 'bg-gray-100 text-gray-800',
+                };
+            @endphp
             <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
                 <div class="flex items-center justify-between mb-4">
                     <h3 class="font-semibold text-gray-900 text-lg">{{ $serviceRequest->service->name }}</h3>
-                    <span class="px-3 py-1 text-sm font-medium rounded-full 
-                        @if($serviceRequest->status === 'pending') bg-yellow-100 text-yellow-800
-                        @elseif($serviceRequest->status === 'assigned') bg-blue-100 text-blue-800
-                        @elseif($serviceRequest->status === 'in_progress') bg-purple-100 text-purple-800
-                        @elseif($serviceRequest->status === 'completed') bg-green-100 text-green-800
-                        @elseif($serviceRequest->status === 'rejected') bg-red-100 text-red-800
-                        @else bg-gray-100 text-gray-800 @endif">
+                    <span class="px-3 py-1 text-sm font-medium rounded-full {{ $statusBadgeClass }}">
                         {{ ucfirst(str_replace('_', ' ', $serviceRequest->status)) }}
                     </span>
                 </div>
@@ -87,6 +91,41 @@
                     @endif
                 </dl>
 
+                @if ($serviceRequest->isLaundry())
+                    <div class="md:col-span-2 mt-4">
+                        <h4 class="font-semibold text-gray-900 mb-2">Detail Laundry</h4>
+                        <div class="grid grid-cols-2 gap-3 text-sm">
+                            <div>
+                                <dt class="text-blue-600">Jenis</dt>
+                                <dd class="font-medium">{{ $serviceRequest->laundry_type }}</dd>
+                            </div>
+                            <div>
+                                <dt class="text-blue-600">Durasi</dt>
+                                <dd class="font-medium">{{ $serviceRequest->laundry_duration === 'reguler' ? 'Reguler (3 Hari)' : 'Express (1 Hari)' }}</dd>
+                            </div>
+                            <div>
+                                <dt class="text-blue-600">Harga / Kg</dt>
+                                <dd class="font-medium">Rp{{ number_format($serviceRequest->snapshot_price_per_kg ?? 0, 0, ',', '.') }}</dd>
+                            </div>
+                            @if($serviceRequest->billable_weight)
+                                <div>
+                                    <dt class="text-blue-600">Berat</dt>
+                                    <dd class="font-medium">{{ $serviceRequest->billable_weight }} kg</dd>
+                                </div>
+                                <div>
+                                    <dt class="text-blue-600">Total</dt>
+                                    <dd class="font-bold text-green-700">Rp{{ number_format($serviceRequest->total_price, 0, ',', '.') }}</dd>
+                                </div>
+                            @else
+                                <div>
+                                    <dt class="text-blue-600">Berat</dt>
+                                    <dd class="text-orange-600">Belum ditimbang</dd>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+                @endif
+
                 @if ($serviceRequest->notes)
                     <div class="mt-4">
                         <dt class="text-gray-500 text-sm">Catatan Guest</dt>
@@ -118,10 +157,14 @@
                         <div>
                             <dt class="text-gray-500">Urgensi</dt>
                             <dd class="font-medium">
-                                <span class="px-2 py-1 text-xs font-medium rounded-full 
-                                    @if($serviceRequest->maintenanceDetail->urgency === 'high') bg-red-100 text-red-800
-                                    @elseif($serviceRequest->maintenanceDetail->urgency === 'medium') bg-yellow-100 text-yellow-800
-                                    @else bg-green-100 text-green-800 @endif">
+                                @php
+                                    $urgencyBadgeClass = match($serviceRequest->maintenanceDetail->urgency) {
+                                        'high' => 'bg-red-100 text-red-800',
+                                        'medium' => 'bg-yellow-100 text-yellow-800',
+                                        default => 'bg-green-100 text-green-800',
+                                    };
+                                @endphp
+                                <span class="px-2 py-1 text-xs font-medium rounded-full {{ $urgencyBadgeClass }}">
                                     {{ ucfirst($serviceRequest->maintenanceDetail->urgency) }}
                                 </span>
                             </dd>
@@ -177,7 +220,8 @@
                     <form method="POST" action="{{ route('admin.service-requests.assign', $serviceRequest) }}" class="space-y-4">
                         @csrf
                         <div>
-                            <x-input-label for="worker_id" :value="__('Pilih Pekerja') <span class=\"text-red-500\">*</span>" />
+                            <x-input-label for="worker_id" :value="__('Pilih Pekerja')" />
+                            <span class="text-red-500">*</span>
                             <select name="worker_id" id="worker_id" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-4 py-2 bg-white">
                                 <option value="">-- Pilih Pekerja --</option>
                                 @foreach ($workers as $worker)

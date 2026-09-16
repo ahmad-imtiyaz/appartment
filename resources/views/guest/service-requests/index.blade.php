@@ -152,7 +152,7 @@
         <div class="mt-6">
             <h3 class="font-bold text-gray-900 mb-3 text-[16px]">Pilih Layanan</h3>
             <div class="grid grid-cols-2 gap-3">
-                <a href="{{ route('guest.service-requests.category', 'laundry') }}" class="service-item flex flex-col items-center gap-1.5">
+                <a href="{{ route('guest.services.show', 'laundry') }}" class="service-item flex flex-col items-center gap-1.5">
                     <div class="service-icon flex items-center justify-center">
                         <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M8 3v3M16 3v3M3 9h18M5 5h14a2 2 0 012 2v12a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2z" />

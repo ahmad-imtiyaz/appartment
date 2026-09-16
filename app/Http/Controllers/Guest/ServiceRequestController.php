@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Guest;
 
 use App\Http\Controllers\Controller;
+use App\Models\LaundryPricing;
 use App\Models\MaintenanceDetail;
 use App\Models\Service;
 use App\Models\ServiceRequest;
@@ -74,12 +75,17 @@ class ServiceRequestController extends Controller
 
         abort_unless(isset($categories[$category]), 404);
 
+        // Laundry goes directly to service-detail page with card-based type/duration selector
+        if ($category === 'laundry') {
+            return redirect()->route('guest.services.show', 'laundry');
+        }
+
         $categoryData = $categories[$category];
 
         $activeRequests = auth()->user()->serviceRequests()
             ->with(['service', 'worker', 'feedback'])
             ->whereHas('service', function ($q) use ($category) {
-                $q->where('services.slug', $category); // fix: use slug instead of category
+                $q->where('services.slug', $category);
             })
             ->whereNotIn('status', ['completed', 'rejected'])
             ->latest()
@@ -101,7 +107,11 @@ class ServiceRequestController extends Controller
             ->latest()
             ->get();
 
-        return view('guest.service-requests.service-detail', compact('service', 'requests'));
+        $laundryPricings = $service->slug === 'laundry'
+            ? LaundryPricing::active()->latest()->get()
+            : collect();
+
+        return view('guest.service-requests.service-detail', compact('service', 'requests', 'laundryPricings'));
     }
 
     public function create(): View
@@ -127,7 +137,12 @@ class ServiceRequestController extends Controller
             'notes' => ['nullable', 'string', 'max:1000'],
             'scheduled_at' => ['nullable', 'date', 'after:now'],
 
-            // hanya wajib kalau service-nya Maintenance & Repair, dicek manual di bawah
+            // laundry-specific fields
+            'laundry_type' => ['nullable', 'in:cuci,cuci_setrika,setrika'],
+            'laundry_duration' => ['nullable', 'in:reguler,express'],
+            'snapshot_price_per_kg' => ['nullable', 'numeric', 'min:0'],
+
+            // maintenance fields
             'damage_category' => ['nullable', 'string', 'max:100'],
             'location' => ['nullable', 'string', 'max:100'],
             'urgency' => ['nullable', 'in:low,medium,high'],
@@ -137,6 +152,7 @@ class ServiceRequestController extends Controller
 
         $service = Service::findOrFail($validated['service_id']);
         $isMaintenance = $service->slug === 'maintenance-repair';
+        $isLaundry = $service->slug === 'laundry';
 
         if ($isMaintenance) {
             $request->validate([
@@ -144,13 +160,24 @@ class ServiceRequestController extends Controller
             ]);
         }
 
-        $serviceRequest = DB::transaction(function () use ($request, $validated, $service, $isMaintenance) {
+        if ($isLaundry) {
+            $request->validate([
+                'laundry_type' => ['required', 'in:cuci,cuci_setrika,setrika'],
+                'laundry_duration' => ['required', 'in:reguler,express'],
+                'snapshot_price_per_kg' => ['required', 'numeric', 'min:0'],
+            ]);
+        }
+
+        $serviceRequest = DB::transaction(function () use ($request, $validated, $service, $isMaintenance, $isLaundry) {
             $serviceRequest = ServiceRequest::create([
                 'user_id' => auth()->id(),
                 'service_id' => $service->id,
                 'status' => 'pending',
                 'notes' => $validated['notes'] ?? null,
                 'scheduled_at' => $validated['scheduled_at'] ?? null,
+                'laundry_type' => $isLaundry ? $validated['laundry_type'] : null,
+                'laundry_duration' => $isLaundry ? $validated['laundry_duration'] : null,
+                'snapshot_price_per_kg' => $isLaundry ? $validated['snapshot_price_per_kg'] : null,
             ]);
 
             if ($isMaintenance) {

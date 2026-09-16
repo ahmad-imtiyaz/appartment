@@ -69,8 +69,10 @@
                     </a>
 
                 </div>
-            </nav>
+             </nav>
 
-        </div>
-    </body>
-</html>
++           @stack('scripts')
++
+         </div>
+     </body>
+ </html>

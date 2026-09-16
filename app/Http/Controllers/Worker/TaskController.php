@@ -36,12 +36,41 @@ class TaskController extends Controller
         abort_unless($serviceRequest->worker_id === auth()->id(), 403);
         abort_if(!$serviceRequest->isWaitingAcceptance(), 422, 'Tugas ini tidak dalam status menunggu ACC.');
 
-        $serviceRequest->update([
+        $data = [
             'accepted_at' => now(),
             'status' => 'in_progress',
-        ]);
+        ];
+
+        if ($serviceRequest->isLaundry()) {
+            $data['collected_at'] = now();
+        }
+
+        $serviceRequest->update($data);
 
         return back()->with('success', 'Tugas diterima, status diubah jadi sedang dikerjakan.');
+    }
+
+    public function weigh(Request $request, ServiceRequest $serviceRequest): RedirectResponse
+    {
+        abort_unless($serviceRequest->worker_id === auth()->id(), 403);
+        abort_unless($serviceRequest->status === 'in_progress', 422, 'Tugas belum dalam progress.');
+        abort_if($serviceRequest->isLaundry() === false, 422, 'Tugas ini bukan laundry.');
+
+        $validated = $request->validate([
+            'billable_weight' => ['required', 'numeric', 'min:0.01'],
+        ]);
+
+        $billableWeight = max($validated['billable_weight'], 1);
+        $snapshotPrice = $serviceRequest->snapshot_price_per_kg ?? 0;
+        $totalPrice = round($billableWeight * $snapshotPrice, 2);
+
+        $serviceRequest->update([
+            'billable_weight' => $billableWeight,
+            'total_price' => $totalPrice,
+            'weighed_at' => now(),
+        ]);
+
+        return back()->with('success', 'Berat berhasil dicatat. Total harga: Rp' . number_format($totalPrice, 0, ',', '.'));
     }
 
     public function complete(Request $request, ServiceRequest $serviceRequest): RedirectResponse
@@ -51,8 +80,6 @@ class TaskController extends Controller
 
         $validated = $request->validate([
             'worker_notes' => ['nullable', 'string', 'max:1000'],
-            // wajib diisi manual khusus untuk Maintenance & Repair (harga custom per kasus)
-            'cost' => ['nullable', 'numeric', 'min:0'],
             'photos' => ['nullable', 'array', 'max:5'],
             'photos.*' => ['image', 'max:2048'],
         ]);
@@ -60,8 +87,8 @@ class TaskController extends Controller
         DB::transaction(function () use ($request, $validated, $serviceRequest) {
             $serviceRequest->loadMissing('service', 'user');
 
-            // biaya final: dari input pekerja (mis. maintenance), fallback ke base_price service
-            $cost = $validated['cost'] ?? $serviceRequest->service->base_price ?? 0;
+            // For laundry: total_price already calculated during weigh step
+            $cost = $serviceRequest->total_price ?? $serviceRequest->service->base_price ?? 0;
 
             $guest = $serviceRequest->user()->lockForUpdate()->first();
 

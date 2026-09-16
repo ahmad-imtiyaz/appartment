@@ -23,6 +23,14 @@ class ServiceRequest extends Model
         'accepted_at',
         'completed_at',
         'cost',
+        // laundry
+        'laundry_type',
+        'laundry_duration',
+        'snapshot_price_per_kg',
+        'billable_weight',
+        'total_price',
+        'collected_at',
+        'weighed_at',
     ];
 
     protected function casts(): array
@@ -33,6 +41,8 @@ class ServiceRequest extends Model
             'notified_at' => 'datetime',
             'accepted_at' => 'datetime',
             'completed_at' => 'datetime',
+            'collected_at' => 'datetime',
+            'weighed_at' => 'datetime',
             'cost' => 'decimal:2',
         ];
     }
@@ -103,5 +113,29 @@ class ServiceRequest extends Model
     public function isCompleted(): bool
     {
         return $this->status === 'completed';
+    }
+
+    // ==== Laundry helpers ==== //
+
+    public function isLaundry(): bool
+    {
+        return $this->service->slug === 'laundry';
+    }
+
+    public function calculateTotalPrice(): void
+    {
+        if (!$this->isLaundry() || !$this->billable_weight || !$this->snapshot_price_per_kg) {
+            return;
+        }
+
+        $billableWeight = max($this->billable_weight, 1);
+        $this->total_price = round($billableWeight * $this->snapshot_price_per_kg, 2);
+        $this->save();
+    }
+
+    public function billableWeightLabel(): string
+    {
+        return ($this->billable_weight !== null && $this->billable_weight < 1)
+            ? '1 kg (minimum)' : $this->billable_weight . ' kg';
     }
 }

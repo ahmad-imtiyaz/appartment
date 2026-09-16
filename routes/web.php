@@ -227,6 +227,16 @@ Route::middleware(['auth', 'role:admin'])
             ->name('service-requests.assign');
 
         /*
+        | Laundry Pricing
+        */
+
+        Route::resource('laundry-pricings', \App\Http\Controllers\Admin\LaundryPricingController::class)
+            ->except(['show', 'update']);
+
+        Route::put('/laundry-pricings/{laundryPricing}', [\App\Http\Controllers\Admin\LaundryPricingController::class, 'update'])
+            ->name('laundry-pricings.update');
+
+        /*
         | Product Listings
         */
 
@@ -266,6 +276,9 @@ Route::middleware(['auth', 'role:pekerja'])
 
         Route::post('/tasks/{serviceRequest}/accept', [TaskController::class, 'accept'])
             ->name('tasks.accept');
+
+        Route::post('/tasks/{serviceRequest}/weigh', [TaskController::class, 'weigh'])
+            ->name('tasks.weigh');
 
         Route::post('/tasks/{serviceRequest}/complete', [TaskController::class, 'complete'])
             ->name('tasks.complete');

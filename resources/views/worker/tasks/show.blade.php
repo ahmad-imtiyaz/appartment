@@ -23,7 +23,7 @@
             <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
                 <div class="flex items-center justify-between mb-4">
                     <h3 class="font-semibold text-gray-900 text-lg">{{ $serviceRequest->service->name }}</h3>
-                    <span class="px-3 py-1 text-sm font-medium rounded-full 
+                    <span class="px-3 py-1 text-sm font-medium rounded-full
                         @if($serviceRequest->status === 'pending') bg-yellow-100 text-yellow-800
                         @elseif($serviceRequest->status === 'assigned') bg-blue-100 text-blue-800
                         @elseif($serviceRequest->status === 'in_progress') bg-purple-100 text-purple-800
@@ -63,6 +63,18 @@
                             <dd class="font-medium">{{ $serviceRequest->accepted_at->format('d M Y H:i') }}</dd>
                         </div>
                     @endif
+                    @if ($serviceRequest->collected_at)
+                        <div>
+                            <dt class="text-gray-500">Diambil</dt>
+                            <dd class="font-medium">{{ $serviceRequest->collected_at->format('d M Y H:i') }}</dd>
+                        </div>
+                    @endif
+                    @if ($serviceRequest->weighed_at)
+                        <div>
+                            <dt class="text-gray-500">Ditimbang</dt>
+                            <dd class="font-medium">{{ $serviceRequest->weighed_at->format('d M Y H:i') }}</dd>
+                        </div>
+                    @endif
                     @if ($serviceRequest->completed_at)
                         <div>
                             <dt class="text-gray-500">Selesai</dt>
@@ -76,6 +88,41 @@
                         </div>
                     @endif
                 </dl>
+
+                @if ($serviceRequest->isLaundry())
+                    <div class="mb-4 bg-blue-50 rounded-lg p-4">
+                        <h4 class="font-semibold text-blue-900 mb-2">Detail Laundry</h4>
+                        <dl class="grid grid-cols-2 gap-3 text-sm">
+                            <div>
+                                <dt class="text-blue-600">Jenis</dt>
+                                <dd class="font-medium text-blue-900">{{ $serviceRequest->laundry_type }}</dd>
+                            </div>
+                            <div>
+                                <dt class="text-blue-600">Durasi</dt>
+                                <dd class="font-medium text-blue-900">{{ $serviceRequest->laundry_duration === 'reguler' ? 'Reguler (3 Hari)' : 'Express (1 Hari)' }}</dd>
+                            </div>
+                            <div>
+                                <dt class="text-blue-600">Harga / Kg</dt>
+                                <dd class="font-medium text-blue-900">Rp{{ number_format($serviceRequest->snapshot_price_per_kg ?? 0, 0, ',', '.') }}</dd>
+                            </div>
+                            @if($serviceRequest->billable_weight)
+                                <div>
+                                    <dt class="text-blue-600">Berat</dt>
+                                    <dd class="font-medium text-blue-900">{{ $serviceRequest->billable_weight }} kg</dd>
+                                </div>
+                                <div>
+                                    <dt class="text-blue-600">Total Harga</dt>
+                                    <dd class="font-bold text-green-900 text-lg">Rp{{ number_format($serviceRequest->total_price ?? 0, 0, ',', '.') }}</dd>
+                                </div>
+                            @else
+                                <div>
+                                    <dt class="text-blue-600">Berat</dt>
+                                    <dd class="text-orange-600">Belum ditimbang</dd>
+                                </div>
+                            @endif
+                        </dl>
+                    </div>
+                @endif
 
                 @if ($serviceRequest->notes)
                     <div class="mb-4">
@@ -108,7 +155,7 @@
                         <div>
                             <dt class="text-gray-500">Urgensi</dt>
                             <dd class="font-medium">
-                                <span class="px-2 py-1 text-xs font-medium rounded-full 
+                                <span class="px-2 py-1 text-xs font-medium rounded-full
                                     @if($serviceRequest->maintenanceDetail->urgency === 'high') bg-red-100 text-red-800
                                     @elseif($serviceRequest->maintenanceDetail->urgency === 'medium') bg-yellow-100 text-yellow-800
                                     @else bg-green-100 text-green-800 @endif">
@@ -155,34 +202,46 @@
                 </div>
             @endif
 
+            <!-- Weigh Form (for laundry tasks that haven't been weighed yet) -->
+            @if($serviceRequest->isLaundry() && $serviceRequest->status === 'in_progress' && !$serviceRequest->weighed_at)
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
+                    <h3 class="font-semibold text-gray-900 mb-4">Timbang Pakaian</h3>
+                    <form method="POST" action="{{ route('worker.tasks.weigh', $serviceRequest) }}" class="space-y-4">
+                        @csrf
+                        <div>
+                            <x-input-label for="billable_weight" :value="__('Berat Aktual (kg)') <span class=\"text-red-500\">*</span>" />
+                            <x-text-input id="billable_weight" type="number" name="billable_weight" step="0.01" min="0.01" required class="mt-1 block w-full" placeholder="Contoh: 0.5, 1.0, 2.5" />
+                            <x-input-error :messages="$errors->get('billable_weight')" class="mt-2" />
+                            <p class="mt-1 text-xs text-gray-500">Berat minimum dihitung sebagai 1 kg</p>
+                        </div>
+                        <x-primary-button type="submit" class="w-full">
+                            Catat Berat & Hitung Total
+                        </x-primary-button>
+                    </form>
+                </div>
+            @endif
+
             <!-- Complete Form (for in_progress status) -->
             @if ($serviceRequest->status === 'in_progress')
                 <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
                     <h3 class="font-semibold text-gray-900 mb-4">Tandai Selesai</h3>
                     <form method="POST" action="{{ route('worker.tasks.complete', $serviceRequest) }}" enctype="multipart/form-data" class="space-y-4">
                         @csrf
-                        
+
+                        @if($serviceRequest->isLaundry() && $serviceRequest->billable_weight && $serviceRequest->total_price)
+                            <div class="bg-green-50 rounded-lg p-3 mb-4">
+                                <p class="font-medium text-green-900">
+                                    Total Harga: Rp{{ number_format($serviceRequest->total_price, 0, ',', '.') }}
+                                    ({{ $serviceRequest->billable_weight }} kg × Rp{{ number_format($serviceRequest->snapshot_price_per_kg, 0, ',', '.') }}/kg)
+                                </p>
+                            </div>
+                        @endif
+
                         <div>
                             <x-input-label for="worker_notes" :value="__('Catatan Pekerja')" />
                             <textarea name="worker_notes" id="worker_notes" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-4 py-2" placeholder="Catatan hasil kerjaan...">{{ old('worker_notes') }}</textarea>
                             <x-input-error :messages="$errors->get('worker_notes')" class="mt-2" />
                         </div>
-
-                        <!-- Cost field (required for maintenance) -->
-                        @if ($serviceRequest->service->slug === 'maintenance-repair')
-                            <div>
-                                <x-input-label for="cost" :value="__('Biaya') <span class=\"text-red-500\">*</span>" />
-                                <x-text-input id="cost" type="number" name="cost" min="0" step="1000" required class="mt-1 block w-full" placeholder="Masukkan biaya aktual" />
-                                <x-input-error :messages="$errors->get('cost')" class="mt-2" />
-                                <p class="mt-1 text-xs text-gray-500">Wajib diisi untuk Maintenance & Repair (harga custom)</p>
-                            </div>
-                        @else
-                            <div>
-                                <x-input-label for="cost" :value="__('Biaya (Opsional)')" />
-                                <x-text-input id="cost" type="number" name="cost" min="0" step="1000" class="mt-1 block w-full" placeholder="Kosongkan untuk gunakan harga standar (Rp{{ number_format($serviceRequest->service->base_price ?? 0, 0, ',', '.') }})" />
-                                <x-input-error :messages="$errors->get('cost')" class="mt-2" />
-                            </div>
-                        @endif
 
                         <div>
                             <x-input-label for="photos" :value="__('Foto Hasil (Opsional, max 5)')" />
