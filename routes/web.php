@@ -231,9 +231,10 @@ Route::middleware(['auth', 'role:admin'])
         */
 
         Route::resource('laundry-pricings', \App\Http\Controllers\Admin\LaundryPricingController::class)
+            ->parameters(['laundry-pricings' => 'pricing'])
             ->except(['show', 'update']);
 
-        Route::put('/laundry-pricings/{laundryPricing}', [\App\Http\Controllers\Admin\LaundryPricingController::class, 'update'])
+        Route::put('/laundry-pricings/{pricing}', [\App\Http\Controllers\Admin\LaundryPricingController::class, 'update'])
             ->name('laundry-pricings.update');
 
         /*
@@ -290,4 +291,4 @@ Route::middleware(['auth', 'role:pekerja'])
 |--------------------------------------------------------------------------
 */
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';

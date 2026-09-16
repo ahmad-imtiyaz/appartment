@@ -73,7 +73,10 @@ class LaundryPricingController extends Controller
             ->whereIn('status', ['pending', 'assigned', 'in_progress'])
             ->exists();
 
-        abort_if($activeOrders, 422, 'Harga ini sedang digunakan oleh pesanan aktif. Tidak bisa dihapus.');
+        if ($activeOrders) {
+            return redirect()->route('admin.laundry-pricings.index')
+                ->with('error', 'Harga ini sedang digunakan oleh pesanan aktif. Tidak bisa dihapus.');
+        }
 
         $pricing->delete();
 
