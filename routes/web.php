@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\PaymentMethodController as AdminPaymentMethodController;
 use App\Http\Controllers\Admin\ProductListingController as AdminProductListingController;
 use App\Http\Controllers\Admin\ServiceRequestController as AdminServiceRequestController;
@@ -68,6 +69,7 @@ Route::get('/dashboard', function () {
 */
 
 Route::middleware('auth')->group(function () {
+
     Route::get('/profile', [ProfileController::class, 'edit'])
         ->name('profile.edit');
 
@@ -159,9 +161,8 @@ Route::middleware(['auth', 'role:admin'])
         | Admin Dashboard
         */
 
-        Route::get('/', function () {
-            return view('admin.dashboard');
-        })->name('dashboard');
+        Route::get('/', [DashboardController::class, 'index'])
+            ->name('dashboard');
 
         /*
         | Workers
