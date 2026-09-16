@@ -2,46 +2,111 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, SoftDeletes;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
     protected $fillable = [
         'name',
         'email',
         'password',
+        'role',                 // admin | pekerja | guest
+        'phone',
+        'apartment_unit_number',
+        'balance',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var array<int, string>
-     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'balance' => 'decimal:2',
         ];
+    }
+
+    // ==== Helper role check ====
+    public function isAdmin(): bool
+    {
+        return $this->role === 'admin';
+    }
+
+    public function isPekerja(): bool
+    {
+        return $this->role === 'pekerja';
+    }
+
+    public function isGuest(): bool
+    {
+        return $this->role === 'guest';
+    }
+
+    // ==== Relasi sebagai GUEST (penyewa apartemen) ====
+
+    // semua service request yang DIA ajukan
+    public function serviceRequests(): HasMany
+    {
+        return $this->hasMany(ServiceRequest::class, 'user_id');
+    }
+
+    public function topupRequests(): HasMany
+    {
+        return $this->hasMany(TopupRequest::class, 'user_id');
+    }
+
+    public function balanceMutations(): HasMany
+    {
+        return $this->hasMany(BalanceMutation::class, 'user_id');
+    }
+
+    // feedback yang DIA berikan ke pekerja
+    public function feedbacksGiven(): HasMany
+    {
+        return $this->hasMany(ServiceRequestFeedback::class, 'user_id');
+    }
+
+    // ==== Relasi sebagai PEKERJA ====
+
+    // semua tugas yang DIA kerjakan
+    public function assignedTasks(): HasMany
+    {
+        return $this->hasMany(ServiceRequest::class, 'worker_id');
+    }
+
+    // feedback yang DIA terima dari guest
+    public function feedbacksReceived(): HasMany
+    {
+        return $this->hasMany(ServiceRequestFeedback::class, 'worker_id');
+    }
+
+    // ==== Relasi sebagai ADMIN ====
+
+    // topup yang DIA approve/reject
+    public function approvedTopups(): HasMany
+    {
+        return $this->hasMany(TopupRequest::class, 'approved_by');
+    }
+
+    // service request yang DIA assign ke pekerja
+    public function assignedServiceRequests(): HasMany
+    {
+        return $this->hasMany(ServiceRequest::class, 'assigned_by');
+    }
+
+    public function productListings(): HasMany
+    {
+        return $this->hasMany(ProductListing::class, 'posted_by');
     }
 }
