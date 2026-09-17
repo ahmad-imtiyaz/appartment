@@ -90,6 +90,7 @@ class TaskController extends Controller
             $cost = match ($serviceRequest->service->slug) {
                 'laundry' => $serviceRequest->total_price ?? 0, // dihitung dari berat, di-set saat worker input berat
                 'cleaning' => $serviceRequest->snapshot_cleaning_price ?? 0,
+                'ac' => $serviceRequest->snapshot_ac_price ?? 0,
                 default => $serviceRequest->service->base_price ?? 0,
             };
 

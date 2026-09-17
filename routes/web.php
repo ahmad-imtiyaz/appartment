@@ -248,6 +248,18 @@ Route::middleware(['auth', 'role:admin'])
         Route::put('/cleaning-pricings/{pricing}', [\App\Http\Controllers\Admin\CleaningPricingController::class, 'update'])
             ->name('cleaning-pricings.update');
 
+
+        /*
+        | AC Pricing
+        */
+
+        Route::resource('ac-pricings', \App\Http\Controllers\Admin\AcPricingController::class)
+            ->parameters(['ac-pricings' => 'pricing'])
+            ->except(['show', 'update']);
+
+        Route::put('/ac-pricings/{pricing}', [\App\Http\Controllers\Admin\AcPricingController::class, 'update'])
+            ->name('ac-pricings.update');
+
         /*
         | Product Listings
         */

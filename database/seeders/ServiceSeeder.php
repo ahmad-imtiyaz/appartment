@@ -24,7 +24,7 @@ class ServiceSeeder extends Seeder
             ],
             [
                 'name' => 'AC Service',
-                'slug' => 'ac-service',
+                'slug' => 'ac',
                 'description' => 'Layanan servis/cuci AC unit apartemen.',
                 'base_price' => 75000,
             ],

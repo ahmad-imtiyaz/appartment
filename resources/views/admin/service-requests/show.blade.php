@@ -125,6 +125,37 @@
                         </div>
                     </div>
                 @endif
+                @if ($serviceRequest->isAc())
+    <div class="md:col-span-2 mt-4">
+        <h4 class="font-semibold text-gray-900 mb-2">Detail AC</h4>
+        <div class="grid grid-cols-2 gap-3 text-sm">
+            <div>
+                <dt class="text-blue-600">Tipe AC</dt>
+                <dd class="font-medium">{{ $serviceRequest->ac_type ?? '-' }}</dd>
+            </div>
+            <div>
+                <dt class="text-blue-600">Harga</dt>
+                <dd class="font-medium">Rp{{ number_format($serviceRequest->snapshot_ac_price ?? 0, 0, ',', '.') }}</dd>
+            </div>
+        </div>
+    </div>
+@endif
+
+@if ($serviceRequest->isCleaning())
+    <div class="md:col-span-2 mt-4">
+        <h4 class="font-semibold text-gray-900 mb-2">Detail Cleaning</h4>
+        <div class="grid grid-cols-2 gap-3 text-sm">
+            <div>
+                <dt class="text-blue-600">Tipe Cleaning</dt>
+                <dd class="font-medium">{{ $serviceRequest->cleaning_type ?? '-' }}</dd>
+            </div>
+            <div>
+                <dt class="text-blue-600">Harga</dt>
+                <dd class="font-medium">Rp{{ number_format($serviceRequest->snapshot_cleaning_price ?? 0, 0, ',', '.') }}</dd>
+            </div>
+        </div>
+    </div>
+@endif
 
                 @if ($serviceRequest->notes)
                     <div class="mt-4">

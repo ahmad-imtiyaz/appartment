@@ -26,6 +26,7 @@
                                 ['route' => 'admin.service-requests.index', 'label' => 'Service Request'],
                                 ['route' => 'admin.laundry-pricings.index', 'label' => 'Harga Layanan'],
                                 ['route' => 'admin.cleaning-pricings.index', 'label' => 'Harga Cleaning'],
+                                ['route' => 'admin.ac-pricings.index', 'label' => 'Harga AC'],
                                 ['route' => 'admin.topups.index', 'label' => 'Top Up'],
                                 ['route' => 'admin.workers.index', 'label' => 'Pekerja'],
                                 ['route' => 'admin.payment-methods.index', 'label' => 'Payment Method'],
@@ -56,7 +57,7 @@
                     <x-slot name="trigger">
                         <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
                             <div>{{ Auth::user()->name }}</div>
-                            <div class="ms-2 px-2 py-0.5 text-xs font-medium rounded-full 
+                            <div class="ms-2 px-2 py-0.5 text-xs font-medium rounded-full
                                 @if(Auth::user()->role === 'admin') bg-purple-100 text-purple-800
                                 @elseif(Auth::user()->role === 'pekerja') bg-blue-100 text-blue-800
                                 @else bg-green-100 text-green-800 @endif">

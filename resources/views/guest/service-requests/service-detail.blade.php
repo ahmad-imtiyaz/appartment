@@ -220,6 +220,75 @@
     </div>
 @endif
 
+{{-- AC Type Selection --}}
+@if($service->slug === 'ac' && $acPricings->isNotEmpty())
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 space-y-5">
+        <div>
+            <h3 class="font-bold text-gray-900 mb-1">Pilih Jenis Layanan AC</h3>
+            <p class="text-xs text-gray-400">Jenis layanan AC yang kamu inginkan</p>
+        </div>
+
+        <div class="grid grid-cols-3 gap-3">
+            @php
+                $acIconConfig = [
+                    'ac-cleaning' => [
+                        'icon' => '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375" /></svg>',
+                        'color' => 'cyan',
+                    ],
+                    'ac-refill' => [
+                        'icon' => '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 2v20M2 12h20" /></svg>',
+                        'color' => 'sky',
+                    ],
+                    'ac-repair' => [
+                        'icon' => '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.877-5.877" /></svg>',
+                        'color' => 'blue',
+                    ],
+                ];
+                $preselectedAc = old('ac_type') ?: request('type');
+            @endphp
+            @foreach($acPricings as $pricing)
+                @php
+                    $cfg = $acIconConfig[$pricing->type] ?? ['icon' => '', 'color' => 'gray'];
+                    $checked = $preselectedAc === $pricing->type ? 'checked' : '';
+                    $inputId = 'ac-' . $pricing->type;
+                @endphp
+                <label class="group relative cursor-pointer" for="{{ $inputId }}">
+                    <input type="radio" name="ac_type_display" value="{{ $pricing->type }}"
+                        data-price="{{ $pricing->price }}"
+                        data-label="{{ $pricing->typeLabel() }}"
+                        {{ $checked }} id="{{ $inputId }}"
+                        class="ac-type-radio absolute opacity-0 pointer-events-none peer">
+                    <div class="flex flex-col items-center gap-2 p-3 rounded-xl border-2 border-gray-100 bg-gray-50
+                        peer-checked:border-indigo-500 peer-checked:bg-indigo-50 peer-checked:shadow-md
+                        hover:border-gray-300 hover:bg-white hover:shadow-sm
+                        transition-all duration-200">
+                        <div class="w-10 h-10 rounded-full bg-{{ $cfg['color'] }}/10 flex items-center justify-center text-{{ $cfg['color'] }} group-hover:bg-{{ $cfg['color'] }}/20 transition-colors">
+                            {!! $cfg['icon'] !!}
+                        </div>
+                        <span class="text-xs font-semibold text-gray-700 text-center leading-tight">{{ $pricing->typeLabel() }}</span>
+                        @if($checked)
+                            <div class="absolute top-1.5 right-1.5 w-4 h-4 bg-indigo-500 rounded-full flex items-center justify-center">
+                                <svg class="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                            </div>
+                        @endif
+                    </div>
+                </label>
+            @endforeach
+        </div>
+
+        {{-- Price Display Box --}}
+        <div id="ac-price-info" class="hidden bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl p-4 border border-indigo-100">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-xs text-indigo-500 font-medium">Layanan Terpilih</p>
+                    <p class="text-sm font-bold text-indigo-700" id="selected-ac-label">-</p>
+                </div>
+                <p class="text-xl font-bold text-indigo-700" id="selected-ac-price">Rp 0</p>
+            </div>
+        </div>
+    </div>
+@endif
+
     {{-- Form Pesanan --}}
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
         <h3 class="font-bold text-gray-900 mb-3">Buat Pesanan</h3>
@@ -251,6 +320,12 @@
 @if($service->slug === 'cleaning')
     <input type="hidden" name="cleaning_type" id="form-cleaning-type" value="{{ old('cleaning_type') }}">
     <input type="hidden" name="snapshot_cleaning_price" id="form-cleaning-price" value="{{ old('snapshot_cleaning_price') }}">
+@endif
+
+{{-- AC hidden fields --}}
+@if($service->slug === 'ac')
+    <input type="hidden" name="ac_type" id="form-ac-type" value="{{ old('ac_type') }}">
+    <input type="hidden" name="snapshot_ac_price" id="form-ac-price" value="{{ old('snapshot_ac_price') }}">
 @endif
 
             <!-- Scheduled Date -->
@@ -514,5 +589,42 @@
     // Initialize cleaning saat halaman dibuka
     // termasuk ketika menggunakan old() atau ?type=
     updateCleaningSelection();
+
+    // ==============================
+// AC selection
+// ==============================
+
+const acRadios = document.querySelectorAll('.ac-type-radio');
+const formAcType = document.getElementById('form-ac-type');
+const formAcPrice = document.getElementById('form-ac-price');
+
+const acPriceInfo = document.getElementById('ac-price-info');
+const acLabelDisplay = document.getElementById('selected-ac-label');
+const acPriceDisplay = document.getElementById('selected-ac-price');
+
+function updateAcSelection() {
+    const checked = document.querySelector('input[name="ac_type_display"]:checked');
+
+    if (checked && formAcType && formAcPrice) {
+        formAcType.value = checked.value;
+        formAcPrice.value = checked.dataset.price;
+
+        if (acPriceInfo && acLabelDisplay && acPriceDisplay) {
+            acPriceInfo.classList.remove('hidden');
+            acLabelDisplay.textContent = checked.dataset.label;
+            acPriceDisplay.textContent = 'Rp ' + Number(checked.dataset.price).toLocaleString('id-ID');
+        }
+    } else {
+        if (acPriceInfo) acPriceInfo.classList.add('hidden');
+        if (formAcType) formAcType.value = '';
+        if (formAcPrice) formAcPrice.value = '';
+    }
+}
+
+acRadios.forEach(r => {
+    r.addEventListener('change', updateAcSelection);
+});
+
+updateAcSelection();
 </script>
 @endpush

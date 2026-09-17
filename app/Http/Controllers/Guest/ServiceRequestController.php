@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Guest;
 use App\Http\Controllers\Controller;
 use App\Models\LaundryPricing;
 use App\Models\CleaningPricing;
+use App\Models\AcPricing;
 use App\Models\MaintenanceDetail;
 use App\Models\Service;
 use App\Models\ServiceRequest;
@@ -77,7 +78,7 @@ class ServiceRequestController extends Controller
         abort_unless(isset($categories[$category]), 404);
 
         // Laundry & Cleaning go directly to service-detail page with card-based selector
-        if (in_array($category, ['laundry', 'cleaning'])) {
+        if (in_array($category, ['laundry', 'cleaning', 'ac'])) {
             return redirect()->route('guest.services.show', $category);
         }
 
@@ -116,7 +117,11 @@ class ServiceRequestController extends Controller
             ? CleaningPricing::active()->latest()->get()
             : collect();
 
-        return view('guest.service-requests.service-detail', compact('service', 'requests', 'laundryPricings', 'cleaningPricings'));
+        $acPricings = $service->slug === 'ac'
+            ? AcPricing::active()->latest()->get()
+            : collect();
+
+        return view('guest.service-requests.service-detail', compact('service', 'requests', 'laundryPricings', 'cleaningPricings', 'acPricings'));
     }
 
     public function create(): View
@@ -151,6 +156,10 @@ class ServiceRequestController extends Controller
             'cleaning_type' => ['nullable', 'in:cleaning-regular,cleaning-deep,cleaning-postmove'],
             'snapshot_cleaning_price' => ['nullable', 'numeric', 'min:0'],
 
+            // ac-specific fields
+            'ac_type' => ['nullable', 'in:ac-cleaning,ac-refill,ac-repair'],
+            'snapshot_ac_price' => ['nullable', 'numeric', 'min:0'],
+
             // maintenance fields
             'damage_category' => ['nullable', 'string', 'max:100'],
             'location' => ['nullable', 'string', 'max:100'],
@@ -163,6 +172,7 @@ class ServiceRequestController extends Controller
         $isMaintenance = $service->slug === 'maintenance-repair';
         $isLaundry = $service->slug === 'laundry';
         $isCleaning = $service->slug === 'cleaning';
+        $isAc = $service->slug === 'ac';
 
         if ($isMaintenance) {
             $request->validate([
@@ -185,7 +195,14 @@ class ServiceRequestController extends Controller
             ]);
         }
 
-        $serviceRequest = DB::transaction(function () use ($request, $validated, $service, $isMaintenance, $isLaundry, $isCleaning) {
+        if ($isAc) {
+            $request->validate([
+                'ac_type' => ['required', 'in:ac-cleaning,ac-refill,ac-repair'],
+                'snapshot_ac_price' => ['required', 'numeric', 'min:0'],
+            ]);
+        }
+
+        $serviceRequest = DB::transaction(function () use ($request, $validated, $service, $isMaintenance, $isLaundry, $isCleaning, $isAc) {
             $serviceRequest = ServiceRequest::create([
                 'user_id' => auth()->id(),
                 'service_id' => $service->id,
@@ -196,6 +213,8 @@ class ServiceRequestController extends Controller
                 'laundry_duration' => $isLaundry ? $validated['laundry_duration'] : null,
                 'cleaning_type' => $isCleaning ? $validated['cleaning_type'] : null,
                 'snapshot_cleaning_price' => $isCleaning ? $validated['snapshot_cleaning_price'] : null,
+                'ac_type' => $isAc ? $validated['ac_type'] : null,
+                'snapshot_ac_price' => $isAc ? $validated['snapshot_ac_price'] : null,
             ]);
 
             if ($isMaintenance) {

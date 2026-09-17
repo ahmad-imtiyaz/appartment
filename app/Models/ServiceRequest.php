@@ -34,6 +34,9 @@ class ServiceRequest extends Model
         // cleaning
         'cleaning_type',
         'snapshot_cleaning_price',
+        // ac
+        'ac_type',
+        'snapshot_ac_price',
     ];
 
     protected function casts(): array
@@ -118,11 +121,24 @@ class ServiceRequest extends Model
         return $this->status === 'completed';
     }
 
-    // ==== Laundry helpers ==== //
+    public function isAc(): bool
+    {
+        return $this->service->slug === 'ac';
+    }
 
     public function isLaundry(): bool
     {
         return $this->service->slug === 'laundry';
+    }
+
+    public function isCleaning(): bool
+    {
+        return $this->service->slug === 'cleaning';
+    }
+
+    public function isMaintenance(): bool
+    {
+        return $this->service->slug === 'maintenance-repair';
     }
 
     public function calculateTotalPrice(): void
