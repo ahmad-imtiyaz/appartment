@@ -87,8 +87,11 @@ class TaskController extends Controller
         DB::transaction(function () use ($request, $validated, $serviceRequest) {
             $serviceRequest->loadMissing('service', 'user');
 
-            // For laundry: total_price already calculated during weigh step
-            $cost = $serviceRequest->total_price ?? $serviceRequest->service->base_price ?? 0;
+            $cost = match ($serviceRequest->service->slug) {
+                'laundry' => $serviceRequest->total_price ?? 0, // dihitung dari berat, di-set saat worker input berat
+                'cleaning' => $serviceRequest->snapshot_cleaning_price ?? 0,
+                default => $serviceRequest->service->base_price ?? 0,
+            };
 
             $guest = $serviceRequest->user()->lockForUpdate()->first();
 
