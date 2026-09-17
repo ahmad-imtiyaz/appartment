@@ -151,6 +151,75 @@
         </div>
     @endif
 
+    {{-- Cleaning Type Selection --}}
+@if($service->slug === 'cleaning' && $cleaningPricings->isNotEmpty())
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 space-y-5">
+        <div>
+            <h3 class="font-bold text-gray-900 mb-1">Pilih Jenis Cleaning</h3>
+            <p class="text-xs text-gray-400">Jenis layanan cleaning yang kamu inginkan</p>
+        </div>
+
+        <div class="grid grid-cols-3 gap-3">
+            @php
+                $cleaningIconConfig = [
+                    'cleaning-regular' => [
+                        'icon' => '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5m4.75-11.396a24.301 24.301 0 014.5 0M14.25 3.104v5.714c0 .597.237 1.17.659 1.591L19.8 15.3m0 0a48.11 48.11 0 00-14.8 0M19.8 15.3l1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0112 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5" /></svg>',
+                        'color' => 'purple',
+                    ],
+                    'cleaning-deep' => [
+                        'icon' => '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9.53 16.122a3 3 0 00-5.78 1.128 2.25 2.25 0 01-2.4 2.245 4.5 4.5 0 008.4-2.245c0-.399-.078-.78-.22-1.128zm0 0a15.998 15.998 0 003.388-1.62m-5.043-.025a15.994 15.994 0 011.622-3.395m3.42 3.42a15.995 15.995 0 004.764-4.648l3.876-5.814a1.151 1.151 0 00-1.597-1.597L14.146 6.32a15.996 15.996 0 00-4.649 4.763m3.42 3.42a6.776 6.776 0 00-3.42-3.42" /></svg>',
+                        'color' => 'indigo',
+                    ],
+                    'cleaning-postmove' => [
+                        'icon' => '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" /></svg>',
+                        'color' => 'orange',
+                    ],
+                ];
+                $preselected = old('cleaning_type') ?: request('type');
+            @endphp
+            @foreach($cleaningPricings as $pricing)
+                @php
+                    $cfg = $cleaningIconConfig[$pricing->type] ?? ['icon' => '', 'color' => 'gray'];
+                    $checked = $preselected === $pricing->type ? 'checked' : '';
+                    $inputId = 'cleaning-' . $pricing->type;
+                @endphp
+                <label class="group relative cursor-pointer" for="{{ $inputId }}">
+                    <input type="radio" name="cleaning_type_display" value="{{ $pricing->type }}"
+                        data-price="{{ $pricing->price }}"
+                        data-label="{{ $pricing->typeLabel() }}"
+                        {{ $checked }} id="{{ $inputId }}"
+                        class="cleaning-type-radio absolute opacity-0 pointer-events-none peer">
+                    <div class="flex flex-col items-center gap-2 p-3 rounded-xl border-2 border-gray-100 bg-gray-50
+                        peer-checked:border-indigo-500 peer-checked:bg-indigo-50 peer-checked:shadow-md
+                        hover:border-gray-300 hover:bg-white hover:shadow-sm
+                        transition-all duration-200">
+                        <div class="w-10 h-10 rounded-full bg-{{ $cfg['color'] }}/10 flex items-center justify-center text-{{ $cfg['color'] }} group-hover:bg-{{ $cfg['color'] }}/20 transition-colors">
+                            {!! $cfg['icon'] !!}
+                        </div>
+                        <span class="text-xs font-semibold text-gray-700 text-center leading-tight">{{ $pricing->typeLabel() }}</span>
+                        @if($checked)
+                            <div class="absolute top-1.5 right-1.5 w-4 h-4 bg-indigo-500 rounded-full flex items-center justify-center">
+                                <svg class="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                            </div>
+                        @endif
+                    </div>
+                </label>
+            @endforeach
+        </div>
+
+        {{-- Price Display Box --}}
+        <div id="cleaning-price-info" class="hidden bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl p-4 border border-indigo-100">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-xs text-indigo-500 font-medium">Layanan Terpilih</p>
+                    <p class="text-sm font-bold text-indigo-700" id="selected-cleaning-label">-</p>
+                </div>
+                <p class="text-xl font-bold text-indigo-700" id="selected-cleaning-price">Rp 0</p>
+            </div>
+        </div>
+    </div>
+@endif
+
     {{-- Form Pesanan --}}
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
         <h3 class="font-bold text-gray-900 mb-3">Buat Pesanan</h3>
@@ -176,6 +245,13 @@
                 <input type="hidden" name="laundry_duration" id="form-laundry-duration" value="{{ old('laundry_duration') }}">
                 <input type="hidden" name="snapshot_price_per_kg" id="form-price-per-kg" value="{{ old('snapshot_price_per_kg') }}">
             @endif
+
+            {{-- Cleaning hidden fields --}}
+
+@if($service->slug === 'cleaning')
+    <input type="hidden" name="cleaning_type" id="form-cleaning-type" value="{{ old('cleaning_type') }}">
+    <input type="hidden" name="snapshot_cleaning_price" id="form-cleaning-price" value="{{ old('snapshot_cleaning_price') }}">
+@endif
 
             <!-- Scheduled Date -->
             <div>
@@ -323,12 +399,14 @@
         cuci_setrika: 'Cuci + Setrika',
         setrika: 'Setrika'
     };
+
     const durLabels = {
         reguler: 'Reguler (3 Hari)',
         express: 'Express (1 Hari)'
     };
 
     function updatePrice() {
+        if (!priceInfo || !formType || !formDuration || !formPrice) return;
         const type = document.querySelector('input[name="laundry_type"]:checked')?.value;
         const duration = document.querySelector('input[name="laundry_duration"]:checked')?.value;
 
@@ -340,11 +418,18 @@
             return;
         }
 
-        const match = pricingData.find(p => p.type === type && p.duration === duration);
+        const match = pricingData.find(
+            p => p.type === type && p.duration === duration
+        );
+
         if (match) {
             priceInfo.classList.remove('hidden');
-            priceDisplay.textContent = 'Rp ' + Number(match.price_per_kg).toLocaleString('id-ID');
-            descDisplay.textContent = typeLabels[type] + ' • ' + durLabels[duration];
+            priceDisplay.textContent =
+                'Rp ' + Number(match.price_per_kg).toLocaleString('id-ID');
+
+            descDisplay.textContent =
+                typeLabels[type] + ' • ' + durLabels[duration];
+
             formType.value = type;
             formDuration.value = duration;
             formPrice.value = match.price_per_kg;
@@ -356,10 +441,78 @@
         }
     }
 
-    typeRadios.forEach(r => r.addEventListener('change', updatePrice));
-    durationRadios.forEach(r => r.addEventListener('change', updatePrice));
+    typeRadios.forEach(r => {
+        r.addEventListener('change', updatePrice);
+    });
 
-    // Initialize on page load (handles old values and ensures hidden fields are synced)
+    durationRadios.forEach(r => {
+        r.addEventListener('change', updatePrice);
+    });
+
+    // Initialize laundry saat halaman dibuka
     updatePrice();
+
+
+    // ==============================
+    // Cleaning selection
+    // ==============================
+
+    const cleaningRadios = document.querySelectorAll('.cleaning-type-radio');
+    const formCleaningType = document.getElementById('form-cleaning-type');
+    const formCleaningPrice = document.getElementById('form-cleaning-price');
+
+    const cleaningPriceInfo = document.getElementById('cleaning-price-info');
+    const cleaningLabelDisplay = document.getElementById('selected-cleaning-label');
+    const cleaningPriceDisplay = document.getElementById('selected-cleaning-price');
+
+    function updateCleaningSelection() {
+        const checked = document.querySelector(
+            'input[name="cleaning_type_display"]:checked'
+        );
+
+        if (
+            checked &&
+            formCleaningType &&
+            formCleaningPrice
+        ) {
+            formCleaningType.value = checked.value;
+            formCleaningPrice.value = checked.dataset.price;
+
+            if (
+                cleaningPriceInfo &&
+                cleaningLabelDisplay &&
+                cleaningPriceDisplay
+            ) {
+                cleaningPriceInfo.classList.remove('hidden');
+
+                cleaningLabelDisplay.textContent =
+                    checked.dataset.label;
+
+                cleaningPriceDisplay.textContent =
+                    'Rp ' +
+                    Number(checked.dataset.price).toLocaleString('id-ID');
+            }
+        } else {
+            if (cleaningPriceInfo) {
+                cleaningPriceInfo.classList.add('hidden');
+            }
+
+            if (formCleaningType) {
+                formCleaningType.value = '';
+            }
+
+            if (formCleaningPrice) {
+                formCleaningPrice.value = '';
+            }
+        }
+    }
+
+    cleaningRadios.forEach(r => {
+        r.addEventListener('change', updateCleaningSelection);
+    });
+
+    // Initialize cleaning saat halaman dibuka
+    // termasuk ketika menggunakan old() atau ?type=
+    updateCleaningSelection();
 </script>
 @endpush

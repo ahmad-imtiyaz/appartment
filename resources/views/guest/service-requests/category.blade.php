@@ -20,13 +20,16 @@
         <div>
             <div class="grid grid-cols-3 gap-3">
                 @foreach ($category['options'] as $option)
-                    <a href="{{ route('guest.services.show', $category['slug']) }}" class="bg-white rounded-xl shadow-sm border border-gray-100 p-3 flex flex-col items-center gap-2 hover:shadow-md transition-shadow">
-                        <div class="w-12 h-12 {{ $category['bg'] }} rounded-lg flex items-center justify-center">
-                            {!! $option['icon'] !!}
-                        </div>
-                        <span class="text-xs font-medium text-gray-700 text-center leading-tight">{{ $option['label'] }}</span>
-                    </a>
-                @endforeach
+    <a href="{{ route('guest.services.show', $category['slug']) }}?type={{ $option['id'] }}"
+       class="bg-white rounded-xl shadow-sm border border-gray-100 p-3 flex flex-col items-center gap-2 hover:shadow-md transition-shadow">
+        <div class="w-12 h-12 {{ $category['bg'] }} rounded-lg flex items-center justify-center">
+            {!! $option['icon'] !!}
+        </div>
+        <span class="text-xs font-medium text-gray-700 text-center leading-tight">
+            {{ $option['label'] }}
+        </span>
+    </a>
+@endforeach
             </div>
         </div>
 

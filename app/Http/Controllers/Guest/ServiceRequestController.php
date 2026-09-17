@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Guest;
 
 use App\Http\Controllers\Controller;
 use App\Models\LaundryPricing;
+use App\Models\CleaningPricing;
 use App\Models\MaintenanceDetail;
 use App\Models\Service;
 use App\Models\ServiceRequest;
@@ -25,7 +26,7 @@ class ServiceRequestController extends Controller
         return view('guest.service-requests.index', compact('requests'));
     }
 
-    public function category(string $category): View
+    public function category(string $category): View|RedirectResponse
     {
         $categories = [
             'laundry' => [
@@ -75,9 +76,9 @@ class ServiceRequestController extends Controller
 
         abort_unless(isset($categories[$category]), 404);
 
-        // Laundry goes directly to service-detail page with card-based type/duration selector
-        if ($category === 'laundry') {
-            return redirect()->route('guest.services.show', 'laundry');
+        // Laundry & Cleaning go directly to service-detail page with card-based selector
+        if (in_array($category, ['laundry', 'cleaning'])) {
+            return redirect()->route('guest.services.show', $category);
         }
 
         $categoryData = $categories[$category];
@@ -111,7 +112,11 @@ class ServiceRequestController extends Controller
             ? LaundryPricing::active()->latest()->get()
             : collect();
 
-        return view('guest.service-requests.service-detail', compact('service', 'requests', 'laundryPricings'));
+        $cleaningPricings = $service->slug === 'cleaning'
+            ? CleaningPricing::active()->latest()->get()
+            : collect();
+
+        return view('guest.service-requests.service-detail', compact('service', 'requests', 'laundryPricings', 'cleaningPricings'));
     }
 
     public function create(): View
@@ -142,6 +147,10 @@ class ServiceRequestController extends Controller
             'laundry_duration' => ['nullable', 'in:reguler,express'],
             'snapshot_price_per_kg' => ['nullable', 'numeric', 'min:0'],
 
+            // cleaning-specific fields
+            'cleaning_type' => ['nullable', 'in:cleaning-regular,cleaning-deep,cleaning-postmove'],
+            'snapshot_cleaning_price' => ['nullable', 'numeric', 'min:0'],
+
             // maintenance fields
             'damage_category' => ['nullable', 'string', 'max:100'],
             'location' => ['nullable', 'string', 'max:100'],
@@ -153,6 +162,7 @@ class ServiceRequestController extends Controller
         $service = Service::findOrFail($validated['service_id']);
         $isMaintenance = $service->slug === 'maintenance-repair';
         $isLaundry = $service->slug === 'laundry';
+        $isCleaning = $service->slug === 'cleaning';
 
         if ($isMaintenance) {
             $request->validate([
@@ -168,7 +178,14 @@ class ServiceRequestController extends Controller
             ]);
         }
 
-        $serviceRequest = DB::transaction(function () use ($request, $validated, $service, $isMaintenance, $isLaundry) {
+        if ($isCleaning) {
+            $request->validate([
+                'cleaning_type' => ['required', 'in:cleaning-regular,cleaning-deep,cleaning-postmove'],
+                'snapshot_cleaning_price' => ['required', 'numeric', 'min:0'],
+            ]);
+        }
+
+        $serviceRequest = DB::transaction(function () use ($request, $validated, $service, $isMaintenance, $isLaundry, $isCleaning) {
             $serviceRequest = ServiceRequest::create([
                 'user_id' => auth()->id(),
                 'service_id' => $service->id,
@@ -177,7 +194,8 @@ class ServiceRequestController extends Controller
                 'scheduled_at' => $validated['scheduled_at'] ?? null,
                 'laundry_type' => $isLaundry ? $validated['laundry_type'] : null,
                 'laundry_duration' => $isLaundry ? $validated['laundry_duration'] : null,
-                'snapshot_price_per_kg' => $isLaundry ? $validated['snapshot_price_per_kg'] : null,
+                'cleaning_type' => $isCleaning ? $validated['cleaning_type'] : null,
+                'snapshot_cleaning_price' => $isCleaning ? $validated['snapshot_cleaning_price'] : null,
             ]);
 
             if ($isMaintenance) {

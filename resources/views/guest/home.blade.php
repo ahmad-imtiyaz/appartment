@@ -237,7 +237,7 @@
         @else
             <div class="space-y-3">
                 @foreach ($recentRequests as $request)
-                    <a href="{{ route('guest.service-requests.show', $request) }}" class="request-card block bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+                    <a href="{{ route('guest.services.show', 'cleaning') }}" class="service-item flex flex-col items-center gap-1.5">
                         <div class="flex items-center justify-between">
                             <h4 class="font-semibold text-sm text-gray-900">{{ $request->service->name }}</h4>
                             <span class="badge px-2.5 py-1 text-xs font-semibold rounded-full

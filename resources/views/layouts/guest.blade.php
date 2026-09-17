@@ -71,8 +71,8 @@
                 </div>
              </nav>
 
-+           @stack('scripts')
-+
+          @stack('scripts')
+
          </div>
      </body>
  </html>

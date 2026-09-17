@@ -31,6 +31,9 @@ class ServiceRequest extends Model
         'total_price',
         'collected_at',
         'weighed_at',
+        // cleaning
+        'cleaning_type',
+        'snapshot_cleaning_price',
     ];
 
     protected function casts(): array
