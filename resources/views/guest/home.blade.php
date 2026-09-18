@@ -106,7 +106,7 @@
                 </div>
                 <span class="text-[11px] font-medium text-gray-700 text-center leading-tight">Repair &amp;<br>Maintenance</span>
             </a>
-            <a href="{{ route('guest.services.show', 'ac-service') }}" class="service-item flex flex-col items-center gap-1.5">
+            <a href="{{ route('guest.service-requests.category', 'ac') }}" class="service-item flex flex-col items-center gap-1.5">
                 <div class="service-icon flex items-center justify-center">
                     <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375" />
