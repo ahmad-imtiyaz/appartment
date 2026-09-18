@@ -14,7 +14,9 @@ class DatabaseSeeder extends Seeder
             PaymentMethodSeeder::class,
             LaundryPricingSeeder::class,
             CleaningPricingSeeder::class,
-            AcPricingSeeder::class
+            AcPricingSeeder::class,
+            CoinSettingSeeder::class,
+            CoinRedemptionProductSeeder::class,
         ]);
     }
 }

@@ -1,11 +1,15 @@
 <?php
 
+use App\Http\Controllers\Admin\CoinRedemptionController as AdminCoinRedemptionController;
+use App\Http\Controllers\Admin\CoinRedemptionProductController;
+use App\Http\Controllers\Admin\CoinSettingController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\PaymentMethodController as AdminPaymentMethodController;
 use App\Http\Controllers\Admin\ProductListingController as AdminProductListingController;
 use App\Http\Controllers\Admin\ServiceRequestController as AdminServiceRequestController;
 use App\Http\Controllers\Admin\TopupController as AdminTopupController;
 use App\Http\Controllers\Admin\WorkerController;
+use App\Http\Controllers\Guest\CoinRedemptionController as GuestCoinRedemptionController;
 use App\Http\Controllers\Guest\FeedbackController;
 use App\Http\Controllers\Guest\ProfileController as GuestProfileController;
 use App\Http\Controllers\Guest\ServiceRequestController as GuestServiceRequestController;
@@ -150,6 +154,19 @@ Route::middleware(['auth', 'role:guest'])
 
         Route::delete('/profile', [GuestProfileController::class, 'destroy'])
             ->name('profile.destroy');
+
+        /*
+        | Coin Redemptions
+        */
+
+        Route::get('/coin-redemptions', [GuestCoinRedemptionController::class, 'index'])
+            ->name('coin-redemptions.index');
+
+        Route::post('/coin-redemptions', [GuestCoinRedemptionController::class, 'store'])
+            ->name('coin-redemptions.store');
+
+        Route::delete('/coin-redemptions/{coinRedemption}', [GuestCoinRedemptionController::class, 'cancel'])
+            ->name('coin-redemptions.cancel');
     });
 
 /*
@@ -284,15 +301,52 @@ Route::middleware(['auth', 'role:admin'])
         Route::delete('/product-listings/{productListing}', [AdminProductListingController::class, 'destroy'])
             ->name('product-listings.destroy');
 
-            /*
-            | Coin Settings
-            */
+/*
+        | Coin Settings
+        */
 
-            Route::resource('coin-settings', \App\Http\Controllers\Admin\CoinSettingController::class)
+        Route::resource('coin-settings', \App\Http\Controllers\Admin\CoinSettingController::class)
             ->parameters(['coin-settings' => 'coinSetting'])
             ->except(['show']);
 
-            });
+        /*
+        | Coin Redemption Products
+        */
+
+        Route::get('/coin-redemption-products', [CoinRedemptionProductController::class, 'index'])
+            ->name('coin-redemption-products.index');
+
+        Route::get('/coin-redemption-products/create', [CoinRedemptionProductController::class, 'create'])
+            ->name('coin-redemption-products.create');
+
+        Route::post('/coin-redemption-products', [CoinRedemptionProductController::class, 'store'])
+            ->name('coin-redemption-products.store');
+
+        Route::get('/coin-redemption-products/{coinRedemptionProduct}/edit', [CoinRedemptionProductController::class, 'edit'])
+            ->name('coin-redemption-products.edit');
+
+        Route::put('/coin-redemption-products/{coinRedemptionProduct}', [CoinRedemptionProductController::class, 'update'])
+            ->name('coin-redemption-products.update');
+
+        Route::delete('/coin-redemption-products/{coinRedemptionProduct}', [CoinRedemptionProductController::class, 'destroy'])
+            ->name('coin-redemption-products.destroy');
+
+        /*
+        | Coin Redemptions (Guest Requests)
+        */
+
+        Route::get('/coin-redemptions', [AdminCoinRedemptionController::class, 'index'])
+            ->name('coin-redemptions.index');
+
+        Route::get('/coin-redemptions/{coinRedemption}', [AdminCoinRedemptionController::class, 'show'])
+            ->name('coin-redemptions.show');
+
+        Route::post('/coin-redemptions/{coinRedemption}/approve', [AdminCoinRedemptionController::class, 'approve'])
+            ->name('coin-redemptions.approve');
+
+        Route::post('/coin-redemptions/{coinRedemption}/reject', [AdminCoinRedemptionController::class, 'reject'])
+            ->name('coin-redemptions.reject');
+    });
 /*
 |--------------------------------------------------------------------------
 | Worker / Pekerja (role: pekerja)

@@ -110,4 +110,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(ProductListing::class, 'posted_by');
     }
+
+    public function coinRedemptions(): HasMany
+    {
+        return $this->hasMany(CoinRedemption::class, 'user_id');
+    }
 }

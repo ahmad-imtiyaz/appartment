@@ -62,6 +62,8 @@
                     'cloud'      => '<path d="M6 14h8a3 3 0 0 0 .3-6 4.5 4.5 0 0 0-8.6-1A3.5 3.5 0 0 0 6 14Z" />',
                     'card'       => '<rect x="2.5" y="5" width="15" height="10" rx="1.5" /><line x1="2.5" y1="8.3" x2="17.5" y2="8.3" />',
                     'shop'       => '<path d="M4 7h12l-1 9.5a1 1 0 0 1-1 .9H6a1 1 0 0 1-1-.9L4 7Z" /><path d="M7 7V5.5a3 3 0 0 1 6 0V7" />',
+                    'gift'       => '<path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />',
+                    'coin'       => '<circle cx="12" cy="12" r="10" /><path d="M12 6v12M6 12h12" />',
                 ];
 
                 $navGroups = $role === 'admin' ? [
@@ -78,10 +80,14 @@
                         ['route' => 'admin.cleaning-pricings.index', 'label' => 'Cleaning', 'icon' => 'sparkles'],
                         ['route' => 'admin.ac-pricings.index', 'label' => 'AC', 'icon' => 'cloud'],
                     ],
+                    'Penukaran Koin' => [
+                        ['route' => 'admin.coin-redemption-products.index', 'label' => 'Produk Tukar Koin', 'icon' => 'gift'],
+                        ['route' => 'admin.coin-redemptions.index', 'label' => 'Kelola Penukaran', 'icon' => 'coin'],
+                        ['route' => 'admin.coin-settings.index', 'label' => 'Setting Koin', 'icon' => 'banknotes'],
+                    ],
                     'Lainnya' => [
                         ['route' => 'admin.payment-methods.index', 'label' => 'Payment Method', 'icon' => 'card'],
                         ['route' => 'admin.product-listings.index', 'label' => 'Jual-Beli', 'icon' => 'shop'],
-                        ['route' => 'admin.coin-settings.index', 'label' => 'Setting Koin', 'icon' => 'banknotes'],
                     ],
                 ] : [
                     'Utama' => [
