@@ -11,6 +11,8 @@
         --pink-icon:#DB2777;
         --orange:#F97316;
         --border:#F1F1F1;
+        --wa-green:#25D366;
+        --wa-green-dark:#1DA851;
     }
 
     .jb-wrapper{
@@ -95,6 +97,32 @@
         padding:2px 8px;
         border-radius:999px;
         display:inline-block;
+    }
+
+    .wa-btn{
+        background:var(--wa-green);
+        color:#fff;
+        font-size:11px;
+        font-weight:600;
+        padding:6px 0;
+        border-radius:8px;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        gap:4px;
+        margin-top:8px;
+        transition:background .15s ease, transform .15s ease;
+        -webkit-tap-highlight-color:transparent;
+    }
+    .wa-btn:active{
+        background:var(--wa-green-dark);
+        transform:scale(0.97);
+    }
+    .wa-btn svg{width:13px;height:13px;flex-shrink:0;}
+    .wa-btn-disabled{
+        background:#E5E7EB;
+        color:#9CA3AF;
+        pointer-events:none;
     }
 
     .fab-jual{
@@ -193,6 +221,20 @@
                             @endif
                             @if ($listing->contact_info)
                                 <p class="text-[10px] text-gray-400 mt-1 truncate">{{ $listing->contact_info }}</p>
+                            @endif
+
+                            {{-- Tombol chat WhatsApp --}}
+                            @if ($listing->whatsapp_url)
+                                <a href="{{ $listing->whatsapp_url }}" target="_blank" rel="noopener" class="wa-btn">
+                                    <svg viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.26-1.38a9.9 9.9 0 004.78 1.22h.01c5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.85 9.85 0 0012.04 2zm5.8 14.11c-.24.68-1.4 1.3-1.94 1.38-.5.08-1.12.11-1.81-.11-.42-.13-.95-.31-1.64-.6-2.9-1.25-4.79-4.17-4.94-4.36-.14-.2-1.18-1.57-1.18-3 0-1.42.75-2.12 1.01-2.41.27-.29.58-.36.77-.36l.55.01c.18.01.42-.07.65.5.24.58.82 2 .89 2.15.07.15.12.32.02.52-.1.19-.14.31-.28.48-.14.17-.29.37-.42.5-.14.14-.28.29-.12.57.16.28.71 1.17 1.52 1.9 1.05.94 1.93 1.23 2.21 1.37.28.14.44.12.61-.07.17-.19.72-.84.91-1.13.19-.29.38-.24.63-.14.26.09 1.63.77 1.91.91.28.14.47.21.54.33.07.12.07.68-.17 1.36z"/>
+                                    </svg>
+                                    Chat WA
+                                </a>
+                            @else
+                                <div class="wa-btn wa-btn-disabled">
+                                    Kontak Tidak Valid
+                                </div>
                             @endif
                         </div>
                     </div>
