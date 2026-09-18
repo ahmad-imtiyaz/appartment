@@ -21,6 +21,7 @@ class User extends Authenticatable
         'phone',
         'apartment_unit_number',
         'balance',
+        'coin_balance',
     ];
 
     protected $hidden = [

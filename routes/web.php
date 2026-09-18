@@ -283,8 +283,16 @@ Route::middleware(['auth', 'role:admin'])
 
         Route::delete('/product-listings/{productListing}', [AdminProductListingController::class, 'destroy'])
             ->name('product-listings.destroy');
-    });
 
+            /*
+            | Coin Settings
+            */
+
+            Route::resource('coin-settings', \App\Http\Controllers\Admin\CoinSettingController::class)
+            ->parameters(['coin-settings' => 'coinSetting'])
+            ->except(['show']);
+
+            });
 /*
 |--------------------------------------------------------------------------
 | Worker / Pekerja (role: pekerja)

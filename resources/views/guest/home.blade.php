@@ -124,8 +124,8 @@
                     Balance : <span class="font-bold text-gray-900">Rp{{ number_format(auth()->user()->balance, 0, ',', '.') }}</span>
                 </p>
                 <p class="text-sm text-gray-700 mt-1">
-                    Oregonet Point : <span class="font-bold text-orange-500">{{ auth()->user()->points ?? 0 }} point</span>
-                </p>
+    Oregonet Point : <span class="font-bold text-orange-500">{{ auth()->user()->coin_balance }} point</span>
+</p>
             </div>
 
             <div class="flex items-center gap-3">

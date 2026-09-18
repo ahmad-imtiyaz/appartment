@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Worker;
 use App\Http\Controllers\Controller;
 use App\Models\BalanceMutation;
 use App\Models\ServiceRequest;
+use App\Services\CoinRewardService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -102,7 +103,7 @@ class TaskController extends Controller
             $balanceAfter = $balanceBefore - $cost;
             $guest->update(['balance' => $balanceAfter]);
 
-            BalanceMutation::create([
+                BalanceMutation::create([
                 'user_id' => $guest->id,
                 'type' => 'debit',
                 'amount' => $cost,
@@ -112,6 +113,11 @@ class TaskController extends Controller
                 'reference_id' => $serviceRequest->id,
                 'description' => 'Pembayaran jasa ' . $serviceRequest->service->name,
             ]);
+
+            // Reward koin berdasarkan tier CoinSetting yang aktif
+            (new CoinRewardService())->awardForServiceRequest($serviceRequest, $guest, $cost);
+
+
 
             foreach ($request->file('photos', []) as $photo) {
                 $serviceRequest->photos()->create([

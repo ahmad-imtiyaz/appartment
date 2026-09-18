@@ -81,6 +81,7 @@
                     'Lainnya' => [
                         ['route' => 'admin.payment-methods.index', 'label' => 'Payment Method', 'icon' => 'card'],
                         ['route' => 'admin.product-listings.index', 'label' => 'Jual-Beli', 'icon' => 'shop'],
+                        ['route' => 'admin.coin-settings.index', 'label' => 'Setting Koin', 'icon' => 'banknotes'],
                     ],
                 ] : [
                     'Utama' => [
