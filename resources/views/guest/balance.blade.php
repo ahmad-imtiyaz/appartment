@@ -247,32 +247,14 @@
 
 @section('content')
 @php
-    $filter = ($filter ?? request('filter', 'saldo')) === 'coin' ? 'coin' : 'saldo';
+    $filter = in_array($filter ?? request('filter'), ['saldo', 'koin']) ? ($filter ?? request('filter')) : 'all';
 
     $iconCoin  = 'M12 2a10 10 0 100 20 10 10 0 000-20zm0 3.5a1 1 0 011 1V7h.75a1 1 0 110 2H13v1h.5a2.5 2.5 0 010 5H13v.5a1 1 0 11-2 0V15h-.75a1 1 0 110-2H11v-1h-.5a2.5 2.5 0 010-5H11v-.5a1 1 0 011-1z';
     $iconWallet = 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z';
     $iconOut   = 'M7 17L17 7m0 0H8m9 0v9';
     $iconIn    = 'M17 7L7 17m0 0h9m-9 0V8';
     $iconClock = 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z';
-    $iconProc  = 'M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15';
-    $iconCancel = 'M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z';
-    $iconDone  = 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z';
-
-    $coinStatusLabels = [
-        'processing' => 'Sedang Proses',
-        'completed'  => 'Berhasil Ditukarkan',
-        'cancelled'  => 'Dibatalkan (Koin Kembali)',
-    ];
-    $coinStatusPill = [
-        'processing' => 'pill-processing',
-        'completed'  => 'pill-debit',
-        'cancelled'  => 'pill-cancelled',
-    ];
-    $coinStatusIcon = [
-        'processing' => $iconProc,
-        'completed'  => $iconDone,
-        'cancelled'  => $iconCancel,
-    ];
+    $iconAll   = 'M4 6h16M4 12h16M4 18h16';
 @endphp
 
 <div class="px-4 pt-4 pb-6 space-y-4">
@@ -311,141 +293,109 @@
     </div>
 
     {{-- Filter + daftar --}}
-    <div class="tab-row">
-        <nav class="tab-pillbar" aria-label="Filter pengeluaran">
-            <a href="{{ route(Route::currentRouteName(), ['filter' => 'saldo']) }}"
-               class="tab-btn {{ $filter === 'saldo' ? 'active' : '' }}">
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="{{ $iconWallet }}"/>
+   {{-- Filter + daftar --}}
+<div class="tab-row">
+    <nav class="tab-pillbar" aria-label="Filter mutasi">
+        <a href="{{ route('guest.balance', ['filter' => 'all']) }}"
+           class="tab-btn {{ $filter === 'all' ? 'active' : '' }}">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="{{ $iconAll }}"/>
+            </svg>
+            Semua
+        </a>
+        <a href="{{ route('guest.balance', ['filter' => 'saldo']) }}"
+           class="tab-btn {{ $filter === 'saldo' ? 'active' : '' }}">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="{{ $iconWallet }}"/>
+            </svg>
+            Saldo
+        </a>
+        <a href="{{ route('guest.balance', ['filter' => 'koin']) }}"
+           class="tab-btn {{ $filter === 'koin' ? 'active' : '' }}">
+            <svg fill="currentColor" viewBox="0 0 24 24">
+                <path d="{{ $iconCoin }}"/>
+            </svg>
+            Koin
+        </a>
+    </nav>
+
+    <div class="tab-panel-wrap">
+        @if ($mutations->isEmpty())
+            <div class="empty-state">
+                <svg class="mx-auto h-10 w-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                 </svg>
-                Saldo
-            </a>
-            <a href="{{ route(Route::currentRouteName(), ['filter' => 'coin']) }}"
-               class="tab-btn {{ $filter === 'coin' ? 'active' : '' }}">
-                <svg fill="currentColor" viewBox="0 0 24 24">
-                    <path d="{{ $iconCoin }}"/>
-                </svg>
-                Koin
-            </a>
-        </nav>
-
-        <div class="tab-panel-wrap">
-
-            {{-- ================= FILTER SALDO ================= --}}
-            @if ($filter === 'saldo')
-                @if (empty($mutations) || $mutations->isEmpty())
-                    <div class="empty-state">
-                        <svg class="mx-auto h-10 w-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                        </svg>
-                        <p class="mt-2 text-sm">Belum ada riwayat mutasi saldo</p>
-                    </div>
-                @else
-                    <div class="mutation-list">
-                        @foreach ($mutations as $mutation)
-                            @php $isCredit = $mutation->type === 'credit'; @endphp
-                            <div class="mutation-card {{ $isCredit ? 'is-credit' : 'is-debit' }}">
-                                <div class="mutation-main">
-                                    <div class="mutation-icon {{ $isCredit ? 'credit' : '' }}">
-                                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.2">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="{{ $isCredit ? $iconIn : $iconOut }}"/>
-                                        </svg>
-                                    </div>
-
-                                    <div class="mutation-info">
-                                        <p class="mutation-title">{{ $mutation->description }}</p>
-                                        <p class="mutation-sub">
-                                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="{{ $iconClock }}"/>
-                                            </svg>
-                                            {{ $mutation->created_at->format('d M Y, H:i') }}
-                                        </p>
-                                    </div>
-
-                                    <div class="mutation-amount {{ $isCredit ? 'amount-credit' : 'amount-debit' }}">
-                                        {{ $isCredit ? '+' : '-' }}Rp{{ number_format($mutation->amount, 0, ',', '.') }}
-                                    </div>
-                                </div>
-
-                                <div class="mutation-footer">
-                                    <span class="type-pill {{ $isCredit ? 'pill-credit' : 'pill-debit' }}">
-                                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.2" aria-hidden="true">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="{{ $isCredit ? $iconIn : $iconOut }}"/>
-                                        </svg>
-                                        {{ $isCredit ? 'Masuk' : 'Keluar' }}
-                                        @if ($mutation->reference_type)
-                                            <span style="opacity:.75;font-weight:500;">&middot; {{ class_basename($mutation->reference_type) }} #{{ $mutation->reference_id }}</span>
-                                        @endif
-                                    </span>
-                                    <span class="mutation-balance">
-                                        Saldo: <strong>Rp{{ number_format($mutation->balance_after, 0, ',', '.') }}</strong>
-                                    </span>
-                                </div>
+                <p class="mt-2 text-sm">
+                    @if ($filter === 'saldo') Belum ada riwayat mutasi saldo
+                    @elseif ($filter === 'koin') Belum ada riwayat mutasi koin
+                    @else Belum ada riwayat mutasi
+                    @endif
+                </p>
+            </div>
+        @else
+            <div class="mutation-list">
+                @foreach ($mutations as $mutation)
+                    @php
+                        $isCredit = $mutation->direction === 'in';
+                        $isCoin = $mutation->kind === 'koin';
+                        $unitLabel = $isCoin ? 'Koin' : 'Saldo';
+                    @endphp
+                    <div class="mutation-card {{ $isCredit ? 'is-credit' : 'is-debit' }}">
+                        <div class="mutation-main">
+                            <div class="mutation-icon {{ $isCredit ? 'credit' : '' }} {{ $isCoin ? 'coin' : '' }}">
+                                @if ($isCoin)
+                                    <svg fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="{{ $iconCoin }}"/>
+                                    </svg>
+                                @else
+                                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="{{ $isCredit ? $iconIn : $iconOut }}"/>
+                                    </svg>
+                                @endif
                             </div>
-                        @endforeach
-                    </div>
 
-                    <div class="mt-4">
-                        {{ $mutations->links() }}
-                    </div>
-                @endif
-
-            {{-- ================= FILTER KOIN ================= --}}
-            @else
-                @if (empty($coinRedemptions) || $coinRedemptions->isEmpty())
-                    <div class="empty-state">
-                        <svg class="mx-auto h-10 w-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                        </svg>
-                        <p class="mt-2 text-sm">Belum ada pengeluaran koin</p>
-                    </div>
-                @else
-                    <div class="mutation-list">
-                        @foreach ($coinRedemptions as $redemption)
-                            @php $cancelled = $redemption->status === 'cancelled'; @endphp
-                            <div class="mutation-card is-{{ $redemption->status }}">
-                                <div class="mutation-main">
-                                    <div class="mutation-icon {{ $cancelled ? 'cancelled' : 'coin' }}">
-                                        <svg fill="currentColor" viewBox="0 0 24 24">
-                                            <path d="{{ $iconCoin }}"/>
-                                        </svg>
-                                    </div>
-
-                                    <div class="mutation-info">
-                                        <p class="mutation-title">Penukaran {{ $redemption->product->name ?? 'Produk' }}</p>
-                                        <p class="mutation-sub">
-                                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="{{ $iconClock }}"/>
-                                            </svg>
-                                            {{ $redemption->created_at->format('d M Y, H:i') }}
-                                        </p>
-                                    </div>
-
-                                    <div class="mutation-amount {{ $cancelled ? 'amount-cancelled' : 'amount-debit' }}">
-                                        -{{ number_format($redemption->coin_cost) }} Koin
-                                    </div>
-                                </div>
-
-                                <div class="mutation-footer">
-                                    <span class="type-pill {{ $coinStatusPill[$redemption->status] ?? 'pill-processing' }}">
-                                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.2" aria-hidden="true">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="{{ $coinStatusIcon[$redemption->status] ?? $iconProc }}"/>
-                                        </svg>
-                                        {{ $coinStatusLabels[$redemption->status] ?? $redemption->status }}
-                                    </span>
-                                    <span class="mutation-balance">Keluar: <strong>Koin</strong></span>
-                                </div>
+                            <div class="mutation-info">
+                                <p class="mutation-title">{{ $mutation->description }}</p>
+                                <p class="mutation-sub">
+                                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="{{ $iconClock }}"/>
+                                    </svg>
+                                    {{ \Carbon\Carbon::parse($mutation->created_at)->format('d M Y, H:i') }}
+                                </p>
                             </div>
-                        @endforeach
-                    </div>
 
-                    <div class="mt-4">
-                        {{ $coinRedemptions->links() }}
-                    </div>
-                @endif
-            @endif
+                            <div class="mutation-amount {{ $isCredit ? 'amount-credit' : 'amount-debit' }}">
+                                {{ $isCredit ? '+' : '-' }}{{ $isCoin ? number_format($mutation->amount) . ' Koin' : 'Rp' . number_format($mutation->amount, 0, ',', '.') }}
+                            </div>
+                        </div>
 
-        </div>
+                        <div class="mutation-footer">
+                            <span class="type-pill {{ $isCredit ? 'pill-credit' : 'pill-debit' }}">
+                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.2" aria-hidden="true">
+                                    @if ($isCoin)
+                                        <path fill-rule="evenodd" clip-rule="evenodd" d="{{ $iconCoin }}"/>
+                                    @else
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="{{ $isCredit ? $iconIn : $iconOut }}"/>
+                                    @endif
+                                </svg>
+                                {{ $isCredit ? 'Masuk' : 'Keluar' }} &middot; {{ $unitLabel }}
+                                @if ($mutation->reference_type)
+                                    <span style="opacity:.75;font-weight:500;">&middot; {{ class_basename($mutation->reference_type) }} #{{ $mutation->reference_id }}</span>
+                                @endif
+                            </span>
+                            <span class="mutation-balance">
+                                {{ $unitLabel }}: <strong>{{ $isCoin ? number_format($mutation->balance_after) : 'Rp' . number_format($mutation->balance_after, 0, ',', '.') }}</strong>
+                            </span>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+
+            <div class="mt-4">
+                {{ $mutations->links() }}
+            </div>
+        @endif
     </div>
+</div>
 </div>
 @endsection

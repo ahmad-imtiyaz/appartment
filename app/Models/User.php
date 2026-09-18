@@ -115,4 +115,11 @@ class User extends Authenticatable
     {
         return $this->hasMany(CoinRedemption::class, 'user_id');
     }
+
+    // relasi coin
+
+    public function coinMutations(): HasMany
+    {
+        return $this->hasMany(CoinMutation::class, 'user_id');
+    }
 }

@@ -9,6 +9,8 @@ use App\Models\TopupRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use App\Models\CoinMutation;
+use Illuminate\Support\Facades\DB;
 
 class TopupController extends Controller
 {
@@ -19,13 +21,41 @@ class TopupController extends Controller
         return view('guest.topups.index', compact('topups'));
     }
 
-    public function balance(): View
-    {
-        $mutations = auth()->user()->balanceMutations()->latest()->paginate(20);
-        auth()->user()->forceFill(['notif_seen_at' => now()])->save();
+    public function balance(Request $request): View
+{
+    $filter = in_array($request->query('filter'), ['saldo', 'koin']) ? $request->query('filter') : 'all';
+    $userId = auth()->id();
 
-        return view('guest.balance', compact('mutations'));
-    }
+    $balanceQuery = fn () => DB::table('balance_mutations')
+        ->select(
+            DB::raw("'saldo' as kind"),
+            'id', 'type',
+            DB::raw("CASE WHEN type = 'credit' THEN 'in' ELSE 'out' END as direction"),
+            'amount', 'balance_before', 'balance_after',
+            'reference_type', 'reference_id', 'description', 'created_at'
+        )
+        ->where('user_id', $userId);
+
+    $coinQuery = fn () => DB::table('coin_mutations')
+        ->select(
+            DB::raw("'koin' as kind"),
+            'id', 'type',
+            DB::raw("CASE WHEN type = 'earn' THEN 'in' ELSE 'out' END as direction"),
+            'amount', 'balance_before', 'balance_after',
+            'reference_type', 'reference_id', 'description', 'created_at'
+        )
+        ->where('user_id', $userId);
+
+    $mutations = match ($filter) {
+        'saldo' => $balanceQuery()->orderByDesc('created_at')->paginate(20)->withQueryString(),
+        'koin' => $coinQuery()->orderByDesc('created_at')->paginate(20)->withQueryString(),
+        default => $balanceQuery()->unionAll($coinQuery())->orderByDesc('created_at')->paginate(20)->withQueryString(),
+    };
+
+    auth()->user()->forceFill(['notif_seen_at' => now()])->save();
+
+    return view('guest.balance', compact('mutations', 'filter'));
+}
 
     public function create(): View
     {
