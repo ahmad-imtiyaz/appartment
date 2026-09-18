@@ -152,6 +152,25 @@
     }
     .history-thumb-fallback svg{color:var(--pink-icon);}
 
+    .history-thumb{
+        width:64px;
+        height:64px;
+        min-width:64px;
+        border-radius:12px;
+        object-fit:cover;
+        flex-shrink:0;
+    }
+    .history-thumb-fallback{
+        width:64px;
+        height:64px;
+        min-width:64px;
+        border-radius:12px;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        flex-shrink:0;
+    }
+
     .cancel-btn{
         background:var(--pink-bg);
         color:var(--red-dark);
