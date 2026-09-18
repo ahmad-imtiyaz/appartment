@@ -191,15 +191,29 @@
 @push('scripts')
     <script>
         function switchTab(tab) {
-            // Update buttons
-            document.getElementById('tab-products').classList.toggle('text-indigo-600 border-indigo-600 bg-indigo-50', tab === 'products');
-            document.getElementById('tab-products').classList.toggle('text-gray-500', tab !== 'products');
-            document.getElementById('tab-history').classList.toggle('text-indigo-600 border-indigo-600 bg-indigo-50', tab === 'history');
-            document.getElementById('tab-history').classList.toggle('text-gray-500', tab !== 'history');
+            const productsBtn = document.getElementById('tab-products');
+            const historyBtn = document.getElementById('tab-history');
+            const productsContent = document.getElementById('content-products');
+            const historyContent = document.getElementById('content-history');
 
-            // Update content
-            document.getElementById('content-products').classList.toggle('hidden', tab !== 'products');
-            document.getElementById('content-history').classList.toggle('hidden', tab !== 'history');
+            const activeClasses = ['text-indigo-600', 'border-indigo-600', 'bg-indigo-50'];
+            const inactiveClasses = ['text-gray-500'];
+
+            if (tab === 'products') {
+                activeClasses.forEach(c => productsBtn.classList.add(c));
+                inactiveClasses.forEach(c => productsBtn.classList.remove(c));
+                historyBtn.classList.remove(...activeClasses);
+                inactiveClasses.forEach(c => historyBtn.classList.add(c));
+                productsContent.classList.remove('hidden');
+                historyContent.classList.add('hidden');
+            } else {
+                activeClasses.forEach(c => historyBtn.classList.add(c));
+                inactiveClasses.forEach(c => historyBtn.classList.remove(c));
+                productsBtn.classList.remove(...activeClasses);
+                inactiveClasses.forEach(c => productsBtn.classList.add(c));
+                historyContent.classList.remove('hidden');
+                productsContent.classList.add('hidden');
+            }
         }
     </script>
 @endpush
