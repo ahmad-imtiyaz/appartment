@@ -10,6 +10,7 @@
         --pink-bg:#FDECEF;
         --pink-icon:#DB2777;
         --orange:#F97316;
+        --green:#059669;
         --border:#F1F1F1;
     }
 
@@ -73,6 +74,7 @@
         padding:16px;
     }
 
+    /* ---------- Produk ---------- */
     .product-card{
         background:#fff;
         border-radius:16px;
@@ -129,59 +131,188 @@
         color:#9CA3AF;
     }
 
+    /* ---------- Riwayat (selalu 1 kartu per baris) ---------- */
+    .history-grid{
+        display:flex;
+        flex-direction:column;
+        gap:12px;
+    }
+
     .history-card{
+        position:relative;
+        width:100%;
         background:#fff;
         border-radius:16px;
         border:1px solid var(--border);
         box-shadow:0 1px 3px rgba(0,0,0,0.04);
-        padding:14px;
+        overflow:hidden;
+        display:flex;
+        flex-direction:column;
     }
-    .status-pill{
-        font-size:10px;
-        font-weight:600;
-        padding:3px 10px;
-        border-radius:999px;
-        white-space:nowrap;
+    /* aksen warna di sisi kiri sesuai status */
+    .history-card::before{
+        content:'';
+        position:absolute;
+        left:0;top:0;bottom:0;
+        width:4px;
+        background:var(--orange);
     }
-    .status-processing{background:#FFF7ED;color:var(--orange);}
-    .status-completed{background:#ECFDF5;color:#059669;}
-    .status-cancelled{background:var(--pink-bg);color:var(--red-dark);}
+    .history-card.is-completed::before{background:var(--green);}
+    .history-card.is-cancelled::before{background:var(--red);}
 
+    .history-main{
+        display:flex;
+        align-items:center;
+        gap:12px;
+        padding:14px 14px 12px 18px;
+        min-width:0;
+    }
+    .history-thumb,
     .history-thumb-fallback{
-        background:var(--pink-bg);
-    }
-    .history-thumb-fallback svg{color:var(--pink-icon);}
-
-    .history-thumb{
         width:64px;
         height:64px;
         min-width:64px;
+        max-width:64px;
         border-radius:12px;
-        object-fit:cover;
         flex-shrink:0;
     }
+    .history-thumb{
+        object-fit:cover;
+        display:block;
+        background:#F3F4F6;
+    }
     .history-thumb-fallback{
-        width:64px;
-        height:64px;
-        min-width:64px;
-        border-radius:12px;
         display:flex;
         align-items:center;
         justify-content:center;
-        flex-shrink:0;
+        background:var(--pink-bg);
+    }
+    .history-thumb-fallback svg{color:var(--pink-icon);width:26px;height:26px;}
+
+    .history-info{
+        flex:1 1 auto;
+        min-width:0;
+        display:flex;
+        flex-direction:column;
+        gap:4px;
+    }
+    .history-name{
+        font-size:14px;
+        font-weight:700;
+        color:#111827;
+        line-height:1.3;
+        overflow:hidden;
+        display:-webkit-box;
+        -webkit-line-clamp:2;
+        -webkit-box-orient:vertical;
+        word-break:break-word;
+    }
+    .history-meta{
+        display:flex;
+        align-items:center;
+        flex-wrap:wrap;
+        gap:2px 10px;
+        font-size:11.5px;
+        color:#6B7280;
+    }
+    .history-meta-item{
+        display:inline-flex;
+        align-items:center;
+        gap:4px;
+        white-space:nowrap;
+    }
+    .history-meta-item svg{width:13px;height:13px;flex-shrink:0;}
+    .history-coin{
+        color:var(--red);
+        font-weight:700;
+        font-size:13px;
     }
 
-    .cancel-btn{
-        background:var(--pink-bg);
-        color:var(--red-dark);
+    .history-footer{
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        gap:8px;
+        padding:10px 14px 12px 18px;
+        border-top:1px dashed #EEE;
+        background:#FCFCFD;
+    }
+
+    /* ---------- Status pill dengan ikon ---------- */
+    .status-pill{
+        display:inline-flex;
+        align-items:center;
+        gap:5px;
         font-size:11px;
         font-weight:600;
-        padding:5px 10px;
+        padding:4px 10px 4px 8px;
+        border-radius:999px;
+        white-space:nowrap;
+    }
+    .status-pill svg{
+        width:14px;
+        height:14px;
+        flex-shrink:0;
+    }
+    .status-processing{background:#FFF7ED;color:var(--orange);}
+    .status-completed{background:#ECFDF5;color:var(--green);}
+    .status-cancelled{background:var(--pink-bg);color:var(--red-dark);}
+
+    /* ikon "proses" berputar pelan */
+    .status-processing svg{
+        animation:status-spin 2.4s linear infinite;
+    }
+    @keyframes status-spin{
+        from{transform:rotate(0deg);}
+        to{transform:rotate(360deg);}
+    }
+    @media (prefers-reduced-motion:reduce){
+        .status-processing svg{animation:none;}
+    }
+
+    .history-footer form{margin:0;flex-shrink:0;}
+    .cancel-btn{
+        display:inline-flex;
+        align-items:center;
+        gap:5px;
+        background:var(--pink-bg);
+        color:var(--red-dark);
+        font-size:12px;
+        font-weight:600;
+        padding:6px 12px;
         border-radius:8px;
-        transition:background .15s ease;
+        white-space:nowrap;
+        transition:background .15s ease, transform .15s ease;
         -webkit-tap-highlight-color:transparent;
     }
-    .cancel-btn:active{background:#FBD5E0;}
+    .cancel-btn svg{width:13px;height:13px;}
+    .cancel-btn:active{background:#FBD5E0;transform:scale(0.97);}
+
+    .history-note{
+        display:flex;
+        gap:6px;
+        margin:0 14px 12px 18px;
+        padding:8px 10px;
+        background:#F9FAFB;
+        border-radius:10px;
+        font-size:11.5px;
+        color:#4B5563;
+        line-height:1.45;
+        word-break:break-word;
+    }
+    .history-note svg{width:14px;height:14px;flex-shrink:0;margin-top:1px;color:#9CA3AF;}
+    .history-note strong{font-weight:600;color:#374151;}
+
+    /* layar sangat kecil */
+    @media (max-width:360px){
+        .history-thumb,
+        .history-thumb-fallback{
+            width:52px;height:52px;min-width:52px;max-width:52px;
+        }
+        .history-main{gap:10px;padding:12px 12px 10px 16px;}
+        .history-footer{padding:10px 12px 12px 16px;}
+        .history-note{margin:0 12px 12px 16px;}
+    }
 
     .empty-state{
         text-align:center;
@@ -297,60 +428,95 @@
                     <p class="mt-2 text-sm">Belum ada riwayat penukaran</p>
                 </div>
             @else
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                @php
+                    $statusClasses = [
+                        'processing' => 'status-processing',
+                        'completed'  => 'status-completed',
+                        'cancelled'  => 'status-cancelled',
+                    ];
+                    $statusLabels = [
+                        'processing' => 'Sedang Proses',
+                        'completed'  => 'Berhasil Ditukarkan',
+                        'cancelled'  => 'Dibatalkan',
+                    ];
+                    // path SVG ikon per status (stroke icon, viewBox 24x24)
+                    $statusIcons = [
+                        // refresh / proses
+                        'processing' => 'M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15',
+                        // check-circle / berhasil
+                        'completed'  => 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z',
+                        // x-circle / dibatalkan
+                        'cancelled'  => 'M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z',
+                    ];
+                @endphp
+
+                <div class="history-grid">
                     @foreach ($redemptions as $redemption)
-                        <div class="history-card">
-                            <div class="flex items-start justify-between gap-3">
-                                <div class="flex items-center gap-2.5 min-w-0">
-                                    @if ($redemption->product->image)
-                                        <img src="{{ $redemption->product->image_url }}" alt="{{ $redemption->product->name }}"
-                                             class="h-11 w-11 object-cover rounded-lg shrink-0">
-                                    @else
-                                        <div class="history-thumb-fallback h-11 w-11 rounded-lg flex items-center justify-center shrink-0">
-                                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                        <div class="history-card is-{{ $redemption->status }}">
+
+                            {{-- Bagian utama: gambar + info --}}
+                            <div class="history-main">
+                                @if ($redemption->product->image)
+                                    <img src="{{ $redemption->product->image_url }}"
+                                         alt="{{ $redemption->product->name }}"
+                                         class="history-thumb" loading="lazy">
+                                @else
+                                    <div class="history-thumb-fallback">
+                                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                        </svg>
+                                    </div>
+                                @endif
+
+                                <div class="history-info">
+                                    <p class="history-name">{{ $redemption->product->name }}</p>
+                                    <div class="history-meta">
+                                        <span class="history-meta-item history-coin">
+                                            {{ number_format($redemption->coin_cost) }} Koin
+                                        </span>
+                                        <span class="history-meta-item">
+                                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                             </svg>
-                                        </div>
-                                    @endif
-                                    <div class="min-w-0">
-                                        <p class="font-semibold text-gray-900 text-[13px] truncate">{{ $redemption->product->name }}</p>
-                                        <p class="text-[11px] text-gray-400">{{ $redemption->created_at->format('d M Y H:i') }}</p>
-                                        <p class="product-price font-bold text-[12px] mt-0.5">{{ number_format($redemption->coin_cost) }} Koin</p>
+                                            {{ $redemption->created_at->format('d M Y, H:i') }}
+                                        </span>
                                     </div>
                                 </div>
-                                <div class="flex flex-col items-end gap-1.5 shrink-0">
-                                    @php
-                                        $statusClasses = [
-                                            'processing' => 'status-processing',
-                                            'completed' => 'status-completed',
-                                            'cancelled' => 'status-cancelled',
-                                        ];
-                                        $statusLabels = [
-                                            'processing' => 'Sedang Proses',
-                                            'completed' => 'Berhasil Ditukarkan',
-                                            'cancelled' => 'Dibatalkan',
-                                        ];
-                                    @endphp
-                                    <span class="status-pill {{ $statusClasses[$redemption->status] ?? 'status-processing' }}">
-                                        {{ $statusLabels[$redemption->status] ?? $redemption->status }}
-                                    </span>
-                                    @if ($redemption->canBeCancelledByGuest())
-                                        <form method="POST" action="{{ route('guest.coin-redemptions.cancel', $redemption) }}"
-                                              onsubmit="return confirm('Yakin ingin membatalkan penukaran ini? Koin akan dikembalikan.')">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="cancel-btn">
-                                                Batalkan
-                                            </button>
-                                        </form>
-                                    @endif
-                                </div>
                             </div>
+
+                            {{-- Catatan admin --}}
                             @if ($redemption->admin_notes)
-                                <div class="mt-2 p-2 bg-gray-50 rounded-lg text-[11px] text-gray-600">
-                                    Catatan: {{ $redemption->admin_notes }}
+                                <div class="history-note">
+                                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 10h8M8 14h5m-9 6l3-3h11a2 2 0 002-2V7a2 2 0 00-2-2H6a2 2 0 00-2 2v13z"/>
+                                    </svg>
+                                    <span><strong>Catatan:</strong> {{ $redemption->admin_notes }}</span>
                                 </div>
                             @endif
+
+                            {{-- Footer: status + aksi --}}
+                            <div class="history-footer">
+                                <span class="status-pill {{ $statusClasses[$redemption->status] ?? 'status-processing' }}">
+                                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.2" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="{{ $statusIcons[$redemption->status] ?? $statusIcons['processing'] }}"/>
+                                    </svg>
+                                    {{ $statusLabels[$redemption->status] ?? $redemption->status }}
+                                </span>
+
+                                @if ($redemption->canBeCancelledByGuest())
+                                    <form method="POST" action="{{ route('guest.coin-redemptions.cancel', $redemption) }}"
+                                          onsubmit="return confirm('Yakin ingin membatalkan penukaran ini? Koin akan dikembalikan.')">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="cancel-btn">
+                                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.2">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                                            </svg>
+                                            Batalkan
+                                        </button>
+                                    </form>
+                                @endif
+                            </div>
                         </div>
                     @endforeach
                 </div>

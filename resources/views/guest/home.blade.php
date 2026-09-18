@@ -34,14 +34,6 @@
         background:#F9FAFB;
         border-radius:14px;
     }
-    .action-circle{
-        width:42px;height:42px;border-radius:50%;
-        box-shadow:0 2px 4px rgba(0,0,0,0.08);
-        transition:transform .15s ease;
-    }
-    .action-circle:active{transform:scale(0.92);}
-    .action-circle.orange{background:var(--orange);}
-    .action-circle.red{background:var(--red);}
 
     .service-item{transition:transform .15s ease;-webkit-tap-highlight-color:transparent;}
     .service-item:active{transform:scale(0.95);}
@@ -73,23 +65,17 @@
         background:var(--red);
     }
     .promo-tags{border-top:1px solid #F6C9D0;}
-    .promo-tag .dot{
+    .promo-banner .dot{
         width:20px;height:20px;border-radius:50%;
         background:var(--red);color:#fff;font-size:10px;
     }
-
-    .request-card{transition:transform .15s ease;-webkit-tap-highlight-color:transparent;}
-    .request-card:active{transform:scale(0.98);}
-    .badge.pending{background:#FEF9C3;color:#854D0E;}
-    .badge.completed{background:#DCFCE7;color:#166534;}
-    .badge.in-progress{background:#DBEAFE;color:#1E40AF;}
 </style>
 @endpush
 
 @section('content')
 <div class="px-4 pt-4 pb-6 space-y-5 bg-gray-50 min-h-screen">
 
-        @include('guest.partials.header-card')
+    @include('guest.partials.header-card')
 
     {{-- Our Services --}}
     <div>
@@ -163,36 +149,6 @@
                 <span class="text-[11px] text-gray-500">Repair</span>
             </div>
         </div>
-    </div>
-
-    {{-- Permintaan Terbaru --}}
-    <div>
-        <h3 class="font-semibold text-gray-900 mb-3 text-[15px]">Permintaan Terbaru</h3>
-        @php
-            $recentRequests = auth()->user()->serviceRequests()->with('service')->latest()->take(3)->get();
-        @endphp
-
-        @if ($recentRequests->isEmpty())
-            <div class="bg-white rounded-xl border border-dashed border-gray-200 p-6 text-center">
-                <p class="text-sm text-gray-500">Belum ada permintaan jasa.</p>
-            </div>
-        @else
-            <div class="space-y-3">
-                @foreach ($recentRequests as $request)
-                    <a href="{{ route('guest.services.show', 'cleaning') }}" class="service-item flex flex-col items-center gap-1.5">
-                        <div class="flex items-center justify-between">
-                            <h4 class="font-semibold text-sm text-gray-900">{{ $request->service->name }}</h4>
-                            <span class="badge px-2.5 py-1 text-xs font-semibold rounded-full
-                                @if($request->status === 'pending') pending
-                                @elseif($request->status === 'completed') completed
-                                @else in-progress @endif">
-                                {{ ucfirst(str_replace('_', ' ', $request->status)) }}
-                            </span>
-                        </div>
-                    </a>
-                @endforeach
-            </div>
-        @endif
     </div>
 
 </div>
