@@ -67,10 +67,10 @@
                         $typeId = 'type-' . $type;
                     @endphp
                     <label class="group relative cursor-pointer" for="{{ $typeId }}">
-                        <input type="radio" name="laundry_type" value="{{ $type }}" {{ $checked }}
-                            id="{{ $typeId }}"
-                            class="laundry-type-radio absolute opacity-0 pointer-events-none peer"
-                            data-type="{{ $type }}">
+                        <input type="radio" name="laundry_type_display" value="{{ $type }}" {{ $checked }}
+    id="{{ $typeId }}"
+    class="laundry-type-radio absolute opacity-0 pointer-events-none peer"
+    data-type="{{ $type }}">
                         <div class="flex flex-col items-center gap-2 p-3 rounded-xl border-2 border-gray-100 bg-gray-50
                             peer-checked:border-indigo-500 peer-checked:bg-indigo-50 peer-checked:shadow-md
                             hover:border-gray-300 hover:bg-white hover:shadow-sm
@@ -109,10 +109,10 @@
                             $durId = 'duration-' . $duration;
                         @endphp
                         <label class="group relative cursor-pointer" for="{{ $durId }}">
-                            <input type="radio" name="laundry_duration" value="{{ $duration }}" {{ $checked }}
-                                id="{{ $durId }}"
-                                class="laundry-duration-radio absolute opacity-0 pointer-events-none peer"
-                                data-duration="{{ $duration }}">
+                            <input type="radio" name="laundry_duration_display" value="{{ $duration }}" {{ $checked }}
+    id="{{ $durId }}"
+    class="laundry-duration-radio absolute opacity-0 pointer-events-none peer"
+    data-duration="{{ $duration }}">
                             <div class="flex items-center gap-3 p-3 rounded-xl border-2 border-gray-100 bg-gray-50
                                 peer-checked:border-indigo-500 peer-checked:bg-indigo-50 peer-checked:shadow-md
                                 hover:border-gray-300 hover:bg-white hover:shadow-sm
@@ -482,8 +482,8 @@
 
     function updatePrice() {
         if (!priceInfo || !formType || !formDuration || !formPrice) return;
-        const type = document.querySelector('input[name="laundry_type"]:checked')?.value;
-        const duration = document.querySelector('input[name="laundry_duration"]:checked')?.value;
+        const type = document.querySelector('input[name="laundry_type_display"]:checked')?.value;
+const duration = document.querySelector('input[name="laundry_duration_display"]:checked')?.value;
 
         if (!type || !duration) {
             priceInfo.classList.add('hidden');

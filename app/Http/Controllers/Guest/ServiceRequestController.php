@@ -181,12 +181,18 @@ class ServiceRequestController extends Controller
         }
 
         if ($isLaundry) {
-            $request->validate([
-                'laundry_type' => ['required', 'in:cuci,cuci_setrika,setrika'],
-                'laundry_duration' => ['required', 'in:reguler,express'],
-                'snapshot_price_per_kg' => ['required', 'numeric', 'min:0'],
-            ]);
-        }
+    $request->validate([
+        'laundry_type' => ['required', 'in:cuci,cuci_setrika,setrika'],
+        'laundry_duration' => ['required', 'in:reguler,express'],
+    ]);
+
+    $pricing = LaundryPricing::byTypeAndDuration(
+        $request->laundry_type,
+        $request->laundry_duration
+    )->firstOrFail();
+
+    $validated['snapshot_price_per_kg'] = $pricing->price_per_kg;
+}
 
         if ($isCleaning) {
             $request->validate([
@@ -209,9 +215,10 @@ class ServiceRequestController extends Controller
                 'status' => 'pending',
                 'notes' => $validated['notes'] ?? null,
                 'scheduled_at' => $validated['scheduled_at'] ?? null,
-                'laundry_type' => $isLaundry ? $validated['laundry_type'] : null,
-                'laundry_duration' => $isLaundry ? $validated['laundry_duration'] : null,
-                'cleaning_type' => $isCleaning ? $validated['cleaning_type'] : null,
+               'laundry_type' => $isLaundry ? $validated['laundry_type'] : null,
+'laundry_duration' => $isLaundry ? $validated['laundry_duration'] : null,
+'snapshot_price_per_kg' => $isLaundry ? $validated['snapshot_price_per_kg'] : null,
+'cleaning_type' => $isCleaning ? $validated['cleaning_type'] : null,
                 'snapshot_cleaning_price' => $isCleaning ? $validated['snapshot_cleaning_price'] : null,
                 'ac_type' => $isAc ? $validated['ac_type'] : null,
                 'snapshot_ac_price' => $isAc ? $validated['snapshot_ac_price'] : null,
