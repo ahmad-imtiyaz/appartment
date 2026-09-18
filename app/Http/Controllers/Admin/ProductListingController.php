@@ -19,11 +19,20 @@ class ProductListingController extends Controller
 
     public function publicIndex(Request $request)
     {
-        $listings = ProductListing::where('is_active', true)
-            ->latest()
-            ->paginate(12);
+        $query = ProductListing::where('is_active', true)->latest();
 
-        return view('product-listings.index', compact('listings'));
+        if ($request->filled('category')) {
+            $query->where('category', $request->input('category'));
+        }
+
+        $listings = $query->paginate(12)->withQueryString();
+
+        $categories = ProductListing::where('is_active', true)
+            ->whereNotNull('category')
+            ->distinct()
+            ->pluck('category');
+
+        return view('guest.product-listings', compact('listings', 'categories'));
     }
 
     public function store(Request $request): RedirectResponse

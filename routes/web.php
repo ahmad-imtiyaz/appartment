@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\ServiceRequestController as AdminServiceRequestCo
 use App\Http\Controllers\Admin\TopupController as AdminTopupController;
 use App\Http\Controllers\Admin\WorkerController;
 use App\Http\Controllers\Guest\FeedbackController;
+use App\Http\Controllers\Guest\ProfileController as GuestProfileController;
 use App\Http\Controllers\Guest\ServiceRequestController as GuestServiceRequestController;
 use App\Http\Controllers\Guest\TopupController as GuestTopupController;
 use App\Http\Controllers\ProfileController;
@@ -61,24 +62,6 @@ Route::get('/dashboard', function () {
 
     abort(403, 'Role tidak dikenali.');
 })->middleware(['auth', 'verified'])->name('dashboard');
-
-/*
-|--------------------------------------------------------------------------
-| Profile
-|--------------------------------------------------------------------------
-*/
-
-Route::middleware('auth')->group(function () {
-
-    Route::get('/profile', [ProfileController::class, 'edit'])
-        ->name('profile.edit');
-
-    Route::patch('/profile', [ProfileController::class, 'update'])
-        ->name('profile.update');
-
-    Route::delete('/profile', [ProfileController::class, 'destroy'])
-        ->name('profile.destroy');
-});
 
 /*
 |--------------------------------------------------------------------------
@@ -154,6 +137,19 @@ Route::middleware(['auth', 'role:guest'])
 
         Route::get('/balance', [GuestTopupController::class, 'balance'])
             ->name('balance');
+
+        /*
+        | Profile
+        */
+
+        Route::get('/profile', [GuestProfileController::class, 'edit'])
+            ->name('profile.edit');
+
+        Route::patch('/profile', [GuestProfileController::class, 'update'])
+            ->name('profile.update');
+
+        Route::delete('/profile', [GuestProfileController::class, 'destroy'])
+            ->name('profile.destroy');
     });
 
 /*
@@ -173,6 +169,19 @@ Route::middleware(['auth', 'role:admin'])
 
         Route::get('/', [DashboardController::class, 'index'])
             ->name('dashboard');
+
+        /*
+        | Profile
+        */
+
+        Route::get('/profile', [ProfileController::class, 'edit'])
+            ->name('profile.edit');
+
+        Route::patch('/profile', [ProfileController::class, 'update'])
+            ->name('profile.update');
+
+        Route::delete('/profile', [ProfileController::class, 'destroy'])
+            ->name('profile.destroy');
 
         /*
         | Workers
@@ -248,7 +257,6 @@ Route::middleware(['auth', 'role:admin'])
         Route::put('/cleaning-pricings/{pricing}', [\App\Http\Controllers\Admin\CleaningPricingController::class, 'update'])
             ->name('cleaning-pricings.update');
 
-
         /*
         | AC Pricing
         */
@@ -279,7 +287,7 @@ Route::middleware(['auth', 'role:admin'])
 
 /*
 |--------------------------------------------------------------------------
-| Worker / Pekerja (role:  pekerja)
+| Worker / Pekerja (role: pekerja)
 |--------------------------------------------------------------------------
 */
 

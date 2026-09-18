@@ -1,0 +1,208 @@
+@extends('layouts.guest')
+
+@section('title', 'Jual Beli')
+
+@push('styles')
+<style>
+    :root{
+        --red:#DC2626;
+        --red-dark:#B91C1C;
+        --pink-bg:#FDECEF;
+        --pink-icon:#DB2777;
+        --orange:#F97316;
+        --border:#F1F1F1;
+    }
+
+    .jb-wrapper{
+        max-width: 480px;
+        margin-left: auto;
+        margin-right: auto;
+        width: 100%;
+        overflow-x: hidden;
+    }
+
+    .header-card{
+        background:#fff;
+        border-radius:20px;
+        border:1px solid var(--border);
+        box-shadow:0 1px 3px rgba(0,0,0,0.04);
+        padding:16px;
+    }
+    .brand-icon{
+        width:36px;height:36px;
+        background:var(--red);
+        border-radius:10px;
+        flex-shrink:0;
+    }
+
+    .category-pill{
+        background:#F9FAFB;
+        border:1px solid var(--border);
+        color:#374151;
+        font-size:12px;
+        font-weight:600;
+        padding:7px 14px;
+        border-radius:999px;
+        white-space:nowrap;
+        transition:background .15s ease, color .15s ease, border-color .15s ease;
+        -webkit-tap-highlight-color:transparent;
+    }
+    .category-pill.active,
+    .category-pill:active{
+        background:var(--red);
+        border-color:var(--red);
+        color:#fff;
+    }
+    .category-scroll{
+        overflow-x:auto;
+        scrollbar-width:none;
+        -ms-overflow-style:none;
+    }
+    .category-scroll::-webkit-scrollbar{display:none;}
+
+    .product-card{
+        background:#fff;
+        border-radius:16px;
+        border:1px solid var(--border);
+        box-shadow:0 1px 3px rgba(0,0,0,0.04);
+        overflow:hidden;
+        transition:transform .15s ease, box-shadow .15s ease;
+        -webkit-tap-highlight-color:transparent;
+    }
+    .product-card:active{
+        transform:scale(0.97);
+        box-shadow:0 1px 2px rgba(0,0,0,0.04);
+    }
+    .product-thumb{
+        width:100%;
+        aspect-ratio:1/1;
+        background:var(--pink-bg);
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        overflow:hidden;
+    }
+    .product-thumb img{
+        width:100%;height:100%;object-fit:cover;
+    }
+    .product-thumb svg{color:var(--pink-icon);}
+    .product-price{color:var(--red);}
+    .product-badge{
+        background:var(--pink-bg);
+        color:var(--pink-icon);
+        font-size:10px;
+        font-weight:600;
+        padding:2px 8px;
+        border-radius:999px;
+        display:inline-block;
+    }
+
+    .fab-jual{
+        background:var(--red);
+        box-shadow:0 4px 12px rgba(220,38,38,0.35);
+        transition:transform .15s ease, background .15s ease;
+        -webkit-tap-highlight-color:transparent;
+    }
+    .fab-jual:active{transform:scale(0.94);background:var(--red-dark);}
+
+    @media (min-width: 481px){
+        .jb-wrapper{
+            box-shadow: 0 0 0 1px rgba(0,0,0,0.04);
+            min-height: 100vh;
+        }
+    }
+</style>
+@endpush
+
+@section('content')
+<div class="jb-wrapper px-4 pt-4 pb-6 space-y-5">
+
+    {{-- Header card --}}
+    <div class="header-card p-4">
+        <div class="flex items-center gap-2 mb-1">
+            <div class="brand-icon flex items-center justify-center shrink-0">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 7.5A2.25 2.25 0 017.5 5.25h9a2.25 2.25 0 012.25 2.25v11.25a2.25 2.25 0 01-2.25 2.25h-9a2.25 2.25 0 01-2.25-2.25V7.5z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 5.25V4.5a3 3 0 016 0v.75M9 12h6m-6 3.75h4.5" />
+                </svg>
+            </div>
+            <div class="min-w-0">
+                <p class="font-bold text-gray-900 leading-tight text-sm truncate">Jual Beli</p>
+                <p class="text-[10px] text-gray-500 leading-tight italic truncate">Marketplace Penghuni</p>
+            </div>
+        </div>
+        <p class="text-[13px] text-gray-500 mt-2">Temukan atau tawarkan barang di lingkungan apartemenmu.</p>
+    </div>
+
+    @if (session('success'))
+        <div class="p-3 bg-green-50 text-green-800 rounded-lg text-sm">{{ session('success') }}</div>
+    @endif
+    @if (session('error'))
+        <div class="p-3 bg-red-50 text-red-800 rounded-lg text-sm">{{ session('error') }}</div>
+    @endif
+
+    {{-- Filter kategori (opsional, tampil jika ada kategori) --}}
+    @if (isset($categories) && $categories->isNotEmpty())
+        <div class="category-scroll flex items-center gap-2 -mx-4 px-4">
+            <a href="{{ route('product-listings.index') }}"
+               class="category-pill {{ request('category') ? '' : 'active' }}">Semua</a>
+            @foreach ($categories as $cat)
+                <a href="{{ route('product-listings.index', ['category' => $cat]) }}"
+                   class="category-pill {{ request('category') === $cat ? 'active' : '' }}">{{ ucfirst($cat) }}</a>
+            @endforeach
+        </div>
+    @endif
+
+    {{-- Grid produk --}}
+    <div>
+        <div class="flex items-center justify-between mb-3">
+            <h3 class="font-bold text-gray-900 text-[16px]">Info Jual &amp; Beli</h3>
+            <span class="text-xs text-gray-500 whitespace-nowrap">{{ $listings->total() }} item</span>
+        </div>
+
+        @if ($listings->isEmpty())
+            <div class="text-center py-10 text-gray-500 bg-white rounded-xl border border-dashed border-gray-200">
+                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 7.5A2.25 2.25 0 017.5 5.25h9a2.25 2.25 0 012.25 2.25v11.25a2.25 2.25 0 01-2.25 2.25h-9a2.25 2.25 0 01-2.25-2.25V7.5z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 5.25V4.5a3 3 0 016 0v.75M9 12h6m-6 3.75h4.5" />
+                </svg>
+                <p class="mt-2 text-sm">Belum ada info jual-beli</p>
+            </div>
+        @else
+            <div class="grid grid-cols-2 gap-3">
+                @foreach ($listings as $listing)
+                    <div class="product-card">
+                        <div class="product-thumb">
+                            @if ($listing->image)
+                                <img src="{{ asset('storage/' . $listing->image) }}" alt="{{ $listing->title }}">
+                            @else
+                                <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3 3h18v18H3V3z" />
+                                </svg>
+                            @endif
+                        </div>
+                        <div class="p-2.5">
+                            @if ($listing->category)
+                                <span class="product-badge mb-1.5">{{ ucfirst($listing->category) }}</span>
+                            @endif
+                            <h4 class="text-[13px] font-semibold text-gray-900 leading-snug mt-1 line-clamp-2">{{ $listing->title }}</h4>
+                            @if ($listing->price)
+                                <p class="product-price text-[13px] font-bold mt-1">Rp{{ number_format($listing->price, 0, ',', '.') }}</p>
+                            @else
+                                <p class="text-[12px] text-gray-500 mt-1">Nego</p>
+                            @endif
+                            @if ($listing->contact_info)
+                                <p class="text-[10px] text-gray-400 mt-1 truncate">{{ $listing->contact_info }}</p>
+                            @endif
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+
+            <div class="mt-4">
+                {{ $listings->links() }}
+            </div>
+        @endif
+    </div>
+</div>
+@endsection

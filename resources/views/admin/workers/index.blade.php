@@ -5,23 +5,23 @@
         </h2>
     </x-slot>
 
-    <div class="py-8 px-4 sm:px-6 lg:px-8">
+    <div class="py-6 sm:py-8 px-4 sm:px-6 lg:px-8">
         <div class="max-w-7xl mx-auto">
             <!-- Flash Messages -->
             @if (session('success'))
-                <div class="mb-6 p-3 bg-green-50 text-green-800 rounded-lg">
+                <div class="mb-6 p-3 bg-green-50 text-green-800 rounded-lg text-sm">
                     {{ session('success') }}
                 </div>
             @endif
 
             @if (session('error'))
-                <div class="mb-6 p-3 bg-red-50 text-red-800 rounded-lg">
+                <div class="mb-6 p-3 bg-red-50 text-red-800 rounded-lg text-sm">
                     {{ session('error') }}
                 </div>
             @endif
 
             <!-- Add Worker Form -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-8">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6 mb-8">
                 <h3 class="font-semibold text-gray-900 mb-4">Tambah Pekerja Baru</h3>
                 <form method="POST" action="{{ route('admin.workers.store') }}" class="space-y-4">
                     @csrf
@@ -45,14 +45,37 @@
                     <div>
                         <p class="text-sm text-gray-500">Password default: <code class="bg-gray-100 px-1 rounded">password</code> (bisa diubah oleh pekerja setelah login)</p>
                     </div>
-                    <x-primary-button>
+                    <x-primary-button class="w-full sm:w-auto justify-center">
                         Tambah Pekerja
                     </x-primary-button>
                 </form>
             </div>
 
-            <!-- Workers List -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            <!-- Workers: mobile card list -->
+            <div class="space-y-3 lg:hidden">
+                @forelse ($workers as $worker)
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+                        <p class="font-medium text-gray-900">{{ $worker->name }}</p>
+                        <dl class="mt-2 grid grid-cols-2 gap-y-1.5 text-sm">
+                            <dt class="text-gray-500">Email</dt>
+                            <dd class="text-gray-900 text-right truncate">{{ $worker->email }}</dd>
+
+                            <dt class="text-gray-500">Telepon</dt>
+                            <dd class="text-gray-900 text-right">{{ $worker->phone ?? '-' }}</dd>
+
+                            <dt class="text-gray-500">Dibuat</dt>
+                            <dd class="text-gray-900 text-right">{{ $worker->created_at->format('d M Y') }}</dd>
+                        </dl>
+                    </div>
+                @empty
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-8 text-center text-gray-500">
+                        Belum ada data pekerja
+                    </div>
+                @endforelse
+            </div>
+
+            <!-- Workers: desktop table -->
+            <div class="hidden lg:block bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                 <div class="overflow-x-auto">
                     <table class="w-full">
                         <thead class="bg-gray-50 border-b border-gray-100">

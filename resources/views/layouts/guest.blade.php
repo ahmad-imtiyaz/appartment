@@ -52,21 +52,22 @@
                         <span class="text-[11px] font-medium">Jasa</span>
                     </a>
 
-                    <a href="{{ route('guest.balance') }}"
-                       class="flex flex-col items-center justify-center py-2.5 gap-1 {{ request()->routeIs('guest.balance') || request()->routeIs('guest.topups.*') ? 'text-indigo-600' : 'text-gray-400' }}">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="{{ request()->routeIs('guest.balance') || request()->routeIs('guest.topups.*') ? 2 : 1.5 }}">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a2.25 2.25 0 00-2.25-2.25H15a3 3 0 11-6 0H5.25A2.25 2.25 0 003 12m18 0v6a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18v-6m18 0V9M3 12V9m18 0a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 9m18 0V6a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 6v3" />
+                    <a href="{{ route('product-listings.index') }}"
+                       class="flex flex-col items-center justify-center py-2.5 gap-1 {{ request()->routeIs('product-listings.*') ? 'text-indigo-600' : 'text-gray-400' }}">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="{{ request()->routeIs('product-listings.*') ? 2 : 1.5 }}">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 7.5A2.25 2.25 0 017.5 5.25h9a2.25 2.25 0 012.25 2.25v11.25a2.25 2.25 0 01-2.25 2.25h-9a2.25 2.25 0 01-2.25-2.25V7.5z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5.25V4.5a3 3 0 016 0v.75M9 12h6m-6 3.75h4.5" />
                         </svg>
-                        <span class="text-[11px] font-medium">Saldo</span>
+                        <span class="text-[11px] font-medium">Jual Beli</span>
                     </a>
 
-                    <a href="{{ route('profile.edit') }}"
-                       class="flex flex-col items-center justify-center py-2.5 gap-1 {{ request()->routeIs('profile.*') ? 'text-indigo-600' : 'text-gray-400' }}">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="{{ request()->routeIs('profile.*') ? 2 : 1.5 }}">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
-                        </svg>
-                        <span class="text-[11px] font-medium">Profil</span>
-                    </a>
+                    <a href="{{ route('guest.profile.edit') }}"
+   class="flex flex-col items-center justify-center py-2.5 gap-1 {{ request()->routeIs('guest.profile.*') ? 'text-indigo-600' : 'text-gray-400' }}">
+    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="{{ request()->routeIs('guest.profile.*') ? 2 : 1.5 }}">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+    </svg>
+    <span class="text-[11px] font-medium">Profil</span>
+</a>
 
                 </div>
              </nav>
