@@ -22,6 +22,7 @@ class TopupController extends Controller
     public function balance(): View
     {
         $mutations = auth()->user()->balanceMutations()->latest()->paginate(20);
+        auth()->user()->forceFill(['notif_seen_at' => now()])->save();
 
         return view('guest.balance', compact('mutations'));
     }

@@ -89,65 +89,7 @@
 @section('content')
 <div class="px-4 pt-4 pb-6 space-y-5 bg-gray-50 min-h-screen">
 
-    {{-- Header card --}}
-    <div class="header-card p-4">
-        <div class="flex items-center gap-2 mb-4">
-            <div class="brand-icon flex items-center justify-center shrink-0">
-                <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 2.5L2 11h3v9h5v-6h4v6h5v-9h3L12 2.5z"/>
-                </svg>
-            </div>
-            <div>
-                <p class="font-bold text-gray-900 leading-tight text-sm">OREGONET</p>
-                <p class="text-[10px] text-gray-500 leading-tight italic">Apartment Services</p>
-            </div>
-        </div>
-
-        <div class="flex items-center justify-between gap-2">
-            <p class="text-gray-800 text-sm">
-                {{ __('Welcome,') }}<br>
-                <span class="text-[19px] font-extrabold text-gray-900">{{ auth()->user()->name }}</span>
-            </p>
-
-            <div class="house-badge flex items-center justify-center shrink-0">
-                <svg class="w-16 h-16 text-white" viewBox="0 0 64 64" fill="none">
-                    <path d="M32 8L12 24v28h14V38h12v14h14V24L32 8z" fill="white"/>
-                    <path d="M14 46c-2 1-4 3-4 6 0 2 1.5 3.5 3.5 3.5h37c2 0 3.5-1.5 3.5-3.5 0-3-2-5-4-6" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M14 46c1.5-2.5 3.5-4 6-4h24c2.5 0 4.5 1.5 6 4" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round"/>
-                </svg>
-            </div>
-        </div>
-
-        <div class="balance-strip mt-4 p-4 flex items-center justify-between gap-2">
-            <div>
-                <p class="text-sm text-gray-700">
-                    Balance : <span class="font-bold text-gray-900">Rp{{ number_format(auth()->user()->balance, 0, ',', '.') }}</span>
-                </p>
-                <p class="text-sm text-gray-700 mt-1">
-    Oregonet Point : <span class="font-bold text-orange-500">{{ auth()->user()->coin_balance }} point</span>
-</p>
-            </div>
-
-            <div class="flex items-center gap-3">
-                <a href="{{ route('guest.topups.create') }}" class="flex flex-col items-center gap-1">
-                    <div class="action-circle orange flex items-center justify-center">
-                        <svg class="w-[19px] h-[19px] text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h16a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                        </svg>
-                    </div>
-                    <span class="text-[10px] text-gray-600">Top Up</span>
-                </a>
-                <a href="{{ route('guest.balance') }}" class="flex flex-col items-center gap-1">
-                    <div class="action-circle red flex items-center justify-center">
-                        <svg class="w-[19px] h-[19px] text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                    </div>
-                    <span class="text-[10px] text-gray-600 text-center leading-tight">Change<br>Point</span>
-                </a>
-            </div>
-        </div>
-    </div>
+        @include('guest.partials.header-card')
 
     {{-- Our Services --}}
     <div>
