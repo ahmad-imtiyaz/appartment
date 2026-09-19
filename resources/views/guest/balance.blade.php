@@ -1,6 +1,6 @@
 @extends('layouts.guest')
 
-@section('title', 'Saldo & Riwayat Mutasi')
+@section('title', __('guest.balance.title'))
 
 @push('styles')
 <style>
@@ -241,7 +241,7 @@
 
 @section('header')
     <h2 class="font-bold text-lg text-gray-900">
-        {{ __('Saldo & Riwayat Mutasi') }}
+        {{ __('guest.balance.title') }}
     </h2>
 @endsection
 
@@ -274,7 +274,7 @@
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="{{ $iconWallet }}"/>
                     </svg>
-                    Saldo Saat Ini
+                    {{ __('guest.balance.current_balance') }}
                 </div>
                 <div class="wallet-value">Rp{{ number_format(auth()->user()->balance, 0, ',', '.') }}</div>
             </div>
@@ -283,10 +283,10 @@
                     <svg fill="currentColor" viewBox="0 0 24 24">
                         <path d="{{ $iconCoin }}"/>
                     </svg>
-                    Koin Anda
+                    {{ __('guest.balance.your_coins') }}
                 </div>
                 <div class="wallet-value">
-                    {{ number_format(auth()->user()->coin_balance) }} <small>Koin</small>
+                    {{ number_format(auth()->user()->coin_balance) }} <small>{{ __('guest.balance.coin_unit') }}</small>
                 </div>
             </div>
         </div>
@@ -295,27 +295,27 @@
     {{-- Filter + daftar --}}
    {{-- Filter + daftar --}}
 <div class="tab-row">
-    <nav class="tab-pillbar" aria-label="Filter mutasi">
+    <nav class="tab-pillbar" aria-label="{{ __('guest.balance.filter_aria') }}">
         <a href="{{ route('guest.balance', ['filter' => 'all']) }}"
            class="tab-btn {{ $filter === 'all' ? 'active' : '' }}">
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="{{ $iconAll }}"/>
             </svg>
-            Semua
+            {{ __('guest.balance.tab_all') }}
         </a>
         <a href="{{ route('guest.balance', ['filter' => 'saldo']) }}"
            class="tab-btn {{ $filter === 'saldo' ? 'active' : '' }}">
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="{{ $iconWallet }}"/>
             </svg>
-            Saldo
+            {{ __('guest.balance.tab_balance') }}
         </a>
         <a href="{{ route('guest.balance', ['filter' => 'koin']) }}"
            class="tab-btn {{ $filter === 'koin' ? 'active' : '' }}">
             <svg fill="currentColor" viewBox="0 0 24 24">
                 <path d="{{ $iconCoin }}"/>
             </svg>
-            Koin
+            {{ __('guest.balance.tab_coin') }}
         </a>
     </nav>
 
@@ -326,9 +326,9 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                 </svg>
                 <p class="mt-2 text-sm">
-                    @if ($filter === 'saldo') Belum ada riwayat mutasi saldo
-                    @elseif ($filter === 'koin') Belum ada riwayat mutasi koin
-                    @else Belum ada riwayat mutasi
+                    @if ($filter === 'saldo') {{ __('guest.balance.empty_balance') }}
+                    @elseif ($filter === 'koin') {{ __('guest.balance.empty_coin') }}
+                    @else {{ __('guest.balance.empty_all') }}
                     @endif
                 </p>
             </div>
@@ -338,7 +338,7 @@
                     @php
                         $isCredit = $mutation->direction === 'in';
                         $isCoin = $mutation->kind === 'koin';
-                        $unitLabel = $isCoin ? 'Koin' : 'Saldo';
+                        $unitLabel = $isCoin ? __('guest.balance.unit_coin') : __('guest.balance.unit_balance');
                     @endphp
                     <div class="mutation-card {{ $isCredit ? 'is-credit' : 'is-debit' }}">
                         <div class="mutation-main">
@@ -365,7 +365,7 @@
                             </div>
 
                             <div class="mutation-amount {{ $isCredit ? 'amount-credit' : 'amount-debit' }}">
-                                {{ $isCredit ? '+' : '-' }}{{ $isCoin ? number_format($mutation->amount) . ' Koin' : 'Rp' . number_format($mutation->amount, 0, ',', '.') }}
+                                {{ $isCredit ? '+' : '-' }}{{ $isCoin ? number_format($mutation->amount) . ' ' . __('guest.balance.coin_unit') : 'Rp' . number_format($mutation->amount, 0, ',', '.') }}
                             </div>
                         </div>
 
@@ -378,7 +378,7 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" d="{{ $isCredit ? $iconIn : $iconOut }}"/>
                                     @endif
                                 </svg>
-                                {{ $isCredit ? 'Masuk' : 'Keluar' }} &middot; {{ $unitLabel }}
+                                {{ $isCredit ? __('guest.balance.in') : __('guest.balance.out') }} &middot; {{ $unitLabel }}
                                 @if ($mutation->reference_type)
                                     <span style="opacity:.75;font-weight:500;">&middot; {{ class_basename($mutation->reference_type) }} #{{ $mutation->reference_id }}</span>
                                 @endif

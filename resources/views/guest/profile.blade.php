@@ -1,7 +1,6 @@
-
 @extends('layouts.guest')
 
-@section('title', 'Profil')
+@section('title', __('guest.profile.title'))
 
 @push('styles')
 <style>
@@ -211,7 +210,7 @@
                 </p>
 
                 <p class="text-[10px] text-gray-400 mt-0.5">
-                    Profil Penghuni
+                    {{ __('guest.profile.resident_profile') }}
                 </p>
 
             </div>
@@ -239,7 +238,7 @@
             </svg>
 
             <span>
-                Profil berhasil diperbarui.
+                {{ __('guest.profile.updated') }}
             </span>
 
         </div>
@@ -273,7 +272,7 @@
             </div>
 
             <span>
-                Informasi Profil
+                {{ __('guest.profile.info_title') }}
             </span>
 
         </div>
@@ -292,7 +291,7 @@
 
                 <label for="name"
                        class="profile-label">
-                    Nama
+                    {{ __('guest.profile.name') }}
                 </label>
 
                 <input
@@ -301,7 +300,7 @@
                     type="text"
                     value="{{ old('name', $user->name) }}"
                     class="profile-input"
-                    placeholder="Masukkan nama">
+                    placeholder="{{ __('guest.profile.name_placeholder') }}">
 
                 @error('name')
                     <p class="error-text">
@@ -317,7 +316,7 @@
 
                 <label for="email"
                        class="profile-label">
-                    Email
+                    {{ __('guest.profile.email') }}
                 </label>
 
                 <input
@@ -326,7 +325,7 @@
                     type="email"
                     value="{{ old('email', $user->email) }}"
                     class="profile-input"
-                    placeholder="Masukkan email">
+                    placeholder="{{ __('guest.profile.email_placeholder') }}">
 
                 @error('email')
                     <p class="error-text">
@@ -355,7 +354,7 @@
 
                     </svg>
 
-                    Simpan Perubahan
+                    {{ __('guest.profile.save') }}
 
                 </span>
 
@@ -390,11 +389,11 @@
             <div>
 
                 <h3 class="text-sm font-bold text-red-600">
-                    Hapus Akun
+                    {{ __('guest.profile.delete_title') }}
                 </h3>
 
                 <p class="text-[11px] text-gray-500 mt-1 leading-relaxed">
-                    Setelah akun dihapus, semua data akan hilang secara permanen.
+                    {{ __('guest.profile.delete_warning') }}
                 </p>
 
             </div>
@@ -404,7 +403,7 @@
 
         <form method="post"
               action="{{ route('guest.profile.destroy') }}"
-              onsubmit="return confirm('Yakin ingin menghapus akun? Tindakan ini tidak bisa dibatalkan.');"
+              onsubmit="return confirm('{{ __('guest.profile.confirm_delete') }}');"
               class="space-y-3">
 
             @csrf
@@ -415,7 +414,7 @@
 
                 <label for="password"
                        class="profile-label">
-                    Konfirmasi Password
+                    {{ __('guest.profile.confirm_password') }}
                 </label>
 
                 <input
@@ -423,7 +422,7 @@
                     name="password"
                     type="password"
                     class="profile-input"
-                    placeholder="Masukkan password">
+                    placeholder="{{ __('guest.profile.password_placeholder') }}">
 
                 @error('password', 'userDeletion')
                     <p class="error-text">
@@ -451,7 +450,7 @@
 
                     </svg>
 
-                    Hapus Akun
+                    {{ __('guest.profile.delete_button') }}
 
                 </span>
 
@@ -489,7 +488,7 @@
 
                 </svg>
 
-                Logout
+                {{ __('guest.profile.logout') }}
 
             </span>
 
@@ -500,4 +499,3 @@
 </div>
 
 @endsection
-

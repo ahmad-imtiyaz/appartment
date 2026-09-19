@@ -47,8 +47,8 @@ return [
     |--------------------------------------------------------------------------
     |
     | This URL is used by the console to properly generate URLs when using
-    | the Artisan command line tool. You should set this to the root of
-    | the application so that it's available within Artisan commands.
+    | the Artisan command line tool. You should set this to the root of the
+    | application so that it's available within Artisan commands.
     |
     */
 
@@ -59,9 +59,8 @@ return [
     | Application Timezone
     |--------------------------------------------------------------------------
     |
-    | Here you may specify the default timezone for your application, which
-    | will be used by the PHP date and date-time functions. The timezone
-    | is set to "UTC" by default as it is suitable for most use cases.
+    | Here you may specify the default timezone that will be used by the
+    | application.
     |
     */
 
@@ -73,14 +72,15 @@ return [
     |--------------------------------------------------------------------------
     |
     | The application locale determines the default locale that will be used
-    | by Laravel's translation / localization methods. This option can be
-    | set to any locale for which you plan to have translation strings.
+    | by the translation/localization methods.
     |
     */
 
-    'locale' => env('APP_LOCALE', 'en'),
+    'locale' => 'id',
 
-    'fallback_locale' => env('APP_FALLBACK_LOCALE', 'en'),
+    'fallback_locale' => 'en',
+
+    'available_locales' => ['id', 'en'],
 
     'faker_locale' => env('APP_FAKER_LOCALE', 'en_US'),
 
@@ -91,7 +91,7 @@ return [
     |
     | This key is utilized by Laravel's encryption services and should be set
     | to a random, 32 character string to ensure that all encrypted values
-    | are secure. You should do this prior to deploying the application.
+    | are secure.
     |
     */
 
@@ -111,7 +111,7 @@ return [
     |--------------------------------------------------------------------------
     |
     | These configuration options determine the driver used to determine and
-    | manage Laravel's "maintenance mode" status. The "cache" driver will
+    | manage Laravel's maintenance mode status. The "cache" driver will
     | allow maintenance mode to be controlled across multiple machines.
     |
     | Supported drivers: "file", "cache"

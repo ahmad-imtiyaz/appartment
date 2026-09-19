@@ -30,6 +30,19 @@ Route::get('/', function () {
 
 /*
 |--------------------------------------------------------------------------
+| Language / Locale
+|--------------------------------------------------------------------------
+|
+| Route ini berada di luar middleware auth agar halaman login,
+| register, dan halaman publik lainnya juga dapat mengganti bahasa.
+|
+*/
+
+Route::get('/lang/{locale}', [\App\Http\Controllers\LocaleController::class, 'switch'])
+    ->name('lang.switch');
+
+/*
+|--------------------------------------------------------------------------
 | Public Product Listings
 |--------------------------------------------------------------------------
 */
@@ -79,7 +92,9 @@ Route::middleware(['auth', 'role:guest'])
     ->group(function () {
 
         /*
+        |--------------------------------------------------------------------------
         | Guest Home
+        |--------------------------------------------------------------------------
         */
 
         Route::get('/home', function () {
@@ -87,7 +102,9 @@ Route::middleware(['auth', 'role:guest'])
         })->name('home');
 
         /*
+        |--------------------------------------------------------------------------
         | Service Requests
+        |--------------------------------------------------------------------------
         */
 
         Route::get('/service-requests', [GuestServiceRequestController::class, 'index'])
@@ -110,25 +127,32 @@ Route::middleware(['auth', 'role:guest'])
 
         Route::post('/service-requests/{serviceRequest}/approve-price', [GuestServiceRequestController::class, 'approvePrice'])
             ->name('service-requests.approve-price');
+
         Route::post('/service-requests/{serviceRequest}/reject-price', [GuestServiceRequestController::class, 'rejectPrice'])
             ->name('service-requests.reject-price');
 
         /*
+        |--------------------------------------------------------------------------
         | Service Detail (per service type)
+        |--------------------------------------------------------------------------
         */
 
         Route::get('/services/{slug}', [GuestServiceRequestController::class, 'serviceDetail'])
             ->name('services.show');
 
         /*
+        |--------------------------------------------------------------------------
         | Feedback
+        |--------------------------------------------------------------------------
         */
 
         Route::post('/service-requests/{serviceRequest}/feedback', [FeedbackController::class, 'store'])
             ->name('service-requests.feedback');
 
         /*
+        |--------------------------------------------------------------------------
         | Top Up
+        |--------------------------------------------------------------------------
         */
 
         Route::get('/topups', [GuestTopupController::class, 'index'])
@@ -141,14 +165,18 @@ Route::middleware(['auth', 'role:guest'])
             ->name('topups.store');
 
         /*
+        |--------------------------------------------------------------------------
         | Balance
+        |--------------------------------------------------------------------------
         */
 
         Route::get('/balance', [GuestTopupController::class, 'balance'])
             ->name('balance');
 
         /*
+        |--------------------------------------------------------------------------
         | Profile
+        |--------------------------------------------------------------------------
         */
 
         Route::get('/profile', [GuestProfileController::class, 'edit'])
@@ -161,7 +189,9 @@ Route::middleware(['auth', 'role:guest'])
             ->name('profile.destroy');
 
         /*
+        |--------------------------------------------------------------------------
         | Coin Redemptions
+        |--------------------------------------------------------------------------
         */
 
         Route::get('/coin-redemptions', [GuestCoinRedemptionController::class, 'index'])
@@ -186,14 +216,18 @@ Route::middleware(['auth', 'role:admin'])
     ->group(function () {
 
         /*
+        |--------------------------------------------------------------------------
         | Admin Dashboard
+        |--------------------------------------------------------------------------
         */
 
         Route::get('/', [DashboardController::class, 'index'])
             ->name('dashboard');
 
         /*
+        |--------------------------------------------------------------------------
         | Profile
+        |--------------------------------------------------------------------------
         */
 
         Route::get('/profile', [ProfileController::class, 'edit'])
@@ -206,7 +240,9 @@ Route::middleware(['auth', 'role:admin'])
             ->name('profile.destroy');
 
         /*
+        |--------------------------------------------------------------------------
         | Workers
+        |--------------------------------------------------------------------------
         */
 
         Route::get('/workers', [WorkerController::class, 'index'])
@@ -216,7 +252,9 @@ Route::middleware(['auth', 'role:admin'])
             ->name('workers.store');
 
         /*
+        |--------------------------------------------------------------------------
         | Payment Methods
+        |--------------------------------------------------------------------------
         */
 
         Route::get('/payment-methods', [AdminPaymentMethodController::class, 'index'])
@@ -232,7 +270,9 @@ Route::middleware(['auth', 'role:admin'])
             ->name('payment-methods.destroy');
 
         /*
+        |--------------------------------------------------------------------------
         | Top Ups
+        |--------------------------------------------------------------------------
         */
 
         Route::get('/topups', [AdminTopupController::class, 'index'])
@@ -245,7 +285,9 @@ Route::middleware(['auth', 'role:admin'])
             ->name('topups.reject');
 
         /*
+        |--------------------------------------------------------------------------
         | Service Requests
+        |--------------------------------------------------------------------------
         */
 
         Route::get('/service-requests', [AdminServiceRequestController::class, 'index'])
@@ -261,7 +303,9 @@ Route::middleware(['auth', 'role:admin'])
             ->name('service-requests.set-price');
 
         /*
+        |--------------------------------------------------------------------------
         | Laundry Pricing
+        |--------------------------------------------------------------------------
         */
 
         Route::resource('laundry-pricings', \App\Http\Controllers\Admin\LaundryPricingController::class)
@@ -272,18 +316,36 @@ Route::middleware(['auth', 'role:admin'])
             ->name('laundry-pricings.update');
 
         /*
-        | MnR
+        |--------------------------------------------------------------------------
+        | MnR / Repair Pricing
+        |--------------------------------------------------------------------------
         */
 
-        Route::get('repair-pricings', [\App\Http\Controllers\Admin\RepairPricingController::class, 'index'])->name('repair-pricings.index');
-        Route::get('repair-pricings/create', [\App\Http\Controllers\Admin\RepairPricingController::class, 'create'])->name('repair-pricings.create');
-        Route::post('repair-pricings', [\App\Http\Controllers\Admin\RepairPricingController::class, 'store'])->name('repair-pricings.store');
-        Route::get('repair-pricings/{pricing}/edit', [\App\Http\Controllers\Admin\RepairPricingController::class, 'edit'])->name('repair-pricings.edit');
-        Route::put('repair-pricings/{pricing}', [\App\Http\Controllers\Admin\RepairPricingController::class, 'update'])->name('repair-pricings.update');
-        Route::patch('repair-pricings/{pricing}/toggle', [\App\Http\Controllers\Admin\RepairPricingController::class, 'toggle'])->name('repair-pricings.toggle');
-        Route::delete('repair-pricings/{pricing}', [\App\Http\Controllers\Admin\RepairPricingController::class, 'destroy'])->name('repair-pricings.destroy');
+        Route::get('repair-pricings', [\App\Http\Controllers\Admin\RepairPricingController::class, 'index'])
+            ->name('repair-pricings.index');
+
+        Route::get('repair-pricings/create', [\App\Http\Controllers\Admin\RepairPricingController::class, 'create'])
+            ->name('repair-pricings.create');
+
+        Route::post('repair-pricings', [\App\Http\Controllers\Admin\RepairPricingController::class, 'store'])
+            ->name('repair-pricings.store');
+
+        Route::get('repair-pricings/{pricing}/edit', [\App\Http\Controllers\Admin\RepairPricingController::class, 'edit'])
+            ->name('repair-pricings.edit');
+
+        Route::put('repair-pricings/{pricing}', [\App\Http\Controllers\Admin\RepairPricingController::class, 'update'])
+            ->name('repair-pricings.update');
+
+        Route::patch('repair-pricings/{pricing}/toggle', [\App\Http\Controllers\Admin\RepairPricingController::class, 'toggle'])
+            ->name('repair-pricings.toggle');
+
+        Route::delete('repair-pricings/{pricing}', [\App\Http\Controllers\Admin\RepairPricingController::class, 'destroy'])
+            ->name('repair-pricings.destroy');
+
         /*
+        |--------------------------------------------------------------------------
         | Cleaning Pricing
+        |--------------------------------------------------------------------------
         */
 
         Route::resource('cleaning-pricings', \App\Http\Controllers\Admin\CleaningPricingController::class)
@@ -294,7 +356,9 @@ Route::middleware(['auth', 'role:admin'])
             ->name('cleaning-pricings.update');
 
         /*
+        |--------------------------------------------------------------------------
         | AC Pricing
+        |--------------------------------------------------------------------------
         */
 
         Route::resource('ac-pricings', \App\Http\Controllers\Admin\AcPricingController::class)
@@ -305,7 +369,9 @@ Route::middleware(['auth', 'role:admin'])
             ->name('ac-pricings.update');
 
         /*
+        |--------------------------------------------------------------------------
         | Product Listings
+        |--------------------------------------------------------------------------
         */
 
         Route::get('/product-listings', [AdminProductListingController::class, 'index'])
@@ -321,7 +387,9 @@ Route::middleware(['auth', 'role:admin'])
             ->name('product-listings.destroy');
 
         /*
+        |--------------------------------------------------------------------------
         | Coin Settings
+        |--------------------------------------------------------------------------
         */
 
         Route::resource('coin-settings', \App\Http\Controllers\Admin\CoinSettingController::class)
@@ -329,7 +397,9 @@ Route::middleware(['auth', 'role:admin'])
             ->except(['show']);
 
         /*
+        |--------------------------------------------------------------------------
         | Coin Redemption Products
+        |--------------------------------------------------------------------------
         */
 
         Route::get('/coin-redemption-products', [CoinRedemptionProductController::class, 'index'])
@@ -351,7 +421,9 @@ Route::middleware(['auth', 'role:admin'])
             ->name('coin-redemption-products.destroy');
 
         /*
+        |--------------------------------------------------------------------------
         | Coin Redemptions (Guest Requests)
+        |--------------------------------------------------------------------------
         */
 
         Route::get('/coin-redemptions', [AdminCoinRedemptionController::class, 'index'])
@@ -366,6 +438,7 @@ Route::middleware(['auth', 'role:admin'])
         Route::post('/coin-redemptions/{coinRedemption}/reject', [AdminCoinRedemptionController::class, 'reject'])
             ->name('coin-redemptions.reject');
     });
+
 /*
 |--------------------------------------------------------------------------
 | Worker / Pekerja (role: pekerja)
@@ -378,7 +451,9 @@ Route::middleware(['auth', 'role:pekerja'])
     ->group(function () {
 
         /*
+        |--------------------------------------------------------------------------
         | Worker Tasks
+        |--------------------------------------------------------------------------
         */
 
         Route::get('/tasks', [TaskController::class, 'index'])
@@ -400,7 +475,9 @@ Route::middleware(['auth', 'role:pekerja'])
             ->name('tasks.survey');
 
         /*
+        |--------------------------------------------------------------------------
         | Profile
+        |--------------------------------------------------------------------------
         */
 
         Route::get('/profile', [ProfileController::class, 'edit'])

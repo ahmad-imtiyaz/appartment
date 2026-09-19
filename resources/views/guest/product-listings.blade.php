@@ -1,6 +1,6 @@
 @extends('layouts.guest')
 
-@section('title', 'Jual Beli')
+@section('title', __('guest.market.title'))
 
 @push('styles')
 <style>
@@ -197,21 +197,21 @@
                 </svg>
             </div>
             <div class="min-w-0">
-                <p class="jb-hero-title font-bold text-[17px] leading-tight">Jual Beli</p>
-                <p class="jb-hero-subtitle text-[11px] leading-tight italic">Marketplace Penghuni</p>
+                <p class="jb-hero-title font-bold text-[17px] leading-tight">{{ __('guest.market.title') }}</p>
+                <p class="jb-hero-subtitle text-[11px] leading-tight italic">{{ __('guest.market.subtitle') }}</p>
             </div>
         </div>
-        <p class="jb-hero-tagline text-[13px] leading-snug max-w-[320px]">Temukan atau tawarkan barang di lingkungan apartemenmu.</p>
+        <p class="jb-hero-tagline text-[13px] leading-snug max-w-[320px]">{{ __('guest.market.tagline') }}</p>
 
         <div class="flex gap-2.5 mt-4">
             <div class="jb-stat">
                 <p class="jb-stat-value text-[18px]">{{ $listings->total() }}</p>
-                <p class="jb-stat-label text-[10px] mt-0.5">Item Aktif</p>
+                <p class="jb-stat-label text-[10px] mt-0.5">{{ __('guest.market.active_items') }}</p>
             </div>
             @if (isset($categories) && $categories->isNotEmpty())
                 <div class="jb-stat">
                     <p class="jb-stat-value text-[18px]">{{ $categories->count() }}</p>
-                    <p class="jb-stat-label text-[10px] mt-0.5">Kategori</p>
+                    <p class="jb-stat-label text-[10px] mt-0.5">{{ __('guest.market.categories') }}</p>
                 </div>
             @endif
         </div>
@@ -231,7 +231,7 @@
         @if (isset($categories) && $categories->isNotEmpty())
             <div class="category-scroll flex items-center gap-2">
                 <a href="{{ route('product-listings.index') }}"
-                   class="category-pill {{ request('category') ? '' : 'active' }}">Semua</a>
+                   class="category-pill {{ request('category') ? '' : 'active' }}">{{ __('guest.market.all') }}</a>
                 @foreach ($categories as $cat)
                     <a href="{{ route('product-listings.index', ['category' => $cat]) }}"
                        class="category-pill {{ request('category') === $cat ? 'active' : '' }}">{{ ucfirst($cat) }}</a>
@@ -242,8 +242,8 @@
         {{-- Grid produk --}}
         <div>
             <div class="flex items-center justify-between mb-3">
-                <h3 class="font-bold text-gray-900 text-[16px]">Info Jual &amp; Beli</h3>
-                <span class="text-xs text-gray-500 whitespace-nowrap">{{ $listings->total() }} item</span>
+                <h3 class="font-bold text-gray-900 text-[16px]">{{ __('guest.market.section_title') }}</h3>
+                <span class="text-xs text-gray-500 whitespace-nowrap">{{ __('guest.common.items_count', ['count' => $listings->total()]) }}</span>
             </div>
 
             @if ($listings->isEmpty())
@@ -252,7 +252,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 7.5A2.25 2.25 0 017.5 5.25h9a2.25 2.25 0 012.25 2.25v11.25a2.25 2.25 0 01-2.25 2.25h-9a2.25 2.25 0 01-2.25-2.25V7.5z" />
                         <path stroke-linecap="round" stroke-linejoin="round" d="M9 5.25V4.5a3 3 0 016 0v.75M9 12h6m-6 3.75h4.5" />
                     </svg>
-                    <p class="mt-2 text-sm">Belum ada info jual-beli</p>
+                    <p class="mt-2 text-sm">{{ __('guest.market.empty') }}</p>
                 </div>
             @else
                 <div class="grid grid-cols-2 gap-3">
@@ -275,7 +275,7 @@
                                 @if ($listing->price)
                                     <p class="product-price text-[13px] font-bold mt-1">Rp{{ number_format($listing->price, 0, ',', '.') }}</p>
                                 @else
-                                    <p class="text-[12px] text-gray-500 mt-1">Nego</p>
+                                    <p class="text-[12px] text-gray-500 mt-1">{{ __('guest.market.negotiable') }}</p>
                                 @endif
                                 @if ($listing->contact_info)
                                     <p class="text-[10px] text-gray-400 mt-1 truncate">{{ $listing->contact_info }}</p>
@@ -287,11 +287,11 @@
                                         <svg viewBox="0 0 24 24" fill="currentColor">
                                             <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.26-1.38a9.9 9.9 0 004.78 1.22h.01c5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.85 9.85 0 0012.04 2zm5.8 14.11c-.24.68-1.4 1.3-1.94 1.38-.5.08-1.12.11-1.81-.11-.42-.13-.95-.31-1.64-.6-2.9-1.25-4.79-4.17-4.94-4.36-.14-.2-1.18-1.57-1.18-3 0-1.42.75-2.12 1.01-2.41.27-.29.58-.36.77-.36l.55.01c.18.01.42-.07.65.5.24.58.82 2 .89 2.15.07.15.12.32.02.52-.1.19-.14.31-.28.48-.14.17-.29.37-.42.5-.14.14-.28.29-.12.57.16.28.71 1.17 1.52 1.9 1.05.94 1.93 1.23 2.21 1.37.28.14.44.12.61-.07.17-.19.72-.84.91-1.13.19-.29.38-.24.63-.14.26.09 1.63.77 1.91.91.28.14.47.21.54.33.07.12.07.68-.17 1.36z"/>
                                         </svg>
-                                        Chat WA
+                                        {{ __('guest.market.chat_wa') }}
                                     </a>
                                 @else
                                     <div class="wa-btn wa-btn-disabled">
-                                        Kontak Tidak Valid
+                                        {{ __('guest.market.invalid_contact') }}
                                     </div>
                                 @endif
                             </div>

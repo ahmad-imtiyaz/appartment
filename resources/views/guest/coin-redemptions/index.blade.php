@@ -1,6 +1,6 @@
 @extends('layouts.guest')
 
-@section('title', 'Penukaran Koin')
+@section('title', __('guest.coin.title'))
 
 @push('styles')
 <style>
@@ -328,13 +328,13 @@
 @section('header')
     <div class="flex items-center justify-between gap-3">
         <h2 class="font-bold text-lg text-gray-900">
-            {{ __('Penukaran Koin') }}
+            {{ __('guest.coin.title') }}
         </h2>
         <div class="balance-pill flex items-center gap-1.5 shrink-0">
             <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M12 2a10 10 0 100 20 10 10 0 000-20zm0 3.5a1 1 0 011 1V7h.75a1 1 0 110 2H13v1h.5a2.5 2.5 0 010 5H13v.5a1 1 0 11-2 0V15h-.75a1 1 0 110-2H11v-1h-.5a2.5 2.5 0 010-5H11v-.5a1 1 0 011-1z"/>
             </svg>
-            <span class="text-[11px] text-white/90">Koin Anda</span>
+            <span class="text-[11px] text-white/90">{{ __('guest.balance.your_coins') }}</span>
             <span class="font-bold text-sm text-white">{{ number_format(auth()->user()->coin_balance) }}</span>
         </div>
     </div>
@@ -355,11 +355,11 @@
         <nav class="tab-pillbar" aria-label="Tabs">
             <button id="tab-products" onclick="switchTab('products')"
                     class="tab-btn active" aria-selected="true">
-                Produk Tersedia
+                {{ __('guest.coin.tab_products') }}
             </button>
             <button id="tab-history" onclick="switchTab('history')"
                     class="tab-btn" aria-selected="false">
-                Riwayat Penukaran
+                {{ __('guest.coin.tab_history') }}
             </button>
         </nav>
 
@@ -370,7 +370,7 @@
                     <svg class="mx-auto h-10 w-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
                     </svg>
-                    <p class="mt-2 text-sm">Belum ada produk yang bisa ditukarkan</p>
+                    <p class="mt-2 text-sm">{{ __('guest.coin.no_products') }}</p>
                 </div>
             @else
                 <div class="grid grid-cols-2 gap-3">
@@ -391,23 +391,23 @@
                                     <p class="text-[12px] text-gray-500 mt-1 line-clamp-2">{{ $product->description }}</p>
                                 @endif
                                 <div class="flex items-center justify-between mt-2 gap-2">
-                                    <span class="product-price font-bold text-[13px] whitespace-nowrap">{{ number_format($product->coin_cost) }} Koin</span>
+                                    <span class="product-price font-bold text-[13px] whitespace-nowrap">{{ number_format($product->coin_cost) }} {{ __('guest.balance.coin_unit') }}</span>
                                     <span class="stock-badge {{ $product->stock > 0 ? 'in' : 'out' }}">
-                                        Stok: {{ $product->stock }}
+                                        {{ __('guest.coin.stock', ['count' => $product->stock]) }}
                                     </span>
                                 </div>
                                 <form method="POST" action="{{ route('guest.coin-redemptions.store') }}" class="mt-3"
-                                      onsubmit="return confirm('Yakin ingin menukarkan {{ $product->coin_cost }} koin untuk {{ $product->name }}?')">
+                                      onsubmit="return confirm('{{ __('guest.coin.confirm_redeem', ['cost' => $product->coin_cost, 'name' => $product->name]) }}')">
                                     @csrf
                                     <input type="hidden" name="coin_redemption_product_id" value="{{ $product->id }}">
                                     <button type="submit" class="redeem-btn"
                                             {{ !$product->canBeRedeemed() || auth()->user()->coin_balance < $product->coin_cost ? 'disabled' : '' }}>
                                         @if (!$product->canBeRedeemed())
-                                            Stok Habis
+                                            {{ __('guest.coin.out_of_stock') }}
                                         @elseif (auth()->user()->coin_balance < $product->coin_cost)
-                                            Koin Tidak Cukup
+                                            {{ __('guest.coin.insufficient_coin') }}
                                         @else
-                                            Tukar Sekarang
+                                            {{ __('guest.coin.redeem_now') }}
                                         @endif
                                     </button>
                                 </form>
@@ -425,7 +425,7 @@
                     <svg class="mx-auto h-10 w-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
                     </svg>
-                    <p class="mt-2 text-sm">Belum ada riwayat penukaran</p>
+                    <p class="mt-2 text-sm">{{ __('guest.coin.no_history') }}</p>
                 </div>
             @else
                 @php
@@ -435,9 +435,9 @@
                         'cancelled'  => 'status-cancelled',
                     ];
                     $statusLabels = [
-                        'processing' => 'Sedang Proses',
-                        'completed'  => 'Berhasil Ditukarkan',
-                        'cancelled'  => 'Dibatalkan',
+                        'processing' => __('guest.coin.status_processing'),
+                        'completed'  => __('guest.coin.status_completed'),
+                        'cancelled'  => __('guest.coin.status_cancelled'),
                     ];
                     // path SVG ikon per status (stroke icon, viewBox 24x24)
                     $statusIcons = [
@@ -472,7 +472,7 @@
                                     <p class="history-name">{{ $redemption->product->name }}</p>
                                     <div class="history-meta">
                                         <span class="history-meta-item history-coin">
-                                            {{ number_format($redemption->coin_cost) }} Koin
+                                            {{ number_format($redemption->coin_cost) }} {{ __('guest.balance.coin_unit') }}
                                         </span>
                                         <span class="history-meta-item">
                                             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
@@ -490,7 +490,7 @@
                                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M8 10h8M8 14h5m-9 6l3-3h11a2 2 0 002-2V7a2 2 0 00-2-2H6a2 2 0 00-2 2v13z"/>
                                     </svg>
-                                    <span><strong>Catatan:</strong> {{ $redemption->admin_notes }}</span>
+                                    <span><strong>{{ __('guest.coin.admin_note_label') }}</strong> {{ $redemption->admin_notes }}</span>
                                 </div>
                             @endif
 
@@ -505,14 +505,14 @@
 
                                 @if ($redemption->canBeCancelledByGuest())
                                     <form method="POST" action="{{ route('guest.coin-redemptions.cancel', $redemption) }}"
-                                          onsubmit="return confirm('Yakin ingin membatalkan penukaran ini? Koin akan dikembalikan.')">
+                                          onsubmit="return confirm('{{ __('guest.coin.confirm_cancel') }}')">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="cancel-btn">
                                             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.2">
                                                 <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
                                             </svg>
-                                            Batalkan
+                                            {{ __('guest.coin.cancel') }}
                                         </button>
                                     </form>
                                 @endif

@@ -1,228 +1,278 @@
 @extends('layouts.guest')
 
-@section('title', 'Detail Permintaan')
-
-@section('header')
-    <h2 class="font-semibold text-lg text-gray-800">
-        {{ __('Detail Permintaan') }}
-    </h2>
-@endsection
+@section('title', __('guest.show.title'))
 
 @section('content')
-    <div class="py-4 px-4">
-        @if (session('success'))
-            <div class="mb-4 p-3 bg-green-50 text-green-800 rounded-lg text-sm">
-                {{ session('success') }}
-            </div>
-        @endif
 
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-4">
-            <div class="flex items-center justify-between mb-3">
-                <h3 class="font-semibold text-gray-900">{{ $serviceRequest->service->name }}</h3>
-                <span class="px-2 py-1 text-xs font-medium rounded-full
-                    @if($serviceRequest->status === 'pending') bg-yellow-100 text-yellow-800
-                    @elseif($serviceRequest->status === 'assigned') bg-blue-100 text-blue-800
-                    @elseif($serviceRequest->status === 'in_progress') bg-purple-100 text-purple-800
-                    @elseif($serviceRequest->status === 'waiting_approval') bg-orange-100 text-orange-800
-                    @elseif($serviceRequest->status === 'completed') bg-green-100 text-green-800
-                    @elseif($serviceRequest->status === 'rejected') bg-red-100 text-red-800
-                    @else bg-gray-100 text-gray-800 @endif">
-                    {{ ucfirst(str_replace('_', ' ', $serviceRequest->status)) }}
-                </span>
-            </div>
+<div class="ui-page">
 
-            <dl class="space-y-3 text-sm">
-                <div>
-                    <dt class="text-gray-500">Diajukan</dt>
-                    <dd class="font-medium">{{ $serviceRequest->created_at->format('d M Y H:i') }}</dd>
-                </div>
-                @if ($serviceRequest->scheduled_at)
-                    <div>
-                        <dt class="text-gray-500">Dijadwalkan</dt>
-                        <dd class="font-medium">{{ $serviceRequest->scheduled_at->format('d M Y H:i') }}</dd>
-                    </div>
-                @endif
-                @if ($serviceRequest->assigned_at)
-                    <div>
-                        <dt class="text-gray-500">Di-assign</dt>
-                        <dd class="font-medium">{{ $serviceRequest->assigned_at->format('d M Y H:i') }}</dd>
-                    </div>
-                @endif
-                @if ($serviceRequest->worker)
-                    <div>
-                        <dt class="text-gray-500">Pekerja</dt>
-                        <dd class="font-medium">{{ $serviceRequest->worker->name }} ({{ $serviceRequest->worker->phone }})</dd>
-                    </div>
-                @endif
-                @if ($serviceRequest->accepted_at)
-                    <div>
-                        <dt class="text-gray-500">Diterima pekerja</dt>
-                        <dd class="font-medium">{{ $serviceRequest->accepted_at->format('d M Y H:i') }}</dd>
-                    </div>
-                @endif
-                @if ($serviceRequest->completed_at)
-                    <div>
-                        <dt class="text-gray-500">Selesai</dt>
-                        <dd class="font-medium">{{ $serviceRequest->completed_at->format('d M Y H:i') }}</dd>
-                    </div>
-                @endif
-                @if ($serviceRequest->total_price)
-                    <div>
-                        <dt class="text-gray-500">Biaya</dt>
-                         <dd class="font-medium text-indigo-600">Rp{{ number_format($serviceRequest->total_price, 0, ',', '.') }}</dd>
-                    </div>
-                @endif
-            </dl>
+    @include('guest.partials.page-hero', [
+        'title'    => __('guest.show.title'),
+        'subtitle' => __('guest.detail.order_number', ['number' => str_pad($serviceRequest->id, 7, '0', STR_PAD_LEFT)]),
+        'back'     => route('guest.service-requests.index'),
+        'iconKey'  => $serviceRequest->service->slug,
+    ])
 
-            @if ($serviceRequest->notes)
-                <div class="mt-4">
-                    <dt class="text-gray-500 text-sm">Catatan Anda</dt>
-                    <dd class="mt-1 p-3 bg-gray-50 rounded-lg text-sm">{{ $serviceRequest->notes }}</dd>
-                </div>
+    <div class="ui-body">
+        <div class="ui-pull ui-stack">
+
+            @if (session('success'))
+                <div class="ui-alert ui-alert--success">{{ session('success') }}</div>
             @endif
 
-            @if ($serviceRequest->worker_notes)
-                <div class="mt-4">
-                    <dt class="text-gray-500 text-sm">Catatan Pekerja</dt>
-                    <dd class="mt-1 p-3 bg-blue-50 rounded-lg text-sm">{{ $serviceRequest->worker_notes }}</dd>
-                </div>
-            @endif
-        </div>
 
-        <!-- Maintenance Details -->
-        @if ($serviceRequest->maintenanceDetail)
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-4">
-                <h3 class="font-semibold text-gray-900 mb-3">Detail Maintenance & Repair</h3>
-                <dl class="space-y-3 text-sm">
-                    <div>
-                        <dt class="text-gray-500">Kategori Kerusakan</dt>
-                        <dd class="font-medium">{{ \App\Models\RepairPricing::CATEGORIES[$serviceRequest->maintenanceDetail->damage_category] ?? 'Lainnya' }}</dd>
-                     </div>
+            {{-- Ringkasan --}}
+            <div class="ui-card ui-rise">
+
+                <div class="ui-sec-head" style="margin-bottom:6px">
+                    <h3 class="ui-heading">{{ $serviceRequest->service->name }}</h3>
+                    <span class="ui-pill ui-pill--{{ $serviceRequest->status }}">
+                        {{ __('guest.status.' . $serviceRequest->status) }}
+                    </span>
+                </div>
+
+                <dl>
+                    <div class="ui-kv-item">
+                        <dt>{{ __('guest.show.submitted') }}</dt>
+                        <dd>{{ $serviceRequest->created_at->translatedFormat('d M Y H:i') }}</dd>
                     </div>
-                    @if ($serviceRequest->maintenanceDetail->location)
-                        <div>
-                            <dt class="text-gray-500">Lokasi</dt>
-                            <dd class="font-medium">{{ $serviceRequest->maintenanceDetail->location }}</dd>
+
+                    @if ($serviceRequest->scheduled_at)
+                        <div class="ui-kv-item">
+                            <dt>{{ __('guest.show.scheduled') }}</dt>
+                            <dd>{{ $serviceRequest->scheduled_at->translatedFormat('d M Y H:i') }}</dd>
                         </div>
                     @endif
-                    <div>
-                        <dt class="text-gray-500">Urgensi</dt>
-                        <dd class="font-medium">
-                            <span class="px-2 py-1 text-xs font-medium rounded-full
-                                @if($serviceRequest->maintenanceDetail->urgency === 'high') bg-red-100 text-red-800
-                                @elseif($serviceRequest->maintenanceDetail->urgency === 'medium') bg-yellow-100 text-yellow-800
-                                @else bg-green-100 text-green-800 @endif">
-                                {{ ucfirst($serviceRequest->maintenanceDetail->urgency) }}
-                            </span>
-                        </dd>
-                    </div>
+
+                    @if ($serviceRequest->assigned_at)
+                        <div class="ui-kv-item">
+                            <dt>{{ __('guest.show.assigned') }}</dt>
+                            <dd>{{ $serviceRequest->assigned_at->translatedFormat('d M Y H:i') }}</dd>
+                        </div>
+                    @endif
+
+                    @if ($serviceRequest->worker)
+                        <div class="ui-kv-item">
+                            <dt>{{ __('guest.show.worker') }}</dt>
+                            <dd>{{ $serviceRequest->worker->name }} ({{ $serviceRequest->worker->phone }})</dd>
+                        </div>
+                    @endif
+
+                    @if ($serviceRequest->accepted_at)
+                        <div class="ui-kv-item">
+                            <dt>{{ __('guest.show.accepted_by_worker') }}</dt>
+                            <dd>{{ $serviceRequest->accepted_at->translatedFormat('d M Y H:i') }}</dd>
+                        </div>
+                    @endif
+
+                    @if ($serviceRequest->completed_at)
+                        <div class="ui-kv-item">
+                            <dt>{{ __('guest.show.completed') }}</dt>
+                            <dd>{{ $serviceRequest->completed_at->translatedFormat('d M Y H:i') }}</dd>
+                        </div>
+                    @endif
+
+                    @if ($serviceRequest->total_price)
+                        <div class="ui-kv-item">
+                            <dt>{{ __('guest.show.cost') }}</dt>
+                            <dd class="is-price">Rp{{ number_format($serviceRequest->total_price, 0, ',', '.') }}</dd>
+                        </div>
+                    @endif
                 </dl>
-            </div>
-        @endif
 
- <!-- Price Approval (MnR, waiting_approval) -->
-        @if ($serviceRequest->status === 'waiting_approval')
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-4">
-                <h3 class="font-semibold text-gray-900 mb-3">Persetujuan Harga</h3>
-
-                @if (session('error'))
-                    <div class="mb-3 p-3 bg-red-50 text-red-800 rounded-lg text-sm">
-                        {{ session('error') }}
+                @if ($serviceRequest->notes)
+                    <div class="ui-note">
+                        <span class="ui-note-title">{{ __('guest.show.your_notes') }}</span>
+                        {{ $serviceRequest->notes }}
                     </div>
                 @endif
 
-                <div class="bg-orange-50 rounded-lg p-4 mb-4">
-                    <p class="text-sm text-gray-600 mb-1">Pekerja sudah melakukan survey dan admin menetapkan biaya perbaikan:</p>
-                    <p class="text-2xl font-bold text-orange-700">Rp{{ number_format($serviceRequest->total_price, 0, ',', '.') }}</p>
-                    <p class="text-xs text-gray-500 mt-1">Saldo Anda saat ini: Rp{{ number_format(auth()->user()->balance, 0, ',', '.') }}</p>
-                </div>
-
-                <div class="flex gap-3">
-                    <form method="POST" action="{{ route('guest.service-requests.approve-price', $serviceRequest) }}" class="flex-1">
-                        @csrf
-                        <button type="submit" class="w-full px-4 py-3 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors">
-                            Setujui & Bayar
-                        </button>
-                    </form>
-                    <form method="POST" action="{{ route('guest.service-requests.reject-price', $serviceRequest) }}" class="flex-1"
-                          onsubmit="return confirm('Tolak harga ini? Permintaan akan dibatalkan dan Anda perlu mengajukan ulang.')">
-                        @csrf
-                        <button type="submit" class="w-full px-4 py-3 bg-white border border-red-300 text-red-600 rounded-lg font-medium hover:bg-red-50 transition-colors">
-                            Tolak
-                        </button>
-                    </form>
-                </div>
-            </div>
-        @endif
-
-        <!-- Photos -->
-        @if ($serviceRequest->photos->isNotEmpty())
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-4">
-                <h3 class="font-semibold text-gray-900 mb-3">Foto</h3>
-                <div class="grid grid-cols-2 gap-3">
-                    @foreach ($serviceRequest->photos as $photo)
-                        <div>
-                            <p class="text-xs text-gray-500 capitalize mb-1">{{ $photo->type }}</p>
-                            <a href="{{ Storage::url($photo->photo_path) }}" target="_blank">
-                                <img src="{{ Storage::url($photo->photo_path) }}" alt="{{ $photo->type }}" class="w-full h-32 object-cover rounded-lg">
-                            </a>
-                        </div>
-                    @endforeach
-                </div>
-            </div>
-        @endif
-
-        <!-- Feedback Section -->
-        @if ($serviceRequest->status === 'completed')
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-4" id="feedback">
-                <h3 class="font-semibold text-gray-900 mb-3">Feedback untuk Pekerja</h3>
-
-                @if ($serviceRequest->feedback)
-                    <div class="p-3 bg-green-50 rounded-lg">
-                        <p class="font-medium text-green-800">Terima kasih sudah memberikan feedback!</p>
-                        <div class="mt-2 flex items-center gap-2">
-                            @for ($i = 1; $i <= 5; $i++)
-                                <svg class="w-5 h-5 @if($i <= $serviceRequest->feedback->rating) text-yellow-400 @else text-gray-300 @endif" fill="currentColor" viewBox="0 0 20 20">
-                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
-                                </svg>
-                            @endfor
-                        </div>
-                        @if ($serviceRequest->feedback->comment)
-                            <p class="mt-2 text-sm text-gray-700">"{{ $serviceRequest->feedback->comment }}"</p>
-                        @endif
+                @if ($serviceRequest->worker_notes)
+                    <div class="ui-note ui-note--info">
+                        <span class="ui-note-title">{{ __('guest.show.worker_notes') }}</span>
+                        {{ $serviceRequest->worker_notes }}
                     </div>
-                @else
-                    <form method="POST" action="{{ route('guest.service-requests.feedback', $serviceRequest) }}" class="space-y-4">
-                        @csrf
-                        <div>
-                            <x-input-label for="rating">{{ __('Rating') }} <span class="text-red-500">*</span></x-input-label>
-                            <div class="mt-1 flex items-center gap-2" role="radiogroup" aria-label="Rating">
+                @endif
+
+            </div>
+
+
+            {{-- Detail maintenance --}}
+            @if ($serviceRequest->maintenanceDetail)
+                <div class="ui-card ui-rise">
+
+                    <h3 class="ui-heading" style="margin-bottom:6px">{{ __('guest.form.maintenance_details') }}</h3>
+
+                    <dl>
+                        <div class="ui-kv-item">
+                            <dt>{{ __('guest.form.damage_category') }}</dt>
+                            <dd>{{ __('guest.damage_categories.' . $serviceRequest->maintenanceDetail->damage_category) }}</dd>
+                        </div>
+
+                        @if ($serviceRequest->maintenanceDetail->location)
+                            <div class="ui-kv-item">
+                                <dt>{{ __('guest.show.location') }}</dt>
+                                <dd>{{ $serviceRequest->maintenanceDetail->location }}</dd>
+                            </div>
+                        @endif
+
+                        <div class="ui-kv-item">
+                            <dt>{{ __('guest.show.urgency') }}</dt>
+                            <dd>
+                                <span class="ui-pill
+                                    @if($serviceRequest->maintenanceDetail->urgency === 'high') ui-pill--rejected
+                                    @elseif($serviceRequest->maintenanceDetail->urgency === 'medium') ui-pill--pending
+                                    @else ui-pill--completed @endif">
+                                    {{ __('guest.urgency.' . $serviceRequest->maintenanceDetail->urgency . '.label') }}
+                                </span>
+                            </dd>
+                        </div>
+                    </dl>
+
+                </div>
+            @endif
+
+
+            {{-- Persetujuan harga --}}
+            @if ($serviceRequest->status === 'waiting_approval')
+                <div class="ui-card ui-rise">
+
+                    <h3 class="ui-heading" style="margin-bottom:12px">{{ __('guest.show.price_approval') }}</h3>
+
+                    @if (session('error'))
+                        <div class="ui-alert ui-alert--error" style="margin-bottom:12px">{{ session('error') }}</div>
+                    @endif
+
+                    <div class="ui-price" style="display:block">
+                        <p class="ui-price-note" style="color:#6B7280;font-size:12px">{{ __('guest.show.survey_done') }}</p>
+                        <p class="ui-price-value" style="font-size:26px;margin-top:6px">
+                            Rp{{ number_format($serviceRequest->total_price, 0, ',', '.') }}
+                        </p>
+                        <p class="ui-price-note" style="margin-top:6px">
+                            {{ __('guest.show.current_balance', ['amount' => 'Rp' . number_format(auth()->user()->balance, 0, ',', '.')]) }}
+                        </p>
+                    </div>
+
+                    <div style="display:flex;gap:10px;margin-top:14px">
+
+                        <form method="POST" action="{{ route('guest.service-requests.approve-price', $serviceRequest) }}" style="flex:1">
+                            @csrf
+                            <button type="submit" class="ui-btn ui-btn--primary">
+                                {{ __('guest.show.approve_pay') }}
+                            </button>
+                        </form>
+
+                        <form method="POST" action="{{ route('guest.service-requests.reject-price', $serviceRequest) }}" style="flex:1"
+                              onsubmit="return confirm('{{ __('guest.show.confirm_reject') }}')">
+                            @csrf
+                            <button type="submit" class="ui-btn ui-btn--outline">
+                                {{ __('guest.show.reject') }}
+                            </button>
+                        </form>
+
+                    </div>
+
+                </div>
+            @endif
+
+
+            {{-- Foto --}}
+            @if ($serviceRequest->photos->isNotEmpty())
+                <div class="ui-card ui-rise">
+
+                    <h3 class="ui-heading" style="margin-bottom:12px">{{ __('guest.show.photos') }}</h3>
+
+                    <div class="ui-opts ui-opts--2" style="margin-top:0">
+                        @foreach ($serviceRequest->photos as $photo)
+                            <div>
+                                <p class="ui-row-meta" style="margin:0 0 6px;font-weight:700">
+                                    {{ __('guest.photo_types.' . $photo->type) }}
+                                </p>
+                                <a href="{{ Storage::url($photo->photo_path) }}" target="_blank">
+                                    <img src="{{ Storage::url($photo->photo_path) }}"
+                                         alt="{{ $photo->type }}"
+                                         style="width:100%;height:128px;object-fit:cover;border-radius:14px;border:1px solid #F1F1F1">
+                                </a>
+                            </div>
+                        @endforeach
+                    </div>
+
+                </div>
+            @endif
+
+
+            {{-- Feedback --}}
+            @if ($serviceRequest->status === 'completed')
+                <div class="ui-card ui-rise" id="feedback">
+
+                    <h3 class="ui-heading" style="margin-bottom:12px">{{ __('guest.show.feedback_title') }}</h3>
+
+                    @if ($serviceRequest->feedback)
+
+                        <div class="ui-alert ui-alert--success">
+                            <p style="font-weight:800">{{ __('guest.show.feedback_thanks') }}</p>
+
+                            <div class="ui-stars" style="margin-top:8px">
                                 @for ($i = 1; $i <= 5; $i++)
-                                    <label class="cursor-pointer">
-                                        <input type="radio" name="rating" value="{{ $i }}" required class="sr-only peer" {{ old('rating') == $i ? 'checked' : '' }}>
-                                        <svg class="w-8 h-8 text-gray-300 peer-checked:text-yellow-400 hover:text-yellow-400 transition-colors" fill="currentColor" viewBox="0 0 20 20">
-                                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
-                                        </svg>
-                                    </label>
+                                    <svg class="{{ $i <= $serviceRequest->feedback->rating ? 'on' : '' }}" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                                    </svg>
                                 @endfor
                             </div>
-                            <x-input-error :messages="$errors->get('rating')" class="mt-2" />
+
+                            @if ($serviceRequest->feedback->comment)
+                                <p style="margin-top:8px;color:#374151">"{{ $serviceRequest->feedback->comment }}"</p>
+                            @endif
                         </div>
 
-                        <div>
-                            <x-input-label for="comment" :value="__('Komentar (Opsional')" />
-                            <textarea name="comment" id="comment" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-4 py-2" placeholder="Tulis pengalaman Anda...">{{ old('comment') }}</textarea>
-                            <x-input-error :messages="$errors->get('comment')" class="mt-2" />
-                        </div>
+                    @else
 
-                        <button type="submit" class="w-full px-4 py-3 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors">
-                            Kirim Feedback
-                        </button>
-                    </form>
-                @endif
-            </div>
-        @endif
+                        <form method="POST" action="{{ route('guest.service-requests.feedback', $serviceRequest) }}" class="ui-form">
+                            @csrf
 
-        <a href="{{ route('guest.service-requests.index') }}" class="block text-center text-indigo-600 hover:underline">← Kembali ke Daftar</a>
+                            <div>
+                                <span class="ui-label">{{ __('guest.show.rating') }} <span class="text-red-500">*</span></span>
+
+                                <div class="ui-rate" role="radiogroup" aria-label="{{ __('guest.show.rating') }}">
+                                    @for ($i = 5; $i >= 1; $i--)
+                                        <input type="radio" name="rating" id="rating-{{ $i }}" value="{{ $i }}"
+                                               {{ old('rating') == $i ? 'checked' : '' }} required>
+                                        <label for="rating-{{ $i }}">
+                                            <svg fill="currentColor" viewBox="0 0 20 20">
+                                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                                            </svg>
+                                        </label>
+                                    @endfor
+                                </div>
+
+                                <x-input-error :messages="$errors->get('rating')" class="mt-2" />
+                            </div>
+
+                            <div>
+                                <label for="comment" class="ui-label">{{ __('guest.show.comment_optional') }}</label>
+                                <textarea name="comment" id="comment" rows="3" class="ui-input"
+                                          placeholder="{{ __('guest.show.comment_placeholder') }}">{{ old('comment') }}</textarea>
+                                <x-input-error :messages="$errors->get('comment')" class="mt-2" />
+                            </div>
+
+                            <button type="submit" class="ui-btn ui-btn--primary">
+                                {{ __('guest.show.send_feedback') }}
+                            </button>
+                        </form>
+
+                    @endif
+
+                </div>
+            @endif
+
+
+            <a href="{{ route('guest.service-requests.index') }}" class="ui-btn ui-btn--outline">
+                {{ __('guest.common.back_to_list') }}
+            </a>
+
+        </div>
     </div>
+
+</div>
+
 @endsection

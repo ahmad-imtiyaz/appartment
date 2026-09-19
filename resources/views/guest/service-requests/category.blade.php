@@ -2,75 +2,98 @@
 
 @section('title', $category['title'])
 
-@section('header')
-    <div class="flex items-center gap-2">
-        <a href="{{ route('guest.service-requests.index') }}" class="text-gray-500">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
-            </svg>
-        </a>
-        <h2 class="font-semibold text-lg text-gray-800">{{ $category['title'] }}</h2>
-    </div>
-@endsection
-
 @section('content')
-    <div class="py-4 px-4 space-y-6">
 
-        <!-- Sub layanan grid -->
-        <div>
-            <div class="grid grid-cols-3 gap-3">
-                @foreach ($category['options'] as $option)
-    <a href="{{ route('guest.services.show', $category['slug']) }}?type={{ $option['id'] }}"
-       class="bg-white rounded-xl shadow-sm border border-gray-100 p-3 flex flex-col items-center gap-2 hover:shadow-md transition-shadow">
-        <div class="w-12 h-12 {{ $category['bg'] }} rounded-lg flex items-center justify-center">
-            {!! $option['icon'] !!}
-        </div>
-        <span class="text-xs font-medium text-gray-700 text-center leading-tight">
-            {{ $option['label'] }}
-        </span>
-    </a>
-@endforeach
-            </div>
-        </div>
+<div class="ui-page">
 
-        <!-- Active orders khusus kategori ini -->
-        <div>
-            <h3 class="font-semibold text-gray-900 mb-3">Pesanan {{ $category['title'] }} Aktif</h3>
+    @include('guest.partials.page-hero', [
+        'title'   => $category['title'],
+        'back'    => route('guest.service-requests.index'),
+        'iconKey' => $category['slug'],
+    ])
 
-            @if ($activeRequests->isEmpty())
-                <div class="text-center py-8 text-gray-500 bg-white rounded-xl border border-dashed border-gray-200">
-                    <p class="text-sm">Belum ada pesanan {{ strtolower($category['title']) }}</p>
-                </div>
-            @else
-                <div class="space-y-3">
-                    @foreach ($activeRequests as $request)
-                        <a href="{{ route('guest.service-requests.show', $request) }}" class="block">
-                            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 flex items-center gap-3 hover:shadow-md transition-shadow">
-                                <div class="w-10 h-10 {{ $category['bg'] }} rounded-lg flex items-center justify-center shrink-0">
-                                    {!! $category['options'][0]['icon'] !!}
-                                </div>
-                                <div class="flex-1 min-w-0">
-                                    <p class="text-xs text-gray-500">Order #{{ str_pad($request->id, 7, '0', STR_PAD_LEFT) }}</p>
-                                    <h4 class="font-medium text-gray-900 truncate">{{ $request->service->name }}</h4>
-                                </div>
-                                <span class="shrink-0 px-2 py-1 text-xs font-medium rounded-full
-                                    @if($request->status === 'pending') bg-yellow-100 text-yellow-800
-                                    @elseif($request->status === 'in_progress') bg-purple-100 text-purple-800
-                                    @elseif($request->status === 'completed') bg-green-100 text-green-800
-                                    @else bg-blue-100 text-blue-800 @endif">
-                                    {{ ucfirst(str_replace('_', ' ', $request->status)) }}
-                                </span>
-                            </div>
+    <div class="ui-body">
+        <div class="ui-pull ui-stack">
+
+            {{-- Sub layanan --}}
+            <div class="ui-card ui-rise">
+
+                <div class="ui-opts ui-opts--3" style="margin-top:0">
+                    @foreach ($category['options'] as $option)
+                        <a href="{{ route('guest.services.show', $category['slug']) }}?type={{ $option['id'] }}"
+                           class="ui-tile">
+                            <span class="ui-tile-ico {{ $category['bg'] }}">
+                                {!! $option['icon'] !!}
+                            </span>
+                            <span class="ui-opt-name">{{ $option['label'] }}</span>
                         </a>
                     @endforeach
                 </div>
-            @endif
+
+            </div>
+
+
+            {{-- Pesanan aktif --}}
+            <section class="ui-rise" style="animation-delay:.08s">
+
+                <div class="ui-sec-head">
+                    <h3 class="ui-heading">{{ __('guest.category.active_orders', ['title' => $category['title']]) }}</h3>
+                    <span class="ui-count">{{ __('guest.common.orders_count', ['count' => $activeRequests->count()]) }}</span>
+                </div>
+
+                @if ($activeRequests->isEmpty())
+
+                    <div class="ui-empty">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.6">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+                        </svg>
+                        {{ __('guest.category.no_orders', ['title' => $category['title']]) }}
+                    </div>
+
+                @else
+
+                    <div class="ui-stack">
+                        @foreach ($activeRequests as $request)
+
+                            <a href="{{ route('guest.service-requests.show', $request) }}" class="ui-row">
+
+                                <div class="ui-row-main">
+
+                                    <span class="ui-tile-ico {{ $category['bg'] }}" style="width:40px;height:40px;border-radius:12px">
+                                        {!! $category['options'][0]['icon'] !!}
+                                    </span>
+
+                                    <div class="min-w-0 flex-1">
+                                        <p class="ui-row-meta" style="margin-top:0">
+                                            {{ __('guest.detail.order_number', ['number' => str_pad($request->id, 7, '0', STR_PAD_LEFT)]) }}
+                                        </p>
+                                        <p class="ui-row-title">{{ $request->service->name }}</p>
+                                    </div>
+
+                                    <span class="ui-pill ui-pill--{{ $request->status }}">
+                                        {{ __('guest.status.' . $request->status) }}
+                                    </span>
+
+                                </div>
+
+                            </a>
+
+                        @endforeach
+                    </div>
+
+                @endif
+
+            </section>
+
+
+            {{-- CTA --}}
+            <a href="{{ route('guest.services.show', $category['slug']) }}" class="ui-btn ui-btn--primary">
+                {{ __('guest.category.new_request', ['title' => $category['title']]) }}
+            </a>
+
         </div>
-
-        <a href="{{ route('guest.services.show', $category['slug']) }}"
-           class="block w-full px-4 py-3 bg-indigo-600 text-white text-center rounded-lg font-medium hover:bg-indigo-700 transition-colors">
-            + Ajukan {{ $category['title'] }} Baru
-        </a>
-
     </div>
+
+</div>
+
 @endsection
