@@ -14,7 +14,7 @@ class ServiceRequest extends Model
         'service_id',
         'worker_id',            // pekerja yang dipilih admin
         'assigned_by',          // admin yang assign
-        'status',                // pending | assigned | in_progress | completed | rejected
+        'status',                // pending | assigned | in_progress | waiting_approval | completed | rejected
         'notes',
         'worker_notes',
         'scheduled_at',
@@ -28,7 +28,7 @@ class ServiceRequest extends Model
         'laundry_duration',
         'snapshot_price_per_kg',
         'billable_weight',
-        'total_price',
+        'total_price',          // laundry: dari berat | maintenance-repair: harga final
         'collected_at',
         'weighed_at',
         // cleaning
@@ -37,6 +37,12 @@ class ServiceRequest extends Model
         // ac
         'ac_type',
         'snapshot_ac_price',
+        // maintenance & repair
+        'snapshot_repair_price', // estimasi saat order (null = "Lainnya")
+        'survey_notes',
+        'survey_reported_at',
+        'price_change_note',
+        'price_approved_at',
     ];
 
     protected function casts(): array
@@ -49,6 +55,8 @@ class ServiceRequest extends Model
             'completed_at' => 'datetime',
             'collected_at' => 'datetime',
             'weighed_at' => 'datetime',
+            'survey_reported_at' => 'datetime',
+            'price_approved_at' => 'datetime',
             'cost' => 'decimal:2',
         ];
     }
@@ -116,9 +124,28 @@ class ServiceRequest extends Model
         return $this->status === 'in_progress';
     }
 
+    // MnR: harga final sudah dikirim admin, nunggu guest setuju
+    public function isWaitingApproval(): bool
+    {
+        return $this->status === 'waiting_approval';
+    }
+
     public function isCompleted(): bool
     {
         return $this->status === 'completed';
+    }
+
+    public function statusLabel(): string
+    {
+        return match ($this->status) {
+            'pending' => 'Menunggu diproses',
+            'assigned' => 'Menunggu pekerja',
+            'in_progress' => 'Sedang dikerjakan',
+            'waiting_approval' => 'Menunggu persetujuan harga',
+            'completed' => 'Selesai',
+            'rejected' => 'Ditolak',
+            default => ucfirst(str_replace('_', ' ', $this->status)),
+        };
     }
 
     public function isAc(): bool
@@ -139,6 +166,12 @@ class ServiceRequest extends Model
     public function isMaintenance(): bool
     {
         return $this->service->slug === 'maintenance-repair';
+    }
+
+    // MnR: harga final sudah disetujui guest & saldo sudah dipotong
+    public function isPriceApproved(): bool
+    {
+        return $this->price_approved_at !== null;
     }
 
     public function calculateTotalPrice(): void

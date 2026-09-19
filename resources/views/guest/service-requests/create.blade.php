@@ -60,7 +60,9 @@
                 <h3 class="font-medium text-gray-900">Detail Maintenance & Repair</h3>
 
                 <div>
-                    <x-input-label for="damage_category" :value="__('Kategori Kerusakan') <span class=\"text-red-500\">*</span>" />
+                    <x-input-label for="damage_category">
+    {{ __('Kategori Kerusakan') }} <span class="text-red-500">*</span>
+</x-input-label>
                     <select name="damage_category" id="damage_category"
                             class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-4 py-2 bg-white">
                         <option value="">-- Pilih Kategori --</option>

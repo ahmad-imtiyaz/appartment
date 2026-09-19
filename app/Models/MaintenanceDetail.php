@@ -9,7 +9,8 @@ class MaintenanceDetail extends Model
 {
     protected $fillable = [
         'service_request_id',
-        'damage_category',
+        'damage_category',       // label kategori dari repair_pricings, atau "Lainnya"
+        'severity',              // ringan | sedang | berat (null untuk "Lainnya")
         'location',
         'description',
         'urgency',               // low | medium | high
@@ -18,5 +19,12 @@ class MaintenanceDetail extends Model
     public function serviceRequest(): BelongsTo
     {
         return $this->belongsTo(ServiceRequest::class);
+    }
+
+    public function severityLabel(): string
+    {
+        return $this->severity
+            ? (RepairPricing::SEVERITIES[$this->severity] ?? ucfirst($this->severity))
+            : '-';
     }
 }

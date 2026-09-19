@@ -25,6 +25,7 @@
                     'pending' => 'bg-yellow-100 text-yellow-800',
                     'assigned' => 'bg-blue-100 text-blue-800',
                     'in_progress' => 'bg-purple-100 text-purple-800',
+                    'waiting_approval' => 'bg-orange-100 text-orange-800',
                     'completed' => 'bg-green-100 text-green-800',
                     'rejected' => 'bg-red-100 text-red-800',
                     default => 'bg-gray-100 text-gray-800',
@@ -179,7 +180,11 @@
                     <dl class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                         <div>
                             <dt class="text-gray-500">Kategori Kerusakan</dt>
-                            <dd class="font-medium">{{ $serviceRequest->maintenanceDetail->damage_category }}</dd>
+                           <dd class="font-medium">{{ \App\Models\RepairPricing::CATEGORIES[$serviceRequest->maintenanceDetail->damage_category] ?? 'Lainnya' }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-gray-500">Tingkat Kerusakan</dt>
+                            <dd class="font-medium">{{ $serviceRequest->maintenanceDetail->severity ? $serviceRequest->maintenanceDetail->severityLabel() : '-' }}</dd>
                         </div>
                         <div>
                             <dt class="text-gray-500">Lokasi</dt>
@@ -207,6 +212,52 @@
                             </div>
                         @endif
                     </dl>
+
+  @if ($serviceRequest->survey_reported_at)
+                        <div class="mt-4 pt-4 border-t border-gray-100">
+                            <dt class="text-gray-500 text-sm">Survey Pekerja</dt>
+                            <dd class="mt-1 text-sm text-gray-700">Dilaporkan: {{ $serviceRequest->survey_reported_at->format('d M Y H:i') }}</dd>
+                            @if ($serviceRequest->survey_notes)
+                                <dd class="mt-2 p-3 bg-blue-50 rounded-lg text-sm">{{ $serviceRequest->survey_notes }}</dd>
+                            @endif
+                        </div>
+                    @endif
+
+                    @if ($serviceRequest->total_price)
+                        <div class="mt-4 pt-4 border-t border-gray-100">
+                            <dt class="text-gray-500 text-sm mb-2">Harga</dt>
+                            <dl class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                                @if ($serviceRequest->snapshot_repair_price)
+                                    <div>
+                                        <dt class="text-gray-500">Harga Acuan</dt>
+                                        <dd class="font-medium">Rp{{ number_format($serviceRequest->snapshot_repair_price, 0, ',', '.') }}</dd>
+                                    </div>
+                                @endif
+                                <div>
+                                    <dt class="text-gray-500">Harga Final</dt>
+                                    <dd class="font-bold text-green-700">Rp{{ number_format($serviceRequest->total_price, 0, ',', '.') }}</dd>
+                                </div>
+                                @if ($serviceRequest->price_change_note)
+                                    <div class="md:col-span-2">
+                                        <dt class="text-gray-500">Alasan Perubahan Harga</dt>
+                                        <dd class="mt-1 p-3 bg-amber-50 rounded-lg text-sm">{{ $serviceRequest->price_change_note }}</dd>
+                                    </div>
+                                @endif
+                                @if ($serviceRequest->price_approved_at)
+                                    <div>
+                                        <dt class="text-gray-500">Disetujui Guest</dt>
+                                        <dd class="font-medium text-green-700">{{ $serviceRequest->price_approved_at->format('d M Y H:i') }}</dd>
+                                    </div>
+                                @elseif ($serviceRequest->status === 'waiting_approval')
+                                    <div>
+                                        <dt class="text-gray-500">Status</dt>
+                                        <dd class="font-medium text-orange-600">Menunggu persetujuan guest</dd>
+                                    </div>
+                                @endif
+                            </dl>
+                        </div>
+                    @endif
+
                 </div>
             @endif
 
@@ -232,7 +283,7 @@
                 <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
                     <h3 class="font-semibold text-gray-900 mb-4">Feedback dari Guest</h3>
                     <div class="flex items-center gap-2 mb-2">
-                        @for ($i = 1; $i <= 5; $i++)
+                        @for ($i = 1; $i <= 5; $i)
                             <svg class="w-6 h-6 @if($i <= $serviceRequest->feedback->rating) text-yellow-400 @else text-gray-300 @endif" fill="currentColor" viewBox="0 0 20 20">
                                 <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
                             </svg>
@@ -263,6 +314,45 @@
                         </div>
                         <x-primary-button>
                             Assign Pekerja
+                        </x-primary-button>
+                    </form>
+                </div>
+                @elseif ($serviceRequest->isMaintenance() && $serviceRequest->status === 'in_progress' && $serviceRequest->survey_reported_at && !$serviceRequest->total_price)
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                    <h3 class="font-semibold text-gray-900 mb-4">Set Harga Perbaikan</h3>
+                    @php
+                        $detail = $serviceRequest->maintenanceDetail;
+                        $suggestedPrice = $detail
+                            ? \App\Models\RepairPricing::byCategoryAndSeverity($detail->damage_category, $detail->severity ?? '')->value('price')
+                            : null;
+                    @endphp
+                    @if ($suggestedPrice !== null)
+                        <p class="text-sm text-gray-600 mb-4">
+                            Harga acuan untuk kategori & tingkat ini:
+                            <span class="font-semibold text-gray-900">Rp{{ number_format($suggestedPrice, 0, ',', '.') }}</span>
+                        </p>
+                    @else
+                        <p class="text-sm text-amber-600 mb-4">
+                            Tidak ada harga acuan untuk kombinasi kategori & tingkat ini — silakan input harga manual.
+                        </p>
+                    @endif
+                    <form method="POST" action="{{ route('admin.service-requests.set-price', $serviceRequest) }}" class="space-y-4">
+                        @csrf
+                        <div>
+                            <x-input-label for="price">
+                                {{ __('Harga Final') }} <span class="text-red-500">*</span>
+                            </x-input-label>
+                            <x-text-input id="price" type="number" name="price" min="0" step="1000" required class="mt-1 block w-full"
+                                          value="{{ old('price', $suggestedPrice) }}" />
+                            <x-input-error :messages="$errors->get('price')" class="mt-2" />
+                        </div>
+                        <div>
+                            <x-input-label for="price_change_note" :value="__('Alasan Perubahan Harga (wajib jika berbeda dari harga acuan)')" />
+                            <textarea name="price_change_note" id="price_change_note" rows="2" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-4 py-2" placeholder="Contoh: material tambahan karena kerusakan lebih parah dari laporan awal">{{ old('price_change_note') }}</textarea>
+                            <x-input-error :messages="$errors->get('price_change_note')" class="mt-2" />
+                        </div>
+                        <x-primary-button>
+                            Kirim Harga ke Guest
                         </x-primary-button>
                     </form>
                 </div>

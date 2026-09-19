@@ -108,6 +108,11 @@ Route::middleware(['auth', 'role:guest'])
         Route::delete('/service-requests/{serviceRequest}', [GuestServiceRequestController::class, 'destroy'])
             ->name('service-requests.destroy');
 
+        Route::post('/service-requests/{serviceRequest}/approve-price', [GuestServiceRequestController::class, 'approvePrice'])
+            ->name('service-requests.approve-price');
+        Route::post('/service-requests/{serviceRequest}/reject-price', [GuestServiceRequestController::class, 'rejectPrice'])
+            ->name('service-requests.reject-price');
+
         /*
         | Service Detail (per service type)
         */
@@ -252,6 +257,9 @@ Route::middleware(['auth', 'role:admin'])
         Route::post('/service-requests/{serviceRequest}/assign', [AdminServiceRequestController::class, 'assign'])
             ->name('service-requests.assign');
 
+        Route::post('/service-requests/{serviceRequest}/set-price', [AdminServiceRequestController::class, 'setPrice'])
+            ->name('service-requests.set-price');
+
         /*
         | Laundry Pricing
         */
@@ -263,6 +271,17 @@ Route::middleware(['auth', 'role:admin'])
         Route::put('/laundry-pricings/{pricing}', [\App\Http\Controllers\Admin\LaundryPricingController::class, 'update'])
             ->name('laundry-pricings.update');
 
+        /*
+        | MnR
+        */
+
+        Route::get('repair-pricings', [\App\Http\Controllers\Admin\RepairPricingController::class, 'index'])->name('repair-pricings.index');
+        Route::get('repair-pricings/create', [\App\Http\Controllers\Admin\RepairPricingController::class, 'create'])->name('repair-pricings.create');
+        Route::post('repair-pricings', [\App\Http\Controllers\Admin\RepairPricingController::class, 'store'])->name('repair-pricings.store');
+        Route::get('repair-pricings/{pricing}/edit', [\App\Http\Controllers\Admin\RepairPricingController::class, 'edit'])->name('repair-pricings.edit');
+        Route::put('repair-pricings/{pricing}', [\App\Http\Controllers\Admin\RepairPricingController::class, 'update'])->name('repair-pricings.update');
+        Route::patch('repair-pricings/{pricing}/toggle', [\App\Http\Controllers\Admin\RepairPricingController::class, 'toggle'])->name('repair-pricings.toggle');
+        Route::delete('repair-pricings/{pricing}', [\App\Http\Controllers\Admin\RepairPricingController::class, 'destroy'])->name('repair-pricings.destroy');
         /*
         | Cleaning Pricing
         */
@@ -301,7 +320,7 @@ Route::middleware(['auth', 'role:admin'])
         Route::delete('/product-listings/{productListing}', [AdminProductListingController::class, 'destroy'])
             ->name('product-listings.destroy');
 
-/*
+        /*
         | Coin Settings
         */
 
@@ -376,6 +395,9 @@ Route::middleware(['auth', 'role:pekerja'])
 
         Route::post('/tasks/{serviceRequest}/complete', [TaskController::class, 'complete'])
             ->name('tasks.complete');
+
+        Route::post('/tasks/{serviceRequest}/survey', [TaskController::class, 'survey'])
+            ->name('tasks.survey');
 
         /*
         | Profile

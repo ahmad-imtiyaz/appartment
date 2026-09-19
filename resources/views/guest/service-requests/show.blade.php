@@ -23,6 +23,7 @@
                     @if($serviceRequest->status === 'pending') bg-yellow-100 text-yellow-800
                     @elseif($serviceRequest->status === 'assigned') bg-blue-100 text-blue-800
                     @elseif($serviceRequest->status === 'in_progress') bg-purple-100 text-purple-800
+                    @elseif($serviceRequest->status === 'waiting_approval') bg-orange-100 text-orange-800
                     @elseif($serviceRequest->status === 'completed') bg-green-100 text-green-800
                     @elseif($serviceRequest->status === 'rejected') bg-red-100 text-red-800
                     @else bg-gray-100 text-gray-800 @endif">
@@ -65,10 +66,10 @@
                         <dd class="font-medium">{{ $serviceRequest->completed_at->format('d M Y H:i') }}</dd>
                     </div>
                 @endif
-                @if ($serviceRequest->cost)
+                @if ($serviceRequest->total_price)
                     <div>
                         <dt class="text-gray-500">Biaya</dt>
-                        <dd class="font-medium text-indigo-600">Rp{{ number_format($serviceRequest->cost, 0, ',', '.') }}</dd>
+                         <dd class="font-medium text-indigo-600">Rp{{ number_format($serviceRequest->total_price, 0, ',', '.') }}</dd>
                     </div>
                 @endif
             </dl>
@@ -95,7 +96,8 @@
                 <dl class="space-y-3 text-sm">
                     <div>
                         <dt class="text-gray-500">Kategori Kerusakan</dt>
-                        <dd class="font-medium">{{ $serviceRequest->maintenanceDetail->damage_category }}</dd>
+                        <dd class="font-medium">{{ \App\Models\RepairPricing::CATEGORIES[$serviceRequest->maintenanceDetail->damage_category] ?? 'Lainnya' }}</dd>
+                     </div>
                     </div>
                     @if ($serviceRequest->maintenanceDetail->location)
                         <div>
@@ -115,6 +117,41 @@
                         </dd>
                     </div>
                 </dl>
+            </div>
+        @endif
+
+ <!-- Price Approval (MnR, waiting_approval) -->
+        @if ($serviceRequest->status === 'waiting_approval')
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-4">
+                <h3 class="font-semibold text-gray-900 mb-3">Persetujuan Harga</h3>
+
+                @if (session('error'))
+                    <div class="mb-3 p-3 bg-red-50 text-red-800 rounded-lg text-sm">
+                        {{ session('error') }}
+                    </div>
+                @endif
+
+                <div class="bg-orange-50 rounded-lg p-4 mb-4">
+                    <p class="text-sm text-gray-600 mb-1">Pekerja sudah melakukan survey dan admin menetapkan biaya perbaikan:</p>
+                    <p class="text-2xl font-bold text-orange-700">Rp{{ number_format($serviceRequest->total_price, 0, ',', '.') }}</p>
+                    <p class="text-xs text-gray-500 mt-1">Saldo Anda saat ini: Rp{{ number_format(auth()->user()->balance, 0, ',', '.') }}</p>
+                </div>
+
+                <div class="flex gap-3">
+                    <form method="POST" action="{{ route('guest.service-requests.approve-price', $serviceRequest) }}" class="flex-1">
+                        @csrf
+                        <button type="submit" class="w-full px-4 py-3 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors">
+                            Setujui & Bayar
+                        </button>
+                    </form>
+                    <form method="POST" action="{{ route('guest.service-requests.reject-price', $serviceRequest) }}" class="flex-1"
+                          onsubmit="return confirm('Tolak harga ini? Permintaan akan dibatalkan dan Anda perlu mengajukan ulang.')">
+                        @csrf
+                        <button type="submit" class="w-full px-4 py-3 bg-white border border-red-300 text-red-600 rounded-lg font-medium hover:bg-red-50 transition-colors">
+                            Tolak
+                        </button>
+                    </form>
+                </div>
             </div>
         @endif
 
@@ -158,7 +195,7 @@
                     <form method="POST" action="{{ route('guest.service-requests.feedback', $serviceRequest) }}" class="space-y-4">
                         @csrf
                         <div>
-                            <x-input-label for="rating" :value="__('Rating') <span class=\"text-red-500\">*</span>" />
+                            <x-input-label for="rating">{{ __('Rating') }} <span class="text-red-500">*</span></x-input-label>
                             <div class="mt-1 flex items-center gap-2" role="radiogroup" aria-label="Rating">
                                 @for ($i = 1; $i <= 5; $i++)
                                     <label class="cursor-pointer">

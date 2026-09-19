@@ -10,6 +10,7 @@ use App\Models\MaintenanceDetail;
 use App\Models\Service;
 use App\Models\ServiceRequest;
 use App\Models\ServiceRequestPhoto;
+use App\Services\RepairPaymentService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -77,9 +78,11 @@ class ServiceRequestController extends Controller
 
         abort_unless(isset($categories[$category]), 404);
 
-        // Laundry & Cleaning go directly to service-detail page with card-based selector
-        if (in_array($category, ['laundry', 'cleaning', 'ac'])) {
-            return redirect()->route('guest.services.show', $category);
+ // Semua kategori (termasuk repair/MnR) diarahkan ke halaman service-detail
+        // yang sama, dengan card-based selector.
+        if (in_array($category, ['laundry', 'cleaning', 'ac', 'repair'])) {
+            $slug = $category === 'repair' ? 'maintenance-repair' : $category;
+            return redirect()->route('guest.services.show', $slug);
         }
 
         $categoryData = $categories[$category];
@@ -181,18 +184,18 @@ class ServiceRequestController extends Controller
         }
 
         if ($isLaundry) {
-    $request->validate([
-        'laundry_type' => ['required', 'in:cuci,cuci_setrika,setrika'],
-        'laundry_duration' => ['required', 'in:reguler,express'],
-    ]);
+            $request->validate([
+                'laundry_type' => ['required', 'in:cuci,cuci_setrika,setrika'],
+                'laundry_duration' => ['required', 'in:reguler,express'],
+            ]);
 
-    $pricing = LaundryPricing::byTypeAndDuration(
-        $request->laundry_type,
-        $request->laundry_duration
-    )->firstOrFail();
+            $pricing = LaundryPricing::byTypeAndDuration(
+                $request->laundry_type,
+                $request->laundry_duration
+            )->firstOrFail();
 
-    $validated['snapshot_price_per_kg'] = $pricing->price_per_kg;
-}
+            $validated['snapshot_price_per_kg'] = $pricing->price_per_kg;
+        }
 
         if ($isCleaning) {
             $request->validate([
@@ -215,10 +218,10 @@ class ServiceRequestController extends Controller
                 'status' => 'pending',
                 'notes' => $validated['notes'] ?? null,
                 'scheduled_at' => $validated['scheduled_at'] ?? null,
-               'laundry_type' => $isLaundry ? $validated['laundry_type'] : null,
-'laundry_duration' => $isLaundry ? $validated['laundry_duration'] : null,
-'snapshot_price_per_kg' => $isLaundry ? $validated['snapshot_price_per_kg'] : null,
-'cleaning_type' => $isCleaning ? $validated['cleaning_type'] : null,
+                'laundry_type' => $isLaundry ? $validated['laundry_type'] : null,
+                'laundry_duration' => $isLaundry ? $validated['laundry_duration'] : null,
+                'snapshot_price_per_kg' => $isLaundry ? $validated['snapshot_price_per_kg'] : null,
+                'cleaning_type' => $isCleaning ? $validated['cleaning_type'] : null,
                 'snapshot_cleaning_price' => $isCleaning ? $validated['snapshot_cleaning_price'] : null,
                 'ac_type' => $isAc ? $validated['ac_type'] : null,
                 'snapshot_ac_price' => $isAc ? $validated['snapshot_ac_price'] : null,
@@ -261,5 +264,31 @@ class ServiceRequestController extends Controller
         return redirect()
             ->back()
             ->with('success', 'Pesanan "' . $serviceName . '" berhasil dibatalkan.');
+    }
+
+    public function approvePrice(ServiceRequest $serviceRequest, RepairPaymentService $paymentService): RedirectResponse
+    {
+        abort_unless($serviceRequest->user_id === auth()->id(), 403);
+        abort_if($serviceRequest->status !== 'waiting_approval', 422, 'Tidak ada harga yang menunggu persetujuan.');
+
+        $paid = $paymentService->charge($serviceRequest);
+
+        if (!$paid) {
+            return back()->with('error', 'Saldo tidak cukup. Silakan top up terlebih dahulu.');
+        }
+
+        return back()->with('success', 'Harga disetujui, saldo telah dipotong. Pekerjaan akan dilanjutkan.');
+    }
+
+    public function rejectPrice(ServiceRequest $serviceRequest): RedirectResponse
+    {
+        abort_unless($serviceRequest->user_id === auth()->id(), 403);
+        abort_if($serviceRequest->status !== 'waiting_approval', 422, 'Tidak ada harga yang menunggu persetujuan.');
+
+        $serviceRequest->update(['status' => 'rejected']);
+
+        return redirect()
+            ->route('guest.service-requests.index')
+            ->with('success', 'Harga ditolak. Silakan ajukan permintaan baru jika masih diperlukan.');
     }
 }

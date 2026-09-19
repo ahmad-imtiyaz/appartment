@@ -56,7 +56,7 @@
                 @php
                     $typeConfig = [
                         'cuci'       => ['label' => 'Cuci',       'icon' => '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 3v1.5M4.5 8.25H3m18 0h-1.5M4.5 12h15m-15 6h-1.5m19.5 0h-1.5M5.25 6h13.5M5.25 12h13.5m-13.5 6h13.5"/></svg>', 'color' => 'blue'],
-                        'cuci_setrika' => ['label' => 'Cuci + Setrika', 'icon' => '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>', 'color' => 'indigo'],
+                        'cuci_setrika' => ['label' => 'Cuci  Setrika', 'icon' => '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>', 'color' => 'indigo'],
                         'setrika'    => ['label' => 'Setrika',     'icon' => '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 15.75V18m-7.5-6.75h.008v.008H8.25v-.008zm0 2.25h.008v.008H8.25V13.5zm0 2.25h.008v.008H8.25v-.008zm0 2.25h.008v.008H8.25V18zm2.498-6.75h.007v.008h-.007v-.008zm0 2.25h.007v.008h-.007V13.5zm0 2.25h.007v.008h-.007v-.008zm0 2.25h.007v.008h-.007V18zm2.504-6.75h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008V13.5zm0 2.25h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008V18zm2.498-6.75h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008V13.5zM8.25 6h7.5v2.25h-7.5V6zM12 3a9 9 0 100 18 9 9 0 000-18z"/></svg>', 'color' => 'purple'],
                     ];
                 @endphp
@@ -343,22 +343,52 @@
             </div>
 
             @if ($service->slug === 'maintenance-repair')
-                <div class="border-t border-gray-200 pt-4 space-y-4">
+                <div class="border-t border-gray-200 pt-4 space-y-5">
                     <h3 class="font-medium text-gray-900">Detail Maintenance & Repair</h3>
 
+                 <input type="hidden" name="damage_category" id="form-damage-category" value="{{ old('damage_category') }}">
+
                     <div>
-                        <x-input-label for="damage_category" :value="__('Kategori Kerusakan') <span class=\"text-red-500\">*</span>" />
-                        <select name="damage_category" id="damage_category"
-                                class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-4 py-2.5 bg-white">
-                            <option value="">-- Pilih Kategori --</option>
-                            <option value="cat_luntur">Cat Luntur / Rontok</option>
-                            <option value="kebocoran">Kebocoran Air / Pipa</option>
-                            <option value="listrik">Kelistrikan (lampu mati, saklar, stop kontak)</option>
-                            <option value="ac">AC (tidak dingin, bocor, error)</option>
-                            <option value="pintu_jendela">Pintu / Jendela (sulit dibuka, kaca pecah)</option>
-                            <option value="furniture">Furnitur Bawaan (rak, lemari, meja rusak)</option>
-                            <option value="lainnya">Lainnya</option>
-                        </select>
+                        <x-input-label>{{ __('Kategori Kerusakan') }} <span class="text-red-500">*</span></x-input-label>
+                        <div class="grid grid-cols-3 gap-3 mt-2">
+                            @php
+                                $categoryIconConfig = [
+                                    'cat_luntur'    => ['icon' => '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 3h6l1.2 4.5H7.8L9 3zM6.5 7.5h11l-1 5.2a5 5 0 01-9 0l-1-5.2zM10 15v5m4-5v5"/></svg>', 'color' => 'orange'],
+                                    'kebocoran'     => ['icon' => '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3s6 6.7 6 11a6 6 0 01-12 0c0-4.3 6-11 6-11z"/></svg>', 'color' => 'blue'],
+                                    'listrik'       => ['icon' => '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M13 3L4 14h7v7l9-11h-7z"/></svg>', 'color' => 'amber'],
+                                    'ac'            => ['icon' => '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><rect x="3" y="6" width="18" height="7" rx="2"/><path stroke-linecap="round" d="M7 13v2M11 13v2.5M15 13v2M18 13v1.5"/></svg>', 'color' => 'cyan'],
+                                    'pintu_jendela' => ['icon' => '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><rect x="5" y="3" width="14" height="18" rx="1"/><circle cx="15" cy="12" r="0.8" fill="currentColor" stroke="none"/></svg>', 'color' => 'indigo'],
+                                    'furniture'     => ['icon' => '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v16M20 4v16M4 4h16"/></svg>', 'color' => 'purple'],
+                                    'lainnya'       => ['icon' => '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path stroke-linecap="round" d="M12 16h.01M12 8a2 2 0 011.5 3.3c-.5.5-1.5 1-1.5 2"/></svg>', 'color' => 'sky'],
+                                ];
+                                $categoryLabels = \App\Models\RepairPricing::CATEGORIES + ['lainnya' => 'Lainnya'];
+                                $selectedCategory = old('damage_category');
+                            @endphp
+                            @foreach ($categoryLabels as $value => $label)
+                                @php
+                                    $cfg = $categoryIconConfig[$value];
+                                    $checked = $selectedCategory === $value ? 'checked' : '';
+                                    $inputId = 'damage-category-' . $value;
+                                @endphp
+                                <label class="group relative cursor-pointer" for="{{ $inputId }}">
+                                    <input type="radio" name="damage_category_display" value="{{ $value }}" {{ $checked }}
+                                           id="{{ $inputId }}" class="damage-category-radio absolute opacity-0 pointer-events-none peer">
+                                    <div class="flex flex-col items-center gap-2 p-3 rounded-xl border-2 border-gray-100 bg-gray-50
+                                        peer-checked:border-indigo-500 peer-checked:bg-indigo-50 peer-checked:shadow-md
+                                        hover:border-gray-300 hover:bg-white hover:shadow-sm transition-all duration-200">
+                                        <div class="w-10 h-10 rounded-full bg-{{ $cfg['color'] }}/10 flex items-center justify-center text-{{ $cfg['color'] }}">
+                                            {!! $cfg['icon'] !!}
+                                        </div>
+                                        <span class="text-[11px] font-semibold text-gray-700 text-center leading-tight">{{ $label }}</span>
+                                        @if ($checked)
+                                            <div class="absolute top-1.5 right-1.5 w-4 h-4 bg-indigo-500 rounded-full flex items-center justify-center">
+                                                <svg class="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                                            </div>
+                                        @endif
+                                    </div>
+                                </label>
+                            @endforeach
+                        </div>
                         <x-input-error :messages="$errors->get('damage_category')" class="mt-2" />
                     </div>
 
@@ -368,15 +398,41 @@
                         <x-input-error :messages="$errors->get('location')" class="mt-2" />
                     </div>
 
-                    <div>
-                        <x-input-label for="urgency" :value="__('Tingkat Urgensi')" />
-                        <select name="urgency" id="urgency" class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-4 py-2.5 bg-white">
-                            <option value="low">Rendah (bisa ditunda)</option>
-                            <option value="medium" selected>Sedang (1-2 hari)</option>
-                            <option value="high">Tinggi (segera / darurat)</option>
-                        </select>
-                        <x-input-error :messages="$errors->get('urgency')" class="mt-2" />
-                    </div>
+<input type="hidden" name="urgency" id="form-urgency" value="{{ old('urgency', 'medium') }}">
+
+                   <div>
+                       <x-input-label :value="__('Tingkat Urgensi')" />
+                       <div class="grid grid-cols-3 gap-3 mt-2">
+                           @php
+                               $urgencyConfig = [
+                                   'low'    => ['label' => 'Rendah', 'desc' => 'Bisa ditunda', 'color' => 'emerald', 'icon' => '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path stroke-linecap="round" d="M12 7v5l3 2"/></svg>'],
+                                   'medium' => ['label' => 'Sedang', 'desc' => '1-2 hari', 'color' => 'amber', 'icon' => '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 3h.01M10.3 4.4L2.5 18a1 1 0 00.9 1.5h17.2a1 1 0 00.9-1.5L13.7 4.4a1 1 0 00-1.4 0z"/></svg>'],
+                                   'high'   => ['label' => 'Tinggi', 'desc' => 'Segera / darurat', 'color' => 'red', 'icon' => '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>'],
+                               ];
+                               $selectedUrgency = old('urgency', 'medium');
+                           @endphp
+                           @foreach ($urgencyConfig as $value => $cfg)
+                               @php
+                                   $checked = $selectedUrgency === $value ? 'checked' : '';
+                                   $inputId = 'urgency-' . $value;
+                               @endphp
+                               <label class="group relative cursor-pointer" for="{{ $inputId }}">
+                                   <input type="radio" name="urgency_display" value="{{ $value }}" {{ $checked }}
+                                          id="{{ $inputId }}" class="urgency-radio absolute opacity-0 pointer-events-none peer">
+                                   <div class="flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 border-gray-100 bg-gray-50
+                                      peer-checked:border-indigo-500 peer-checked:bg-indigo-50 peer-checked:shadow-md
+                                       hover:border-gray-300 hover:bg-white transition-all duration-200">
+                                       <div class="w-9 h-9 rounded-full bg-{{ $cfg['color'] }}/10 flex items-center justify-center text-{{ $cfg['color'] }}">
+                                           {!! $cfg['icon'] !!}
+                                       </div>
+                                       <span class="text-[11px] font-bold text-gray-800">{{ $cfg['label'] }}</span>
+                                       <span class="text-[10px] text-gray-400">{{ $cfg['desc'] }}</span>
+                                   </div>
+                               </label>
+                           @endforeach
+                       </div>
+                       <x-input-error :messages="$errors->get('urgency')" class="mt-2" />
+                   </div>
 
                     <h3 class="font-medium text-gray-900 pt-2">Foto Kerusakan (Opsional, max 5)</h3>
                     <div>
@@ -471,7 +527,7 @@
 
     const typeLabels = {
         cuci: 'Cuci',
-        cuci_setrika: 'Cuci + Setrika',
+        cuci_setrika: 'Cuci  Setrika',
         setrika: 'Setrika'
     };
 
@@ -483,7 +539,7 @@
     function updatePrice() {
         if (!priceInfo || !formType || !formDuration || !formPrice) return;
         const type = document.querySelector('input[name="laundry_type_display"]:checked')?.value;
-const duration = document.querySelector('input[name="laundry_duration_display"]:checked')?.value;
+        const duration = document.querySelector('input[name="laundry_duration_display"]:checked')?.value;
 
         if (!type || !duration) {
             priceInfo.classList.add('hidden');
@@ -564,8 +620,7 @@ const duration = document.querySelector('input[name="laundry_duration_display"]:
                     checked.dataset.label;
 
                 cleaningPriceDisplay.textContent =
-                    'Rp ' +
-                    Number(checked.dataset.price).toLocaleString('id-ID');
+                    'Rp ' + Number(checked.dataset.price).toLocaleString('id-ID');
             }
         } else {
             if (cleaningPriceInfo) {
@@ -591,40 +646,59 @@ const duration = document.querySelector('input[name="laundry_duration_display"]:
     updateCleaningSelection();
 
     // ==============================
-// AC selection
-// ==============================
+    // AC selection
+    // ==============================
 
-const acRadios = document.querySelectorAll('.ac-type-radio');
-const formAcType = document.getElementById('form-ac-type');
-const formAcPrice = document.getElementById('form-ac-price');
+    const acRadios = document.querySelectorAll('.ac-type-radio');
+    const formAcType = document.getElementById('form-ac-type');
+    const formAcPrice = document.getElementById('form-ac-price');
 
-const acPriceInfo = document.getElementById('ac-price-info');
-const acLabelDisplay = document.getElementById('selected-ac-label');
-const acPriceDisplay = document.getElementById('selected-ac-price');
+    const acPriceInfo = document.getElementById('ac-price-info');
+    const acLabelDisplay = document.getElementById('selected-ac-label');
+    const acPriceDisplay = document.getElementById('selected-ac-price');
 
-function updateAcSelection() {
-    const checked = document.querySelector('input[name="ac_type_display"]:checked');
+    function updateAcSelection() {
+        const checked = document.querySelector('input[name="ac_type_display"]:checked');
 
-    if (checked && formAcType && formAcPrice) {
-        formAcType.value = checked.value;
-        formAcPrice.value = checked.dataset.price;
+        if (checked && formAcType && formAcPrice) {
+            formAcType.value = checked.value;
+            formAcPrice.value = checked.dataset.price;
 
-        if (acPriceInfo && acLabelDisplay && acPriceDisplay) {
-            acPriceInfo.classList.remove('hidden');
-            acLabelDisplay.textContent = checked.dataset.label;
-            acPriceDisplay.textContent = 'Rp ' + Number(checked.dataset.price).toLocaleString('id-ID');
+            if (acPriceInfo && acLabelDisplay && acPriceDisplay) {
+                acPriceInfo.classList.remove('hidden');
+                acLabelDisplay.textContent = checked.dataset.label;
+                acPriceDisplay.textContent = 'Rp ' + Number(checked.dataset.price).toLocaleString('id-ID');
+            }
+        } else {
+            if (acPriceInfo) acPriceInfo.classList.add('hidden');
+            if (formAcType) formAcType.value = '';
+            if (formAcPrice) formAcPrice.value = '';
         }
-    } else {
-        if (acPriceInfo) acPriceInfo.classList.add('hidden');
-        if (formAcType) formAcType.value = '';
-        if (formAcPrice) formAcPrice.value = '';
     }
-}
 
-acRadios.forEach(r => {
-    r.addEventListener('change', updateAcSelection);
-});
+    acRadios.forEach(r => {
+        r.addEventListener('change', updateAcSelection);
+    });
 
-updateAcSelection();
+    updateAcSelection();
+    // ==============================
+    // Maintenance & Repair selection
+    // ==============================
+
+    const damageCategoryRadios = document.querySelectorAll('.damage-category-radio');
+    const formDamageCategory = document.getElementById('form-damage-category');
+    damageCategoryRadios.forEach(r => {
+        r.addEventListener('change', () => {
+            if (formDamageCategory) formDamageCategory.value = r.value;
+        });
+    });
+
+    const urgencyRadios = document.querySelectorAll('.urgency-radio');
+    const formUrgency = document.getElementById('form-urgency');
+    urgencyRadios.forEach(r => {
+        r.addEventListener('change', () => {
+            if (formUrgency) formUrgency.value = r.value;
+        });
+    });
 </script>
 @endpush

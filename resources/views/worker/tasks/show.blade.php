@@ -27,6 +27,7 @@
                         @if($serviceRequest->status === 'pending') bg-yellow-100 text-yellow-800
                         @elseif($serviceRequest->status === 'assigned') bg-blue-100 text-blue-800
                         @elseif($serviceRequest->status === 'in_progress') bg-purple-100 text-purple-800
+                        @elseif($serviceRequest->status === 'waiting_approval') bg-orange-100 text-orange-800
                         @elseif($serviceRequest->status === 'completed') bg-green-100 text-green-800
                         @elseif($serviceRequest->status === 'rejected') bg-red-100 text-red-800
                         @else bg-gray-100 text-gray-800 @endif">
@@ -146,8 +147,13 @@
                     <dl class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                         <div>
                             <dt class="text-gray-500">Kategori Kerusakan</dt>
-                            <dd class="font-medium">{{ $serviceRequest->maintenanceDetail->damage_category }}</dd>
+                            <dd class="font-medium">{{ \App\Models\RepairPricing::CATEGORIES[$serviceRequest->maintenanceDetail->damage_category] ?? 'Lainnya' }}</dd>
                         </div>
+                        <div>
+                            <dt class="text-gray-500">Tingkat Kerusakan</dt>
+                            <dd class="font-medium">{{ $serviceRequest->maintenanceDetail->severity ? $serviceRequest->maintenanceDetail->severityLabel() : '-' }}</dd>
+                        </div>
+
                         <div>
                             <dt class="text-gray-500">Lokasi</dt>
                             <dd class="font-medium">{{ $serviceRequest->maintenanceDetail->location ?? '-' }}</dd>
@@ -189,6 +195,77 @@
                 </div>
             @endif
 
+  <!-- Survey Form (MnR, sudah in_progress, belum survey) -->
+            @if ($serviceRequest->isMaintenance() && $serviceRequest->status === 'in_progress' && !$serviceRequest->survey_reported_at)
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
+                    <h3 class="font-semibold text-gray-900 mb-4">Laporkan Hasil Survey</h3>
+                    <p class="text-sm text-gray-600 mb-4">Cek kondisi kerusakan langsung di lokasi, lalu konfirmasi kategori & tingkat kerusakannya di bawah ini.</p>
+                    <form method="POST" action="{{ route('worker.tasks.survey', $serviceRequest) }}" class="space-y-4">
+                        @csrf
+                        <div>
+                            <x-input-label for="damage_category">
+                                {{ __('Kategori Kerusakan') }} <span class="text-red-500">*</span>
+                            </x-input-label>
+                            <select name="damage_category" id="damage_category" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-4 py-2 bg-white">
+                                <option value="">-- Pilih Kategori --</option>
+                                @foreach (\App\Models\RepairPricing::CATEGORIES as $value => $label)
+                                    <option value="{{ $value }}" {{ old('damage_category', $serviceRequest->maintenanceDetail->damage_category ?? '') === $value ? 'selected' : '' }}>{{ $label }}</option>
+                                @endforeach
+                                <option value="lainnya" {{ old('damage_category', $serviceRequest->maintenanceDetail->damage_category ?? '') === 'lainnya' ? 'selected' : '' }}>Lainnya</option>
+                            </select>
+                            <x-input-error :messages="$errors->get('damage_category')" class="mt-2" />
+                        </div>
+
+                        <div>
+                            <x-input-label for="severity">
+                                {{ __('Tingkat Kerusakan') }} <span class="text-red-500">*</span>
+                            </x-input-label>
+                            <select name="severity" id="severity" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-4 py-2 bg-white">
+                                <option value="">-- Pilih Tingkat --</option>
+                                @foreach (\App\Models\RepairPricing::SEVERITIES as $value => $label)
+                                    <option value="{{ $value }}" {{ old('severity') === $value ? 'selected' : '' }}>{{ $label }}</option>
+                                @endforeach
+                            </select>
+                            <x-input-error :messages="$errors->get('severity')" class="mt-2" />
+                        </div>
+
+                        <div>
+                            <x-input-label for="location" :value="__('Lokasi Kerusakan')" />
+                            <x-text-input id="location" name="location" :value="old('location', $serviceRequest->maintenanceDetail->location ?? '')" class="mt-1 block w-full" />
+                            <x-input-error :messages="$errors->get('location')" class="mt-2" />
+                        </div>
+
+                        <div>
+                            <x-input-label for="description" :value="__('Deskripsi Kerusakan (hasil pengecekan Anda)')" />
+                            <textarea name="description" id="description" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-4 py-2" placeholder="Jelaskan kondisi kerusakan yang Anda temukan">{{ old('description', $serviceRequest->maintenanceDetail->description ?? '') }}</textarea>
+                            <x-input-error :messages="$errors->get('description')" class="mt-2" />
+                        </div>
+
+                        <div>
+                            <x-input-label for="survey_notes" :value="__('Catatan Tambahan (Opsional)')" />
+                            <textarea name="survey_notes" id="survey_notes" rows="2" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-4 py-2" placeholder="Contoh: akses ke lokasi terbatas, perlu alat khusus, dsb.">{{ old('survey_notes') }}</textarea>
+                            <x-input-error :messages="$errors->get('survey_notes')" class="mt-2" />
+                        </div>
+
+                        <x-primary-button type="submit" class="w-full">
+                            Kirim Hasil Survey
+                        </x-primary-button>
+                    </form>
+                </div>
+            @elseif ($serviceRequest->isMaintenance() && $serviceRequest->survey_reported_at && !$serviceRequest->price_approved_at)
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
+                    <h3 class="font-semibold text-gray-900 mb-2">Menunggu Admin & Guest</h3>
+                    <p class="text-sm text-gray-600">
+                        Survey sudah dikirim ({{ $serviceRequest->survey_reported_at->format('d M Y H:i') }}).
+                        @if ($serviceRequest->total_price)
+                            Harga sudah ditetapkan admin (Rp{{ number_format($serviceRequest->total_price, 0, ',', '.') }}), menunggu persetujuan guest.
+                        @else
+                            Menunggu admin menetapkan harga.
+                        @endif
+                    </p>
+                </div>
+            @endif
+
             <!-- ACC Button (for assigned status) -->
             @if ($serviceRequest->status === 'assigned')
                 <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
@@ -222,11 +299,19 @@
             @endif
 
             <!-- Complete Form (for in_progress status) -->
-            @if ($serviceRequest->status === 'in_progress')
+            @if ($serviceRequest->status === 'in_progress' && (!$serviceRequest->isMaintenance() || $serviceRequest->price_approved_at))
                 <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
                     <h3 class="font-semibold text-gray-900 mb-4">Tandai Selesai</h3>
                     <form method="POST" action="{{ route('worker.tasks.complete', $serviceRequest) }}" enctype="multipart/form-data" class="space-y-4">
                         @csrf
+
+                         @if($serviceRequest->isMaintenance() && $serviceRequest->total_price)
+                            <div class="bg-green-50 rounded-lg p-3 mb-4">
+                                <p class="font-medium text-green-900">
+                                    Harga Disetujui: Rp{{ number_format($serviceRequest->total_price, 0, ',', '.') }}
+                                </p>
+                            </div>
+                        @endif
 
                         @if($serviceRequest->isLaundry() && $serviceRequest->billable_weight && $serviceRequest->total_price)
                             <div class="bg-green-50 rounded-lg p-3 mb-4">
@@ -278,7 +363,7 @@
                 <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
                     <h3 class="font-semibold text-gray-900 mb-4">Feedback dari Guest</h3>
                     <div class="flex items-center gap-2 mb-2">
-                        @for ($i = 1; $i <= 5; $i++)
+                        @for ($i = 1; $i <= 5; $i)
                             <svg class="w-6 h-6 @if($i <= $serviceRequest->feedback->rating) text-yellow-400 @else text-gray-300 @endif" fill="currentColor" viewBox="0 0 20 20">
                                 <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
                             </svg>

@@ -64,6 +64,7 @@
                     'shop'       => '<path d="M4 7h12l-1 9.5a1 1 0 0 1-1 .9H6a1 1 0 0 1-1-.9L4 7Z" /><path d="M7 7V5.5a3 3 0 0 1 6 0V7" />',
                     'gift'       => '<path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />',
                     'coin'       => '<circle cx="12" cy="12" r="10" /><path d="M12 6v12M6 12h12" />',
+                    'wrench'     => '<path d="M14.5 3.5a3.5 3.5 0 0 0-4.6 4.3L4 13.7V16h2.3l5.9-5.9a3.5 3.5 0 0 0 4.3-4.6l-2.3 2.3-1.4-1.4 2.3-2.3Z" />',
                 ];
 
                 $navGroups = $role === 'admin' ? [
@@ -79,6 +80,7 @@
                         ['route' => 'admin.laundry-pricings.index', 'label' => 'Laundry', 'icon' => 'tag'],
                         ['route' => 'admin.cleaning-pricings.index', 'label' => 'Cleaning', 'icon' => 'sparkles'],
                         ['route' => 'admin.ac-pricings.index', 'label' => 'AC', 'icon' => 'cloud'],
+                        ['route' => 'admin.repair-pricings.index', 'label' => 'Repair', 'icon' => 'wrench'],
                     ],
                     'Penukaran Koin' => [
                         ['route' => 'admin.coin-redemption-products.index', 'label' => 'Produk Tukar Koin', 'icon' => 'gift'],
