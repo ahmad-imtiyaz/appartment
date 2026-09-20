@@ -260,13 +260,7 @@
     {{-- Hero --}}
     <header class="au-hero">
 
-        {{-- Pilihan bahasa (route lang.switch berada di luar middleware auth) --}}
-        <div class="au-lang">
-            <div class="au-lang-group">
-                <a href="{{ route('lang.switch', 'id') }}" class="{{ app()->getLocale() === 'id' ? 'is-active' : '' }}">ID</a>
-                <a href="{{ route('lang.switch', 'en') }}" class="{{ app()->getLocale() === 'en' ? 'is-active' : '' }}">EN</a>
-            </div>
-        </div>
+
 
         <div class="au-brand">
             <span class="au-logo">
