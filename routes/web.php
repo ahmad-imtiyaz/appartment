@@ -98,7 +98,12 @@ Route::middleware(['auth', 'role:guest'])
         */
 
         Route::get('/home', function () {
-            return view('guest.home');
+            $listings = \App\Models\ProductListing::where('is_active', true)
+                ->latest()
+                ->take(3)
+                ->get();
+
+            return view('guest.home', compact('listings'));
         })->name('home');
 
         /*

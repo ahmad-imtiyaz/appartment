@@ -11,11 +11,17 @@ Sistem manajemen layanan apartemen dengan 3 role: **admin**, **pekerja** (worker
 
 | Model | Table | Key Fields | Purpose |
 |-------|-------|------------|---------|
-| **User** | `users` | `role` (admin/pekerja/guest), `balance`, `coin_balance`, `apartment_unit_number`, `phone` | Semua user (3 role) |
+| **User** | `users` | `role` (admin/pekerja/guest), `status` (penyewa/pemilik/agent), `daerah`, `apartment_location_id`, `apartment_tower_id`, `balance`, `coin_balance`, `apartment_unit_number`, `phone` | Semua user (3 role) + profil apartemen |
 | **Service** | `services` | `slug` (laundry/cleaning/ac/maintenance-repair), `base_price`, `is_active` | Master jenis jasa |
 | **ServiceRequest** | `service_requests` | `user_id`, `service_id`, `worker_id`, `assigned_by`, `status`, `cost`, `total_price`, service-specific fields | Transaksi utama |
 | **TopupRequest** | `topup_requests` | `user_id`, `payment_method_id`, `amount`, `status` (pending/approved/rejected) | Request isi saldo |
 | **PaymentMethod** | `payment_methods` | `type` (bank_transfer/qris), `bank_name`, `qr_image` | Metode pembayaran topup |
+
+### Apartment Location Models (NEW)
+| Model | Table | Key Fields | Purpose |
+|-------|-------|------------|---------|
+| **ApartmentLocation** | `apartment_locations` | `name`, `is_active` | Master lokasi apartemen (dikelola admin) |
+| **ApartmentTower** | `apartment_towers` | `apartment_location_id`, `name`, `is_active` | Tower di dalam lokasi (cascading dropdown) |
 
 ### Pricing Models (Admin-managed)
 | Model | Table | Key Fields |
@@ -43,9 +49,9 @@ Sistem manajemen layanan apartemen dengan 3 role: **admin**, **pekerja** (worker
 ## User Roles & Access Control
 
 ### Middleware: `EnsureUserHasRole` (`role:admin,pekerja,guest`)
-- **admin**: Full CRUD pricing, assign pekerja, approve/reject topup & harga MnR, manage workers
+- **admin**: Full CRUD pricing, assign pekerja, approve/reject topup & harga MnR, manage workers, **kelola lokasi unit & tower**
 - **pekerja**: Terima tugas, input survey/berat, complete tugas, upload foto after
-- **guest**: Request jasa, topup saldo, lihat riwayat, feedback, redeem koin, marketplace
+- **guest**: Request jasa, topup saldo, lihat riwayat, feedback, redeem koin, marketplace, **edit profil lengkap (status, daerah, lokasi, tower)**
 
 ### Role Helpers (User model)
 ```php
@@ -53,6 +59,15 @@ $user->isAdmin()    // role === 'admin'
 $user->isPekerja()  // role === 'pekerja'
 $user->isGuest()    // role === 'guest'
 ```
+
+### Apartment Profile Fields (User)
+| Field | Type | Description |
+|-------|------|-------------|
+| `status` | string | `penyewa` \| `pemilik` \| `agent` (required) |
+| `daerah` | string | Saat ini hanya `Jakarta` (required) |
+| `apartment_location_id` | FK | Lokasi unit (required, relasi ke apartment_locations) |
+| `apartment_tower_id` | FK | Tower (required, relasi ke apartment_towers, must match location) |
+| `apartment_unit_number` | string | Nomor unit, optional |
 
 ---
 
@@ -155,8 +170,8 @@ awardForServiceRequest(ServiceRequest $sr, User $guest, float $amountSpent): ?Co
 | `GET /topups/create` | @create | Form topup |
 | `POST /topups` | @store | Submit topup |
 | `GET /balance` | @balance | Riwayat mutasi saldo + koin |
-| `GET /profile` | GuestProfileController@edit | Edit profil |
-| `PATCH /profile` | @update | Update profil |
+| `GET /profile` | GuestProfileController@edit | **Edit profil lengkap (status, daerah, lokasi, tower, unit)** |
+| `PATCH /profile` | @update | **Update profil lengkap** |
 | `DELETE /profile` | @destroy | Hapus akun |
 | `GET /coin-redemptions` | GuestCoinRedemptionController@index | List produk & riwayat redeem |
 | `POST /coin-redemptions` | @store | Request redeem |
@@ -180,6 +195,11 @@ awardForServiceRequest(ServiceRequest $sr, User $guest, float $amountSpent): ?Co
 | `resource cleaning-pricings` | CleaningPricingController | CRUD pricing cleaning |
 | `resource ac-pricings` | AcPricingController | CRUD pricing AC |
 | `CRUD repair-pricings` | RepairPricingController | CRUD pricing MnR (with toggle) |
+| `GET /apartment-locations` | ApartmentLocationController@index | **List lokasi & tower** |
+| `POST /apartment-locations` | @storeLocation | **Tambah lokasi unit** |
+| `DELETE /apartment-locations/{apartmentLocation}` | @destroyLocation | **Hapus lokasi (jika tidak ada user)** |
+| `POST /apartment-locations/{apartmentLocation}/towers` | @storeTower | **Tambah tower ke lokasi** |
+| `DELETE /apartment-towers/{apartmentTower}` | @destroyTower | **Hapus tower (jika tidak ada user)** |
 | `CRUD product-listings` | ProductListingController | CRUD marketplace |
 | `resource coin-settings` | CoinSettingController | CRUD tier reward koin |
 | `CRUD coin-redemption-products` | CoinRedemptionProductController | CRUD produk tukar koin |
@@ -230,19 +250,27 @@ awardForServiceRequest(ServiceRequest $sr, User $guest, float $amountSpent): ?Co
 - `app/Http/Controllers/Worker/TaskController.php` — Accept, survey, weigh, complete (payment + coin reward)
 - `app/Http/Controllers/Admin/TopupController.php` — Approve/reject topup (saldo mutation)
 - `app/Http/Controllers/Guest/TopupController.php` — Guest topup + balance history
+- `app/Http/Controllers/Auth/RegisteredUserController.php` — **Register dengan cascading dropdown lokasi/tower**
+- `app/Http/Controllers/Guest/ProfileController.php` — **Profil guest lengkap dengan cascading dropdown**
+- `app/Http/Controllers/Admin/ApartmentLocationController.php` — **CRUD lokasi unit & tower (admin)**
 
 ### Services
 - `app/Services/RepairPaymentService.php` — Atomic charge untuk MnR
 - `app/Services/CoinRewardService.php` — Reward koin berdasarkan tier
 
 ### Models (Relations & Helpers)
-- `app/Models/User.php` — Role helpers, all relationships
+- `app/Models/User.php` — Role helpers, all relationships, **apartment location/tower relations**
 - `app/Models/ServiceRequest.php` — Status helpers, service type checks, calculateTotalPrice
 - `app/Models/RepairPricing.php` — Categories & severities constants, scopeByCategoryAndSeverity
 - `app/Models/CoinSetting.php` — Tier reward logic
+- `app/Models/ApartmentLocation.php` — **Master lokasi, relasi ke towers & users**
+- `app/Models/ApartmentTower.php` — **Tower, relasi ke location & users**
 
 ### Middleware
 - `app/Http/Middleware/EnsureUserHasRole.php` — Role-based access
+
+### Requests
+- `app/Http/Requests/ProfileUpdateRequest.php` — **Validasi profil dengan rule tower harus match location**
 
 ---
 
@@ -251,9 +279,10 @@ awardForServiceRequest(ServiceRequest $sr, User $guest, float $amountSpent): ?Co
 ```
 resources/views/
 ├── layouts/
-│   ├── app.blade.php       # Main layout (authenticated)
-│   ├── guest.blade.php     # Guest layout
-│   └── navigation.blade.php
+│   ├── app.blade.php            # Main layout (authenticated)
+│   ├── guest.blade.php          # Guest layout
+│   ├── navigation.blade.php
+│   └── oregonet-auth.blade.php  # **Auth layout (login/register)**
 ├── admin/
 │   ├── dashboard.blade.php
 │   ├── service-requests/{index,show}.blade.php
@@ -263,11 +292,12 @@ resources/views/
 │   ├── product-listings/index.blade.php
 │   ├── coin-settings/{index,create,edit}.blade.php
 │   ├── coin-redemptions/{index,show}.blade.php
-│   └── coin-redemption-products/{index,create,edit}.blade.php
+│   ├── coin-redemption-products/{index,create,edit}.blade.php
+│   └── apartment-locations/index.blade.php  # **Kelola lokasi & tower**
 ├── guest/
 │   ├── home.blade.php
 │   ├── balance.blade.php
-│   ├── profile.blade.php
+│   ├── profile.blade.php        # **Profil lengkap dengan cascading dropdown**
 │   ├── topups/{index,create}.blade.php
 │   ├── service-requests/{index,create,show,category,service-detail}.blade.php
 │   ├── coin-redemptions/index.blade.php
@@ -276,7 +306,9 @@ resources/views/
 │   └── tasks/{index,show}.blade.php
 ├── profile/
 │   └── partials/{update-profile-information-form,update-password-form,delete-user-form}.blade.php
-└── auth/ (standard Breeze)
+└── auth/
+    ├── login.blade.php          # **Custom login (oregonet-auth layout)**
+    └── register.blade.php       # **Custom register dengan cascading dropdown**
 ```
 
 ---
@@ -306,6 +338,9 @@ resources/views/
 6. **Soft Deletes**: User model uses SoftDeletes — queries may need `withTrashed()` sometimes
 7. **File Storage**: Photos stored in `storage/app/public/` — run `php artisan storage:link`
 8. **Decimal Casting**: Prices cast to `decimal:2` in models
+9. **Cascading Dropdown**: Register & profile use JS to populate tower based on selected location — tower must belong to selected location (validated in RegisteredUserController & ProfileUpdateRequest)
+10. **Apartment Fields Required**: Guest registration now requires status, daerah, apartment_location_id, apartment_tower_id
+11. **Admin Location Delete Protection**: Cannot delete location/tower if users are still assigned to them
 
 ---
 
@@ -321,4 +356,4 @@ resources/views/
 
 ---
 
-*Generated from codebase analysis on 2026-09-19*
+*Generated from codebase analysis on 2026-09-19; updated 2026-09-22 with apartment location/tower system, cascading dropdowns, and updated auth views*

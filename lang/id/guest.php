@@ -11,7 +11,7 @@ return [
     'nav' => [
         'home'        => 'Beranda',
         'services'    => 'Jasa',
-        'marketplace' => 'Jual Beli',
+        'marketplace' => 'Properti',
         'profile'     => 'Profil',
     ],
 
@@ -64,6 +64,9 @@ return [
         'request_service'    => 'Ajukan Jasa',
         'promo_small'        => 'Lebih dari Sekadar Layanan,',
         'promo_headline'     => 'Kami Peduli Kenyamanan Anda',
+        'marketplace_title'    => 'Jual & Beli',
+        'marketplace_subtitle' => 'Info properti & barang dari penghuni lain',
+        'see_all'               => 'Lihat Semua',
 
         'how_title'          => 'Cara Kerja',
         'step1_title'        => 'Pilih Layanan',

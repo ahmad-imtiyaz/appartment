@@ -100,7 +100,7 @@
         background:#F3F4F6;
         color:#9CA3AF;
         display:flex;align-items:center;justify-content:center;
-        transition:background .18s ease,color .18s ease;
+        transition:background .15s ease, transform .15s ease;
     }
     .hm-svc:hover .hm-svc-arrow{background:var(--ink-c);color:#fff;}
     .hm-svc-arrow svg{width:13px;height:13px;}
@@ -154,6 +154,187 @@
     .hm-cta-btn:hover{box-shadow:0 8px 18px -6px rgba(255,255,255,.35);}
     .hm-cta-btn:active{transform:scale(.97);}
     .hm-cta-btn svg{width:16px;height:16px;}
+
+/* ============ MARKETPLACE SLIDER ============ */
+
+.hm-slider{
+    display:flex;
+    gap:12px;
+    margin-top:14px;
+    overflow-x:auto;
+    scroll-snap-type:x mandatory;
+    -webkit-overflow-scrolling:touch;
+    padding:2px 2px 6px;
+}
+
+.hm-slider::-webkit-scrollbar{
+    display:none;
+}
+
+.hm-slide{
+    position:relative;
+    scroll-snap-align:start;
+    flex:0 0 68%;
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:20px;
+    overflow:hidden;
+    text-decoration:none;
+    box-shadow:0 2px 6px rgba(17,24,39,.05);
+    transition:
+        transform .18s ease,
+        box-shadow .18s ease,
+        border-color .18s ease;
+    -webkit-tap-highlight-color:transparent;
+}
+
+.hm-slide:hover{
+    transform:translateY(-2px);
+    border-color:#E5E7EB;
+    box-shadow:0 12px 24px -14px rgba(17,24,39,.25);
+}
+
+.hm-slide:active{
+    transform:scale(.98);
+}
+
+/* Gambar */
+
+.hm-slide-img-wrap{
+    position:relative;
+    width:100%;
+    aspect-ratio:4/3;
+    background:#F3F4F6;
+    overflow:hidden;
+}
+
+.hm-slide-img-wrap img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    display:block;
+    transition:transform .3s ease;
+}
+
+.hm-slide:hover .hm-slide-img-wrap img{
+    transform:scale(1.03);
+}
+
+/* Badge kategori */
+
+.hm-slide-category{
+    position:absolute;
+    left:10px;
+    bottom:10px;
+    display:inline-flex;
+    align-items:center;
+    max-width:calc(100% - 20px);
+    padding:5px 9px;
+    border-radius:999px;
+    background:rgba(17,24,39,.78);
+    color:#fff;
+    font-size:9.5px;
+    font-weight:700;
+    line-height:1;
+    backdrop-filter:blur(6px);
+    -webkit-backdrop-filter:blur(6px);
+}
+
+/* Body */
+
+.hm-slide-body{
+    padding:12px 13px 13px;
+}
+
+/* Judul */
+
+.hm-slide-title{
+    font-size:13px;
+    font-weight:800;
+    color:var(--ink);
+    line-height:1.35;
+    display:-webkit-box;
+    -webkit-line-clamp:2;
+    -webkit-box-orient:vertical;
+    overflow:hidden;
+}
+
+/* Deskripsi */
+
+.hm-slide-desc{
+    margin-top:5px;
+    font-size:10.5px;
+    color:var(--muted);
+    line-height:1.45;
+    display:-webkit-box;
+    -webkit-line-clamp:2;
+    -webkit-box-orient:vertical;
+    overflow:hidden;
+}
+
+/* Bagian bawah */
+
+.hm-slide-footer{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    margin-top:11px;
+    padding-top:10px;
+    border-top:1px solid #F3F4F6;
+}
+
+/* Harga */
+
+.hm-slide-price{
+    margin:0;
+    font-size:13px;
+    font-weight:800;
+    color:var(--red);
+    line-height:1.2;
+}
+
+/* Kalau tidak ada harga */
+
+.hm-slide-price-muted{
+    font-size:10px;
+    font-weight:600;
+    color:#9CA3AF;
+}
+
+/* WhatsApp */
+
+.hm-slide-wa{
+    flex-shrink:0;
+    width:30px;
+    height:30px;
+    border-radius:50%;
+    background:#22C55E;
+    color:#fff;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-decoration:none;
+    box-shadow:0 4px 10px -4px rgba(34,197,94,.55);
+    transition:
+        background .15s ease,
+        transform .15s ease,
+        box-shadow .15s ease;
+}
+
+.hm-slide-wa:hover{
+    background:#16A34A;
+    box-shadow:0 6px 14px -5px rgba(34,197,94,.65);
+}
+
+.hm-slide-wa:active{
+    transform:scale(.92);
+}
+
+.hm-slide-wa svg{
+    width:15px;
+    height:15px;
+}
 
     /* ============ STEPS ============ */
     .hm-steps{
@@ -326,25 +507,131 @@
         </section>
 
 
-        {{-- CTA --}}
-        <section class="hm-section hm-rise" style="animation-delay:.12s">
+        {{-- Jual/Beli Slider --}}
+@if ($listings->isNotEmpty())
+    <section class="hm-section hm-rise" style="animation-delay:.12s">
 
-            <div class="hm-cta">
+        <div class="flex items-center justify-between">
+            <div>
+                <h3 class="hm-heading">{{ __('guest.home.marketplace_title') }}</h3>
+                <p class="hm-sub">{{ __('guest.home.marketplace_subtitle') }}</p>
+            </div>
+            <a href="{{ route('product-listings.index') }}" class="text-xs font-semibold text-red-600">
+                {{ __('guest.home.see_all') }}
+            </a>
+        </div>
 
-                <p class="hm-cta-small">{{ __('guest.home.promo_small') }}</p>
+       <div class="hm-slider">
+    @foreach ($listings as $listing)
 
-                <p class="hm-cta-title">{{ __('guest.home.promo_headline') }}</p>
+    <a href="{{ route('product-listings.index') }}" class="hm-slide">
 
-                <a href="{{ route('guest.service-requests.create') }}" class="hm-cta-btn">
-                    {{ __('guest.home.request_service') }}
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+        {{-- Gambar --}}
+        <div class="hm-slide-img-wrap">
+
+            @if ($listing->image)
+
+                <img
+                    src="{{ Storage::url($listing->image) }}"
+                    alt="{{ $listing->title }}"
+                    loading="lazy"
+                >
+
+            @else
+
+                <div class="w-full h-full flex items-center justify-center">
+
+                    <svg
+                        class="w-10 h-10 text-gray-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        stroke-width="1.5"
+                    >
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                        />
                     </svg>
-                </a>
+
+                </div>
+
+            @endif
+
+            {{-- Kategori --}}
+            @if ($listing->category)
+                <span class="hm-slide-category">
+                    {{ $listing->category }}
+                </span>
+            @endif
+
+        </div>
+
+        {{-- Isi Card --}}
+        <div class="hm-slide-body">
+
+            {{-- Judul --}}
+            <p class="hm-slide-title">
+                {{ $listing->title }}
+            </p>
+
+            {{-- Deskripsi --}}
+            @if ($listing->description)
+                <p class="hm-slide-desc">
+                    {{ $listing->description }}
+                </p>
+            @endif
+
+            {{-- Footer --}}
+            <div class="hm-slide-footer">
+
+                {{-- Harga --}}
+                <div>
+                    @if ($listing->price)
+                        <p class="hm-slide-price">
+                            Rp{{ number_format($listing->price, 0, ',', '.') }}
+                        </p>
+                    @else
+                        <span class="hm-slide-price-muted">
+                            Hubungi penjual
+                        </span>
+                    @endif
+                </div>
+
+                {{-- WhatsApp --}}
+                @if ($listing->whatsapp_url)
+
+                    <span
+                        class="hm-slide-wa"
+                        role="button"
+                        tabindex="0"
+                        aria-label="Chat WhatsApp tentang {{ $listing->title }}"
+                        onclick="event.preventDefault(); event.stopPropagation(); window.open('{{ $listing->whatsapp_url }}', '_blank');"
+                        onkeydown="if(event.key === 'Enter' || event.key === ' ') { event.preventDefault(); event.stopPropagation(); window.open('{{ $listing->whatsapp_url }}', '_blank'); }"
+                    >
+                        <svg
+                            viewBox="0 0 24 24"
+                            fill="currentColor"
+                            aria-hidden="true"
+                        >
+                            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.149.198-.298.198-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                        </svg>
+                    </span>
+
+                @endif
 
             </div>
 
-        </section>
+        </div>
+
+    </a>
+
+@endforeach
+</div>
+
+    </section>
+@endif
 
 
         {{-- Cara Kerja --}}
