@@ -50,7 +50,7 @@ return [
     */
 
     'home' => [
-       'our_services'       => 'Our Services',
+        'our_services'       => 'Our Services',
         'services_subtitle'  => 'Choose the service that fits your home',
         'laundry'            => 'Laundry',
         'cleaning'           => 'Cleaning',
@@ -64,6 +64,10 @@ return [
         'request_service'    => 'Request a Service',
         'promo_small'        => 'More Than Just Services,',
         'promo_headline'     => 'We Care About Your Comfort',
+
+        'marketplace_title'    => 'Buy & Sell',
+        'marketplace_subtitle' => 'Property & items from other residents',
+        'see_all'              => 'View All',
 
         'how_title'          => 'How It Works',
         'step1_title'        => 'Choose a Service',
