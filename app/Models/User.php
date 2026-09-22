@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -17,7 +18,11 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'role',                 // admin | pekerja | guest
+        'role',
+        'status',                  // penyewa | pemilik | agent
+        'daerah',
+        'apartment_location_id',
+        'apartment_tower_id',
         'phone',
         'apartment_unit_number',
         'balance',
@@ -39,6 +44,7 @@ class User extends Authenticatable
     }
 
     // ==== Helper role check ====
+
     public function isAdmin(): bool
     {
         return $this->role === 'admin';
@@ -52,6 +58,18 @@ class User extends Authenticatable
     public function isGuest(): bool
     {
         return $this->role === 'guest';
+    }
+
+    // ==== Relasi Apartemen ====
+
+    public function apartmentLocation(): BelongsTo
+    {
+        return $this->belongsTo(ApartmentLocation::class);
+    }
+
+    public function apartmentTower(): BelongsTo
+    {
+        return $this->belongsTo(ApartmentTower::class);
     }
 
     // ==== Relasi sebagai GUEST (penyewa apartemen) ====
@@ -116,7 +134,7 @@ class User extends Authenticatable
         return $this->hasMany(CoinRedemption::class, 'user_id');
     }
 
-    // relasi coin
+    // ==== Relasi Coin ====
 
     public function coinMutations(): HasMany
     {

@@ -26,6 +26,16 @@ class ProfileUpdateRequest extends FormRequest
                 'max:255',
                 Rule::unique(User::class)->ignore($this->user()->id),
             ],
+            'phone' => ['nullable', 'string', 'max:30'],
+            'apartment_unit_number' => ['nullable', 'string', 'max:50'],
+            'status' => ['required', Rule::in(['penyewa', 'pemilik', 'agent'])],
+            'daerah' => ['required', Rule::in(['Jakarta'])],
+            'apartment_location_id' => ['required', 'exists:apartment_locations,id'],
+            'apartment_tower_id' => [
+                'required',
+                Rule::exists('apartment_towers', 'id')
+                    ->where(fn ($q) => $q->where('apartment_location_id', $this->apartment_location_id)),
+            ],
         ];
     }
 }

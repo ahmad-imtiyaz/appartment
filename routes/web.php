@@ -369,6 +369,27 @@ Route::middleware(['auth', 'role:admin'])
             ->name('ac-pricings.update');
 
         /*
+|--------------------------------------------------------------------------
+| Apartment Locations & Towers
+|--------------------------------------------------------------------------
+*/
+
+        Route::get('/apartment-locations', [\App\Http\Controllers\Admin\ApartmentLocationController::class, 'index'])
+            ->name('apartment-locations.index');
+
+        Route::post('/apartment-locations', [\App\Http\Controllers\Admin\ApartmentLocationController::class, 'storeLocation'])
+            ->name('apartment-locations.store');
+
+        Route::delete('/apartment-locations/{apartmentLocation}', [\App\Http\Controllers\Admin\ApartmentLocationController::class, 'destroyLocation'])
+            ->name('apartment-locations.destroy');
+
+        Route::post('/apartment-locations/{apartmentLocation}/towers', [\App\Http\Controllers\Admin\ApartmentLocationController::class, 'storeTower'])
+            ->name('apartment-locations.towers.store');
+
+        Route::delete('/apartment-towers/{apartmentTower}', [\App\Http\Controllers\Admin\ApartmentLocationController::class, 'destroyTower'])
+            ->name('apartment-towers.destroy');
+
+        /*
         |--------------------------------------------------------------------------
         | Product Listings
         |--------------------------------------------------------------------------

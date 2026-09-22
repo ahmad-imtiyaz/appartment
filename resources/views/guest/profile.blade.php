@@ -335,6 +335,80 @@
 
             </div>
 
+            {{-- Phone --}}
+<div>
+    <label for="phone" class="profile-label">{{ __('guest.profile.phone') }}</label>
+    <input id="phone" name="phone" type="tel" value="{{ old('phone', $user->phone) }}"
+           class="profile-input" placeholder="{{ __('guest.profile.phone_placeholder') }}">
+    @error('phone')
+        <p class="error-text">{{ $message }}</p>
+    @enderror
+</div>
+
+{{-- Unit Number (Optional) --}}
+<div>
+    <label for="apartment_unit_number" class="profile-label">
+        {{ __('guest.profile.unit_number') }} <span class="text-gray-400 font-normal">({{ __('Optional') }})</span>
+    </label>
+    <input id="apartment_unit_number" name="apartment_unit_number" type="text"
+           value="{{ old('apartment_unit_number', $user->apartment_unit_number) }}"
+           class="profile-input" placeholder="e.g., A-1203">
+    @error('apartment_unit_number')
+        <p class="error-text">{{ $message }}</p>
+    @enderror
+</div>
+
+{{-- Status --}}
+<div>
+    <label for="status" class="profile-label">{{ __('guest.profile.status') }}</label>
+    <select id="status" name="status" class="profile-input">
+        <option value="penyewa" @selected(old('status', $user->status) === 'penyewa')>Penyewa</option>
+        <option value="pemilik" @selected(old('status', $user->status) === 'pemilik')>Pemilik</option>
+        <option value="agent" @selected(old('status', $user->status) === 'agent')>Agent</option>
+    </select>
+    @error('status')
+        <p class="error-text">{{ $message }}</p>
+    @enderror
+</div>
+
+{{-- Daerah --}}
+<div>
+    <label for="daerah" class="profile-label">{{ __('guest.profile.daerah') }}</label>
+    <select id="daerah" name="daerah" class="profile-input">
+        <option value="Jakarta" @selected(old('daerah', $user->daerah) === 'Jakarta')>Jakarta</option>
+    </select>
+    @error('daerah')
+        <p class="error-text">{{ $message }}</p>
+    @enderror
+</div>
+
+{{-- Lokasi Unit --}}
+<div>
+    <label for="apartment_location_id" class="profile-label">{{ __('guest.profile.location') }}</label>
+    <select id="apartment_location_id" name="apartment_location_id" class="profile-input">
+        @foreach ($locations as $location)
+            <option value="{{ $location->id }}"
+                @selected((string) old('apartment_location_id', $user->apartment_location_id) === (string) $location->id)>
+                {{ $location->name }}
+            </option>
+        @endforeach
+    </select>
+    @error('apartment_location_id')
+        <p class="error-text">{{ $message }}</p>
+    @enderror
+</div>
+
+{{-- Tower --}}
+<div>
+    <label for="apartment_tower_id" class="profile-label">{{ __('guest.profile.tower') }}</label>
+    <select id="apartment_tower_id" name="apartment_tower_id" class="profile-input">
+        <option value="">{{ __('Pilih lokasi unit dahulu') }}</option>
+    </select>
+    @error('apartment_tower_id')
+        <p class="error-text">{{ $message }}</p>
+    @enderror
+</div>
+
 
             {{-- Tombol Simpan --}}
             <button type="submit"
@@ -497,5 +571,64 @@
     </form>
 
 </div>
+
+@php
+    $towersByLocation = $locations->mapWithKeys(function ($loc) {
+        return [
+            $loc->id => $loc->towers->map(function ($t) {
+                return [
+                    'id' => $t->id,
+                    'name' => $t->name,
+                ];
+            }),
+        ];
+    });
+
+    $currentTowerId = old(
+        'apartment_tower_id',
+        $user->apartment_tower_id
+    );
+@endphp
+
+<script>
+    const towersByLocation = @json($towersByLocation);
+    const currentTowerId = @json($currentTowerId);
+
+    const locationSelect = document.getElementById('apartment_location_id');
+    const towerSelect = document.getElementById('apartment_tower_id');
+
+    function renderTowers(locationId) {
+        towerSelect.innerHTML = '';
+
+        const towers = towersByLocation[locationId] ?? [];
+
+        if (towers.length === 0) {
+            towerSelect.innerHTML =
+                '<option value="">Pilih lokasi unit dahulu</option>';
+            return;
+        }
+
+        towers.forEach((tower) => {
+            const opt = document.createElement('option');
+
+            opt.value = tower.id;
+            opt.textContent = tower.name;
+
+            if (String(tower.id) === String(currentTowerId)) {
+                opt.selected = true;
+            }
+
+            towerSelect.appendChild(opt);
+        });
+    }
+
+    locationSelect.addEventListener('change', (e) => {
+        renderTowers(e.target.value);
+    });
+
+    if (locationSelect.value) {
+        renderTowers(locationSelect.value);
+    }
+</script>
 
 @endsection

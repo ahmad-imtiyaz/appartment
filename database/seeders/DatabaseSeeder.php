@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
             AcPricingSeeder::class,
             CoinSettingSeeder::class,
             CoinRedemptionProductSeeder::class,
+            ApartmentLocationSeeder::class,
         ]);
     }
 }
