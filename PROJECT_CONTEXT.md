@@ -13,11 +13,11 @@ Sistem manajemen layanan apartemen dengan 3 role: **admin**, **pekerja** (worker
 |-------|-------|------------|---------|
 | **User** | `users` | `role` (admin/pekerja/guest), `status` (penyewa/pemilik/agent), `daerah`, `apartment_location_id`, `apartment_tower_id`, `balance`, `coin_balance`, `apartment_unit_number`, `phone` | Semua user (3 role) + profil apartemen |
 | **Service** | `services` | `slug` (laundry/cleaning/ac/maintenance-repair), `base_price`, `is_active` | Master jenis jasa |
-| **ServiceRequest** | `service_requests` | `user_id`, `service_id`, `worker_id`, `assigned_by`, `status`, `cost`, `total_price`, service-specific fields | Transaksi utama |
+| **ServiceRequest** | `service_requests` | `user_id`, `service_id`, `worker_id`, `assigned_by`, `status`, `cost`, `total_price`, `daerah`, `apartment_location_id`, `apartment_tower_id`, service-specific fields | Transaksi utama + lokasi layanan |
 | **TopupRequest** | `topup_requests` | `user_id`, `payment_method_id`, `amount`, `status` (pending/approved/rejected) | Request isi saldo |
 | **PaymentMethod** | `payment_methods` | `type` (bank_transfer/qris), `bank_name`, `qr_image` | Metode pembayaran topup |
 
-### Apartment Location Models (NEW)
+### Apartment Location Models
 | Model | Table | Key Fields | Purpose |
 |-------|-------|------------|---------|
 | **ApartmentLocation** | `apartment_locations` | `name`, `is_active` | Master lokasi apartemen (dikelola admin) |
@@ -75,8 +75,8 @@ $user->isGuest()    // role === 'guest'
 
 ```
 pending → assigned → in_progress → [waiting_approval (MnR only)] → completed
-                    ↓
-                  rejected
+              ↓              ↓
+            rejected    waiting_payment (Laundry only) → in_progress → completed
 ```
 
 | Status | Meaning | Who Can Act |
@@ -85,6 +85,7 @@ pending → assigned → in_progress → [waiting_approval (MnR only)] → compl
 | `assigned` | Sudah di-assign ke pekerja, menunggu ACC | Pekerja accept |
 | `in_progress` | Pekerja sudah ACC, sedang dikerjakan | Pekerja: survey/weigh/complete |
 | `waiting_approval` | **MnR only** - Harga final dikirim admin, menunggu guest approve | Guest: approve/reject price |
+| `waiting_payment` | **Laundry only** - Selesai dicuci, menunggu guest bayar sebelum diantar | Guest: bayar via `payLaundry` |
 | `completed` | Selesai, saldo dipotong, koin reward diberikan | - |
 | `rejected` | Dibatalkan (guest/admin) | - |
 
@@ -96,7 +97,7 @@ pending → assigned → in_progress → [waiting_approval (MnR only)] → compl
 - Guest pilih: `type` (cuci/cuci_setrika/setrika) + `duration` (reguler/express)
 - Harga: `snapshot_price_per_kg` dari LaundryPricing (locked saat create)
 - Pekerja input `billable_weight` (min 1kg) → auto hitung `total_price`
-- Guest bayar saat complete (saldo dipotong)
+- **NEW Flow**: Pekerja `readyForPayment` (status → `waiting_payment`) → Guest `payLaundry` via `LaundryPaymentService` (saldo dipotong, `laundry_paid_at` terisi) → Pekerja `confirmDelivered` (upload foto after, status → `completed`, reward koin)
 
 ### Cleaning
 - Guest pilih: `cleaning_type` (regular/deep/postmove)
@@ -127,6 +128,14 @@ charge(ServiceRequest $serviceRequest): bool
 - Atomic: lock row, cek `price_approved_at` (idempotent), cek saldo, potong saldo, create BalanceMutation, update status ke `in_progress`
 - Return `false` kalau saldo tidak cukup
 
+### LaundryPaymentService (NEW)
+```php
+charge(ServiceRequest $serviceRequest): bool
+```
+- Atomic: lock row, cek `laundry_paid_at` (idempotent), cek saldo, potong saldo, create BalanceMutation, update `laundry_paid_at` = now()
+- Return `false` kalau saldo tidak cukup
+- Dipanggil dari `GuestServiceRequestController@payLaundry` saat guest bayar laundry
+
 ### CoinRewardService
 ```php
 awardForServiceRequest(ServiceRequest $sr, User $guest, float $amountSpent): ?CoinMutation
@@ -134,6 +143,7 @@ awardForServiceRequest(ServiceRequest $sr, User $guest, float $amountSpent): ?Co
 - Cari tier `CoinSetting` aktif dengan `min_amount` <= `amountSpent` (highest match)
 - Tambah `coin_balance` guest, create CoinMutation type `earn`
 - Dipanggil di `TaskController@complete` untuk SEMUA jenis jasa (termasuk MnR pakai `total_price`)
+- Untuk laundry dipanggil di `TaskController@confirmDelivered` setelah guest bayar & worker konfirmasi antar
 
 ---
 
@@ -155,23 +165,24 @@ awardForServiceRequest(ServiceRequest $sr, User $guest, float $amountSpent): ?Co
 ### Guest Routes (`guest.*`, prefix `/guest`, middleware `auth, role:guest`)
 | Route | Controller | Purpose |
 |-------|------------|---------|
-| `GET /home` | closure | Guest dashboard |
+| `GET /home` | closure | Guest dashboard (3 properti terbaru slider + services grid) |
 | `GET /service-requests` | GuestServiceRequestController@index | List request guest |
 | `GET /service-requests/category/{category}` | @category | Category landing |
 | `GET /service-requests/create` | @create | Form buat request |
-| `POST /service-requests` | @store | Submit request |
-| `GET /service-requests/{sr}` | @show | Detail request |
+| `POST /service-requests` | @store | Submit request (dengan validasi lokasi wajib) |
+| `GET /service-requests/{sr}` | @show | Detail request (termasuk lokasi, payment laundry, approve/reject MnR) |
 | `DELETE /service-requests/{sr}` | @destroy | Cancel (pending/assigned only) |
 | `POST /service-requests/{sr}/approve-price` | @approvePrice | Approve harga MnR |
 | `POST /service-requests/{sr}/reject-price` | @rejectPrice | Reject harga MnR |
-| `GET /services/{slug}` | @serviceDetail | Detail per jenis jasa + pricelist |
+| `POST /service-requests/{sr}/pay-laundry` | @payLaundry | **Bayar tagihan laundry (status waiting_payment)** |
+| `GET /services/{slug}` | @serviceDetail | Detail per jenis jasa + pricelist + form order dengan cascading dropdown lokasi |
 | `POST /service-requests/{sr}/feedback` | FeedbackController@store | Rating pekerja |
 | `GET /topups` | GuestTopupController@index | Riwayat topup |
 | `GET /topups/create` | @create | Form topup |
 | `POST /topups` | @store | Submit topup |
 | `GET /balance` | @balance | Riwayat mutasi saldo + koin |
-| `GET /profile` | GuestProfileController@edit | **Edit profil lengkap (status, daerah, lokasi, tower, unit)** |
-| `PATCH /profile` | @update | **Update profil lengkap** |
+| `GET /profile` | GuestProfileController@edit | Edit profil lengkap (status, daerah, lokasi, tower, unit) |
+| `PATCH /profile` | @update | Update profil lengkap |
 | `DELETE /profile` | @destroy | Hapus akun |
 | `GET /coin-redemptions` | GuestCoinRedemptionController@index | List produk & riwayat redeem |
 | `POST /coin-redemptions` | @store | Request redeem |
@@ -212,11 +223,13 @@ awardForServiceRequest(ServiceRequest $sr, User $guest, float $amountSpent): ?Co
 | Route | Controller | Purpose |
 |-------|------------|---------|
 | `GET /tasks` | TaskController@index | List tugas assigned |
-| `GET /tasks/{sr}` | @show | Detail tugas |
+| `GET /tasks/{sr}` | @show | Detail tugas (termasuk lokasi unit guest) |
 | `POST /tasks/{sr}/accept` | @accept | ACC tugas (status → in_progress, collected_at untuk laundry) |
 | `POST /tasks/{sr}/survey` | @survey | Input survey MnR (damage_category, severity, dll) |
 | `POST /tasks/{sr}/weigh` | @weigh | Input berat laundry (hitung total_price) |
-| `POST /tasks/{sr}/complete` | @complete | Selesai tugas (potong saldo guest, reward koin, upload foto after) |
+| `POST /tasks/{sr}/ready-for-payment` | @readyForPayment | **Laundry selesai cuci → status waiting_payment** |
+| `POST /tasks/{sr}/confirm-delivered` | @confirmDelivered | **Konfirmasi laundry sudah diantar → completed + reward koin** |
+| `POST /tasks/{sr}/complete` | @complete | Selesai tugas non-laundry (potong saldo guest, reward koin, upload foto after) |
 
 ---
 
@@ -245,9 +258,9 @@ awardForServiceRequest(ServiceRequest $sr, User $guest, float $amountSpent): ?Co
 ## Key Files to Understand
 
 ### Controllers (Business Logic)
-- `app/Http/Controllers/Guest/ServiceRequestController.php` — Create request all services, approve/reject price MnR
+- `app/Http/Controllers/Guest/ServiceRequestController.php` — Create request all services, approve/reject price MnR, **payLaundry, cascading dropdown lokasi**
 - `app/Http/Controllers/Admin/ServiceRequestController.php` — Assign worker, setPrice MnR
-- `app/Http/Controllers/Worker/TaskController.php` — Accept, survey, weigh, complete (payment + coin reward)
+- `app/Http/Controllers/Worker/TaskController.php` — Accept, survey, weigh, **readyForPayment, confirmDelivered**, complete (payment + coin reward)
 - `app/Http/Controllers/Admin/TopupController.php` — Approve/reject topup (saldo mutation)
 - `app/Http/Controllers/Guest/TopupController.php` — Guest topup + balance history
 - `app/Http/Controllers/Auth/RegisteredUserController.php` — **Register dengan cascading dropdown lokasi/tower**
@@ -256,11 +269,12 @@ awardForServiceRequest(ServiceRequest $sr, User $guest, float $amountSpent): ?Co
 
 ### Services
 - `app/Services/RepairPaymentService.php` — Atomic charge untuk MnR
+- `app/Services/LaundryPaymentService.php` — **Atomic charge untuk laundry (idempotent, cek laundry_paid_at)**
 - `app/Services/CoinRewardService.php` — Reward koin berdasarkan tier
 
 ### Models (Relations & Helpers)
 - `app/Models/User.php` — Role helpers, all relationships, **apartment location/tower relations**
-- `app/Models/ServiceRequest.php` — Status helpers, service type checks, calculateTotalPrice
+- `app/Models/ServiceRequest.php` — Status helpers (isWaitingPayment, isLaundryPaid), service type checks, calculateTotalPrice, **lokasi relations**
 - `app/Models/RepairPricing.php` — Categories & severities constants, scopeByCategoryAndSeverity
 - `app/Models/CoinSetting.php` — Tier reward logic
 - `app/Models/ApartmentLocation.php` — **Master lokasi, relasi ke towers & users**
@@ -295,7 +309,7 @@ resources/views/
 │   ├── coin-redemption-products/{index,create,edit}.blade.php
 │   └── apartment-locations/index.blade.php  # **Kelola lokasi & tower**
 ├── guest/
-│   ├── home.blade.php
+│   ├── home.blade.php           # **Hero + services grid + marketplace slider (3 properti terbaru) + steps + trust**
 │   ├── balance.blade.php
 │   ├── profile.blade.php        # **Profil lengkap dengan cascading dropdown**
 │   ├── topups/{index,create}.blade.php
@@ -303,7 +317,7 @@ resources/views/
 │   ├── coin-redemptions/index.blade.php
 │   └── product-listings.blade.php
 ├── worker/
-│   └── tasks/{index,show}.blade.php
+│   └── tasks/{index,show}.blade.php  # **Detail tugas dengan lokasi, readyForPayment, confirmDelivered**
 ├── profile/
 │   └── partials/{update-profile-information-form,update-password-form,delete-user-form}.blade.php
 └── auth/
@@ -338,9 +352,12 @@ resources/views/
 6. **Soft Deletes**: User model uses SoftDeletes — queries may need `withTrashed()` sometimes
 7. **File Storage**: Photos stored in `storage/app/public/` — run `php artisan storage:link`
 8. **Decimal Casting**: Prices cast to `decimal:2` in models
-9. **Cascading Dropdown**: Register & profile use JS to populate tower based on selected location — tower must belong to selected location (validated in RegisteredUserController & ProfileUpdateRequest)
+9. **Cascading Dropdown**: Register, profile & order form use JS to populate tower based on selected location — tower must belong to selected location (validated in RegisteredUserController, ProfileUpdateRequest & ServiceRequestController)
 10. **Apartment Fields Required**: Guest registration now requires status, daerah, apartment_location_id, apartment_tower_id
 11. **Admin Location Delete Protection**: Cannot delete location/tower if users are still assigned to them
+12. **Laundry Payment Flow**: NEW status `waiting_payment` — worker calls `readyForPayment` after weighing → guest pays via `payLaundry` → worker calls `confirmDelivered` → completed + coin reward
+13. **Service Request Location**: All service requests now require `daerah`, `apartment_location_id`, `apartment_tower_id` (defaults from guest profile, cascading dropdown on order form)
+14. **Idempotent Payments**: Both `RepairPaymentService::charge()` and `LaundryPaymentService::charge()` are idempotent (check `price_approved_at` / `laundry_paid_at`)
 
 ---
 
@@ -356,4 +373,4 @@ resources/views/
 
 ---
 
-*Generated from codebase analysis on 2026-09-19; updated 2026-09-22 with apartment location/tower system, cascading dropdowns, and updated auth views*
+*Generated from codebase analysis on 2026-09-19; updated 2026-09-22 with apartment location/tower system, cascading dropdowns, updated auth views, laundry payment flow (waiting_payment status), and marketplace slider on home*
