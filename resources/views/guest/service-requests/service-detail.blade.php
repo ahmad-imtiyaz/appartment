@@ -289,6 +289,49 @@
                         <x-input-error :messages="$errors->get('notes')" class="mt-2" />
                     </div>
 
+                    {{-- Lokasi — wajib untuk semua jasa --}}
+                    <div class="ui-divider ui-form">
+                        <h3 class="ui-heading">{{ __('guest.form.location_title') }}</h3>
+
+                        <div>
+                            <label for="daerah" class="ui-label">{{ __('guest.form.daerah') }} <span class="text-red-500">*</span></label>
+                            <select name="daerah" id="daerah" required class="ui-input">
+                                <option value="" disabled {{ old('daerah', auth()->user()->daerah) ? '' : 'selected' }}>
+                                    {{ __('guest.form.choose_daerah') }}
+                                </option>
+                                <option value="Jakarta" @selected(old('daerah', auth()->user()->daerah) === 'Jakarta')>
+                                    Jakarta
+                                </option>
+                            </select>
+                            <p class="ui-hint">{{ __('guest.form.daerah_hint') }}</p>
+                            <x-input-error :messages="$errors->get('daerah')" class="mt-2" />
+                        </div>
+
+                        <div>
+                            <label for="apartment_location_id" class="ui-label">{{ __('guest.form.apartment_location') }} <span class="text-red-500">*</span></label>
+                            <select name="apartment_location_id" id="apartment_location_id" required class="ui-input">
+                                <option value="" disabled {{ old('apartment_location_id', auth()->user()->apartment_location_id) ? '' : 'selected' }}>
+                                    {{ __('guest.form.choose_location') }}
+                                </option>
+                                @foreach ($locations as $location)
+                                    <option value="{{ $location->id }}"
+                                        @selected((string) old('apartment_location_id', auth()->user()->apartment_location_id) === (string) $location->id)>
+                                        {{ $location->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            <x-input-error :messages="$errors->get('apartment_location_id')" class="mt-2" />
+                        </div>
+
+                        <div>
+                            <label for="apartment_tower_id" class="ui-label">{{ __('guest.form.apartment_tower') }} <span class="text-red-500">*</span></label>
+                            <select name="apartment_tower_id" id="apartment_tower_id" required class="ui-input">
+                                <option value="">{{ __('guest.form.choose_location_first') }}</option>
+                            </select>
+                            <x-input-error :messages="$errors->get('apartment_tower_id')" class="mt-2" />
+                        </div>
+                    </div>
+
                     {{-- Maintenance & Repair --}}
                     @if ($service->slug === 'maintenance-repair')
 
@@ -676,5 +719,40 @@
             if (formUrgency) formUrgency.value = r.value;
         });
     });
+    // ==============================
+    // Lokasi: cascading Daerah → Lokasi Unit → Tower
+    // ==============================
+    const towersByLocation = @json($locations->mapWithKeys(fn ($loc) => [
+        $loc->id => $loc->towers->map(fn ($t) => ['id' => $t->id, 'name' => $t->name]),
+    ]));
+    const oldTowerId = @json(old('apartment_tower_id', auth()->user()->apartment_tower_id));
+
+    const locationSelect = document.getElementById('apartment_location_id');
+    const towerSelect = document.getElementById('apartment_tower_id');
+
+    function renderTowers(locationId) {
+        towerSelect.innerHTML = '';
+        const towers = towersByLocation[locationId] ?? [];
+
+        if (towers.length === 0) {
+            towerSelect.innerHTML = '<option value="">{{ __('guest.form.choose_location_first') }}</option>';
+            return;
+        }
+
+        towerSelect.innerHTML = '<option value="" disabled selected>{{ __('guest.form.choose_tower') }}</option>';
+
+        towers.forEach((tower) => {
+            const opt = document.createElement('option');
+            opt.value = tower.id;
+            opt.textContent = tower.name;
+            if (String(tower.id) === String(oldTowerId)) opt.selected = true;
+            towerSelect.appendChild(opt);
+        });
+    }
+
+    if (locationSelect && towerSelect) {
+        locationSelect.addEventListener('change', (e) => renderTowers(e.target.value));
+        if (locationSelect.value) renderTowers(locationSelect.value);
+    }
 </script>
 @endpush

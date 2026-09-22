@@ -117,9 +117,57 @@ class TaskController extends Controller
         return back()->with('success', 'Berat berhasil dicatat. Total harga: Rp' . number_format($totalPrice, 0, ',', '.'));
     }
 
+    // worker menandai laundry selesai dicuci → guest harus bayar sebelum diantar
+    public function readyForPayment(ServiceRequest $serviceRequest): RedirectResponse
+    {
+        abort_unless($serviceRequest->worker_id === auth()->id(), 403);
+        abort_unless($serviceRequest->isLaundry(), 404);
+        abort_if($serviceRequest->status !== 'in_progress', 422, 'Tugas belum dalam progress.');
+        abort_if($serviceRequest->weighed_at === null, 422, 'Berat belum diinput, tidak bisa lanjut ke pembayaran.');
+
+        $serviceRequest->update(['status' => 'waiting_payment']);
+
+        return back()->with('success', 'Laundry selesai dicuci. Menunggu guest melakukan pembayaran.');
+    }
+
+    // worker konfirmasi guest sudah menerima laundry (setelah dibayar) → completed
+    public function confirmDelivered(Request $request, ServiceRequest $serviceRequest): RedirectResponse
+    {
+        abort_unless($serviceRequest->worker_id === auth()->id(), 403);
+        abort_unless($serviceRequest->isLaundry(), 404);
+        abort_if($serviceRequest->status !== 'waiting_payment', 422, 'Laundry belum dalam status menunggu pembayaran.');
+        abort_if($serviceRequest->laundry_paid_at === null, 422, 'Guest belum membayar, belum bisa diantar.');
+
+        $validated = $request->validate([
+            'worker_notes' => ['nullable', 'string', 'max:1000'],
+            'photos' => ['nullable', 'array', 'max:5'],
+            'photos.*' => ['image', 'max:2048'],
+        ]);
+
+        foreach ($request->file('photos', []) as $photo) {
+            $serviceRequest->photos()->create([
+                'type' => 'after',
+                'photo_path' => $photo->store('service-request-photos', 'public'),
+            ]);
+        }
+
+        $serviceRequest->update([
+            'cost' => $serviceRequest->total_price ?? 0,
+            'worker_notes' => $validated['worker_notes'] ?? null,
+            'completed_at' => now(),
+            'status' => 'completed',
+        ]);
+
+        (new \App\Services\CoinRewardService())
+            ->awardForServiceRequest($serviceRequest, $serviceRequest->user, $serviceRequest->total_price ?? 0);
+
+        return back()->with('success', 'Laundry ditandai selesai & sudah diterima guest.');
+    }
+
     public function complete(Request $request, ServiceRequest $serviceRequest): RedirectResponse
     {
         abort_unless($serviceRequest->worker_id === auth()->id(), 403);
+        abort_if($serviceRequest->isLaundry(), 422, 'Laundry pakai alur tersendiri: selesai cuci → bayar → konfirmasi terima.');
         abort_if(!$serviceRequest->isInProgress(), 422, 'Tugas ini belum berstatus sedang dikerjakan.');
 
         $validated = $request->validate([

@@ -136,6 +136,9 @@ Route::middleware(['auth', 'role:guest'])
         Route::post('/service-requests/{serviceRequest}/reject-price', [GuestServiceRequestController::class, 'rejectPrice'])
             ->name('service-requests.reject-price');
 
+        Route::post('/service-requests/{serviceRequest}/pay-laundry', [GuestServiceRequestController::class, 'payLaundry'])
+            ->name('service-requests.pay-laundry');
+
         /*
         |--------------------------------------------------------------------------
         | Service Detail (per service type)
@@ -320,6 +323,8 @@ Route::middleware(['auth', 'role:admin'])
         Route::put('/laundry-pricings/{pricing}', [\App\Http\Controllers\Admin\LaundryPricingController::class, 'update'])
             ->name('laundry-pricings.update');
 
+
+
         /*
         |--------------------------------------------------------------------------
         | MnR / Repair Pricing
@@ -493,6 +498,12 @@ Route::middleware(['auth', 'role:pekerja'])
 
         Route::post('/tasks/{serviceRequest}/weigh', [TaskController::class, 'weigh'])
             ->name('tasks.weigh');
+
+        Route::post('/tasks/{serviceRequest}/ready-for-payment', [TaskController::class, 'readyForPayment'])
+            ->name('tasks.ready-for-payment');
+
+        Route::post('/tasks/{serviceRequest}/confirm-delivered', [TaskController::class, 'confirmDelivered'])
+            ->name('tasks.confirm-delivered');
 
         Route::post('/tasks/{serviceRequest}/complete', [TaskController::class, 'complete'])
             ->name('tasks.complete');

@@ -23,14 +23,18 @@ class ServiceRequest extends Model
         'accepted_at',
         'completed_at',
         'cost',
+        'daerah',
+        'apartment_location_id',
+        'apartment_tower_id',
         // laundry
         'laundry_type',
         'laundry_duration',
         'snapshot_price_per_kg',
         'billable_weight',
-        'total_price',          // laundry: dari berat | maintenance-repair: harga final
+        'total_price',
         'collected_at',
         'weighed_at',
+        'laundry_paid_at',
         // cleaning
         'cleaning_type',
         'snapshot_cleaning_price',
@@ -55,6 +59,7 @@ class ServiceRequest extends Model
             'completed_at' => 'datetime',
             'collected_at' => 'datetime',
             'weighed_at' => 'datetime',
+            'laundry_paid_at' => 'datetime',
             'survey_reported_at' => 'datetime',
             'price_approved_at' => 'datetime',
             'cost' => 'decimal:2',
@@ -79,6 +84,16 @@ class ServiceRequest extends Model
     public function assignedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'assigned_by');
+    }
+
+        public function apartmentLocation(): BelongsTo
+    {
+        return $this->belongsTo(ApartmentLocation::class);
+    }
+
+    public function apartmentTower(): BelongsTo
+    {
+        return $this->belongsTo(ApartmentTower::class);
     }
 
     // hanya terisi kalau service-nya Maintenance & Repair
@@ -124,6 +139,17 @@ class ServiceRequest extends Model
         return $this->status === 'in_progress';
     }
 
+    // worker sudah selesai cuci, menunggu guest bayar (atau sudah bayar, menunggu konfirmasi terima)
+    public function isWaitingPayment(): bool
+    {
+        return $this->status === 'waiting_payment';
+    }
+
+    public function isLaundryPaid(): bool
+    {
+        return $this->laundry_paid_at !== null;
+    }
+
     // MnR: harga final sudah dikirim admin, nunggu guest setuju
     public function isWaitingApproval(): bool
     {
@@ -142,6 +168,9 @@ class ServiceRequest extends Model
             'assigned' => 'Menunggu pekerja',
             'in_progress' => 'Sedang dikerjakan',
             'waiting_approval' => 'Menunggu persetujuan harga',
+            'waiting_payment' => $this->isLaundryPaid()
+                ? 'Sudah dibayar, menunggu diantar'
+                : 'Menunggu pembayaran',
             'completed' => 'Selesai',
             'rejected' => 'Ditolak',
             default => ucfirst(str_replace('_', ' ', $this->status)),

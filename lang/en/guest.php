@@ -106,6 +106,7 @@ return [
         'assigned'         => 'Assigned',
         'in_progress'      => 'In Progress',
         'waiting_approval' => 'Waiting Approval',
+        'waiting_payment'  => 'Waiting Payment',
         'completed'        => 'Completed',
         'rejected'         => 'Rejected',
         'cancelled'        => 'Cancelled',
@@ -125,6 +126,12 @@ return [
         'insufficient_balance'     => 'Insufficient balance. Please top up first.',
         'price_approved'           => 'Price approved and your balance has been deducted. The work will continue.',
         'price_rejected'           => 'Price rejected. Please submit a new request if you still need the service.',
+
+        'laundry_ready_for_payment' => 'Your laundry is ready. Please pay before it can be delivered.',
+        'laundry_paid'               => 'Payment successful. Your laundry will be delivered soon.',
+        'laundry_no_payment_waiting' => 'There is no laundry payment waiting.',
+        'laundry_already_paid'       => 'This laundry has already been paid.',
+        'laundry_delivered'          => 'Laundry marked as delivered and received by the guest.',
 
         'feedback_only_completed'  => 'Feedback can only be given for completed tasks.',
         'feedback_already'         => 'Feedback for this task has already been submitted.',
@@ -318,6 +325,16 @@ return [
         'urgency'                     => 'Urgency Level',
         'photos_title'                => 'Damage Photos (Optional, max 5)',
         'photos_hint'                 => 'Maximum 5 photos, up to 2MB each',
+
+        'location_title'         => 'Lokasi Layanan',
+        'daerah'                 => 'Daerah',
+        'choose_daerah'          => 'Pilih daerah',
+        'daerah_hint'            => 'Saat ini layanan baru tersedia untuk area Jakarta.',
+        'apartment_location'     => 'Lokasi Unit',
+        'choose_location'        => 'Pilih lokasi unit',
+        'apartment_tower'        => 'Tower',
+        'choose_location_first'  => 'Pilih lokasi unit dahulu',
+        'choose_tower'           => 'Pilih tower',
     ],
 
     /*
@@ -405,6 +422,7 @@ return [
         'accepted_by_worker' => 'Accepted by worker',
         'completed'          => 'Completed',
         'cost'               => 'Cost',
+        'weight'             => 'Weight',
         'your_notes'         => 'Your Notes',
         'worker_notes'       => 'Worker Notes',
         'location'           => 'Location',
@@ -417,6 +435,12 @@ return [
         'reject'             => 'Reject',
 
         'confirm_reject'     => 'Reject this price? The request will be cancelled and you will need to submit it again.',
+
+        'in_progress_note'     => 'Please wait, your request is currently being processed.',
+        'laundry_payment'      => 'Laundry Payment',
+        'laundry_ready'        => 'Your laundry has been washed. Please pay before it is delivered:',
+        'laundry_already_paid' => 'You have already paid for this laundry. Waiting to be delivered to your unit.',
+        'pay_now'              => 'Pay Now',
 
         'photos'             => 'Photos',
 

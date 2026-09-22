@@ -28,6 +28,7 @@
                         @elseif($serviceRequest->status === 'assigned') bg-blue-100 text-blue-800
                         @elseif($serviceRequest->status === 'in_progress') bg-purple-100 text-purple-800
                         @elseif($serviceRequest->status === 'waiting_approval') bg-orange-100 text-orange-800
+                        @elseif($serviceRequest->status === 'waiting_payment') bg-pink-100 text-pink-800
                         @elseif($serviceRequest->status === 'completed') bg-green-100 text-green-800
                         @elseif($serviceRequest->status === 'rejected') bg-red-100 text-red-800
                         @else bg-gray-100 text-gray-800 @endif">
@@ -299,7 +300,7 @@
             @endif
 
             <!-- Complete Form (for in_progress status) -->
-            @if ($serviceRequest->status === 'in_progress' && (!$serviceRequest->isMaintenance() || $serviceRequest->price_approved_at))
+            @if ($serviceRequest->status === 'in_progress' && !$serviceRequest->isLaundry() && (!$serviceRequest->isMaintenance() || $serviceRequest->price_approved_at))
                 <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
                     <h3 class="font-semibold text-gray-900 mb-4">Tandai Selesai</h3>
                     <form method="POST" action="{{ route('worker.tasks.complete', $serviceRequest) }}" enctype="multipart/form-data" class="space-y-4">
@@ -309,15 +310,6 @@
                             <div class="bg-green-50 rounded-lg p-3 mb-4">
                                 <p class="font-medium text-green-900">
                                     Harga Disetujui: Rp{{ number_format($serviceRequest->total_price, 0, ',', '.') }}
-                                </p>
-                            </div>
-                        @endif
-
-                        @if($serviceRequest->isLaundry() && $serviceRequest->billable_weight && $serviceRequest->total_price)
-                            <div class="bg-green-50 rounded-lg p-3 mb-4">
-                                <p class="font-medium text-green-900">
-                                    Total Harga: Rp{{ number_format($serviceRequest->total_price, 0, ',', '.') }}
-                                    ({{ $serviceRequest->billable_weight }} kg × Rp{{ number_format($serviceRequest->snapshot_price_per_kg, 0, ',', '.') }}/kg)
                                 </p>
                             </div>
                         @endif
@@ -339,6 +331,63 @@
                             Tandai Selesai
                         </x-danger-button>
                     </form>
+                </div>
+            @endif
+
+            <!-- Laundry: Ready for Payment (sudah ditimbang, minta guest bayar) -->
+            @if ($serviceRequest->isLaundry() && $serviceRequest->status === 'in_progress' && $serviceRequest->weighed_at)
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
+                    <h3 class="font-semibold text-gray-900 mb-4">Selesai Dicuci</h3>
+                    <div class="bg-green-50 rounded-lg p-3 mb-4">
+                        <p class="font-medium text-green-900">
+                            Total Harga: Rp{{ number_format($serviceRequest->total_price, 0, ',', '.') }}
+                            ({{ $serviceRequest->billable_weight }} kg × Rp{{ number_format($serviceRequest->snapshot_price_per_kg, 0, ',', '.') }}/kg)
+                        </p>
+                    </div>
+                    <form method="POST" action="{{ route('worker.tasks.ready-for-payment', $serviceRequest) }}">
+                        @csrf
+                        <x-primary-button type="submit" class="w-full">
+                            Selesai Dicuci, Minta Bayar
+                        </x-primary-button>
+                    </form>
+                </div>
+            @endif
+
+            <!-- Laundry: Waiting Payment / Confirm Delivered -->
+            @if ($serviceRequest->status === 'waiting_payment')
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
+                    @if (!$serviceRequest->laundry_paid_at)
+                        <h3 class="font-semibold text-gray-900 mb-2">Menunggu Pembayaran Guest</h3>
+                        <p class="text-sm text-gray-600">
+                            Guest belum membayar tagihan sebesar Rp{{ number_format($serviceRequest->total_price, 0, ',', '.') }}.
+                            Laundry belum bisa diantar sebelum pembayaran diterima.
+                        </p>
+                    @else
+                        <h3 class="font-semibold text-gray-900 mb-4">Konfirmasi Sudah Diantar</h3>
+                        <div class="bg-green-50 rounded-lg p-3 mb-4">
+                            <p class="font-medium text-green-900">
+                                Guest sudah membayar ({{ $serviceRequest->laundry_paid_at->format('d M Y H:i') }}).
+                                Silakan antar laundry, lalu konfirmasi di bawah ini.
+                            </p>
+                        </div>
+                        <form method="POST" action="{{ route('worker.tasks.confirm-delivered', $serviceRequest) }}" enctype="multipart/form-data" class="space-y-4">
+                            @csrf
+                            <div>
+                                <x-input-label for="worker_notes" :value="__('Catatan Pekerja')" />
+                                <textarea name="worker_notes" id="worker_notes" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-4 py-2" placeholder="Catatan hasil kerjaan...">{{ old('worker_notes') }}</textarea>
+                                <x-input-error :messages="$errors->get('worker_notes')" class="mt-2" />
+                            </div>
+                            <div>
+                                <x-input-label for="photos" :value="__('Foto Bukti Diantar (Opsional, max 5)')" />
+                                <input type="file" name="photos[]" id="photos" accept="image/*" multiple class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" />
+                                <x-input-error :messages="$errors->get('photos')" class="mt-2" />
+                                <p class="mt-1 text-xs text-gray-500">Maksimal 5 foto, masing-masing max 2MB</p>
+                            </div>
+                            <x-primary-button type="submit" class="w-full">
+                                Konfirmasi Sudah Diantar
+                            </x-primary-button>
+                        </form>
+                    @endif
                 </div>
             @endif
 

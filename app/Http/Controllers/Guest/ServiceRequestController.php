@@ -14,6 +14,7 @@ use App\Services\RepairPaymentService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class ServiceRequestController extends Controller
@@ -124,7 +125,9 @@ class ServiceRequestController extends Controller
             ? AcPricing::active()->latest()->get()
             : collect();
 
-        return view('guest.service-requests.service-detail', compact('service', 'requests', 'laundryPricings', 'cleaningPricings', 'acPricings'));
+        $locations = \App\Models\ApartmentLocation::with('towers')->where('is_active', true)->orderBy('name')->get();
+
+        return view('guest.service-requests.service-detail', compact('service', 'requests', 'laundryPricings', 'cleaningPricings', 'acPricings', 'locations'));
     }
 
     public function create(): View
@@ -149,6 +152,17 @@ class ServiceRequestController extends Controller
             'service_id' => ['required', 'exists:services,id'],
             'notes' => ['nullable', 'string', 'max:1000'],
             'scheduled_at' => ['nullable', 'date', 'after:now'],
+
+            // pesan error
+            'apartment_tower_id.exists' => 'Tower yang dipilih tidak sesuai dengan lokasi.',
+
+            // lokasi — wajib untuk semua jasa
+            'daerah' => ['required', 'in:Jakarta'],
+            'apartment_location_id' => ['required', 'exists:apartment_locations,id'],
+            'apartment_tower_id' => [
+                'required',
+                Rule::exists('apartment_towers', 'id')->where('apartment_location_id', $request->apartment_location_id),
+            ],
 
             // laundry-specific fields
             'laundry_type' => ['nullable', 'in:cuci,cuci_setrika,setrika'],
@@ -218,6 +232,9 @@ class ServiceRequestController extends Controller
                 'status' => 'pending',
                 'notes' => $validated['notes'] ?? null,
                 'scheduled_at' => $validated['scheduled_at'] ?? null,
+                'daerah' => $validated['daerah'],
+                'apartment_location_id' => $validated['apartment_location_id'],
+                'apartment_tower_id' => $validated['apartment_tower_id'],
                 'laundry_type' => $isLaundry ? $validated['laundry_type'] : null,
                 'laundry_duration' => $isLaundry ? $validated['laundry_duration'] : null,
                 'snapshot_price_per_kg' => $isLaundry ? $validated['snapshot_price_per_kg'] : null,
@@ -290,5 +307,21 @@ class ServiceRequestController extends Controller
         return redirect()
             ->route('guest.service-requests.index')
             ->with('success', 'Harga ditolak. Silakan ajukan permintaan baru jika masih diperlukan.');
+    }
+
+    public function payLaundry(ServiceRequest $serviceRequest, \App\Services\LaundryPaymentService $paymentService): RedirectResponse
+    {
+        abort_unless($serviceRequest->user_id === auth()->id(), 403);
+        abort_unless($serviceRequest->isLaundry(), 404);
+        abort_if($serviceRequest->status !== 'waiting_payment', 422, 'Tidak ada tagihan laundry yang menunggu pembayaran.');
+        abort_if($serviceRequest->laundry_paid_at !== null, 422, 'Laundry ini sudah dibayar.');
+
+        $paid = $paymentService->charge($serviceRequest);
+
+        if (!$paid) {
+            return back()->with('error', 'Saldo tidak cukup. Silakan top up terlebih dahulu.');
+        }
+
+        return back()->with('success', 'Pembayaran berhasil. Laundry akan segera diantar.');
     }
 }
