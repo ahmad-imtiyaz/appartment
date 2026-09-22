@@ -53,6 +53,7 @@
             @php
                 $iconPaths = [
                     'home'       => '<path d="M3 9.5 10 4l7 5.5V16a1 1 0 0 1-1 1h-3.5v-4.5h-5V17H4a1 1 0 0 1-1-1V9.5Z" />',
+                    'building'  => '<path d="M5 17V4a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v13M5 17h10M5 17H3.5a.5.5 0 0 1-.5-.5V9.5a.5.5 0 0 1 .5-.5H5m10 8h1.5a.5.5 0 0 0 .5-.5V9.5a.5.5 0 0 0-.5-.5H15M8 6h1M8 9h1M8 12h1M11 6h1M11 9h1M11 12h1" />',
                     'clipboard'  => '<rect x="5" y="4" width="10" height="13" rx="1.2" /><path d="M8 4V3.2A1.2 1.2 0 0 1 9.2 2h1.6A1.2 1.2 0 0 1 12 3.2V4" /><line x1="7.5" y1="9" x2="12.5" y2="9" /><line x1="7.5" y1="12" x2="12.5" y2="12" />',
                     'check'      => '<rect x="5" y="4" width="10" height="13" rx="1.2" /><path d="M8 4V3.2A1.2 1.2 0 0 1 9.2 2h1.6A1.2 1.2 0 0 1 12 3.2V4" /><polyline points="7.5,10.8 9,12.3 12.5,8.8" />',
                     'users'      => '<circle cx="7.3" cy="7" r="2.3" /><path d="M3 16c0-2.5 2-4 4.3-4s4.3 1.5 4.3 4" /><circle cx="14" cy="8" r="1.8" /><path d="M13 16c0-1.8 1.2-3.2 3-3.6" />',
@@ -75,6 +76,7 @@
                         ['route' => 'admin.service-requests.index', 'label' => 'Service Request', 'icon' => 'clipboard'],
                         ['route' => 'admin.workers.index', 'label' => 'Pekerja', 'icon' => 'users'],
                         ['route' => 'admin.topups.index', 'label' => 'Top Up', 'icon' => 'banknotes'],
+                        ['route' => 'admin.apartment-locations.index', 'label' => 'Lokasi & Tower', 'icon' => 'building'],
                     ],
                     'Harga layanan' => [
                         ['route' => 'admin.laundry-pricings.index', 'label' => 'Laundry', 'icon' => 'tag'],
