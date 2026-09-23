@@ -81,7 +81,6 @@
                     'Harga layanan' => [
     ['route' => 'admin.laundry-pricings.index', 'label' => 'Laundry', 'icon' => 'tag'],
     ['route' => 'admin.cleaning-pricings.index', 'label' => 'Cleaning', 'icon' => 'sparkles'],
-    ['route' => 'admin.cleaning-areas.index', 'label' => 'Area Cleaning', 'icon' => 'sparkles'],
     ['route' => 'admin.cleaning-addons.index', 'label' => 'Tambahan Cleaning', 'icon' => 'sparkles'],
     ['route' => 'admin.ac-pricings.index', 'label' => 'AC', 'icon' => 'cloud'],
 

@@ -140,12 +140,7 @@
                                 <dt class="text-purple-600">Harga / Jam</dt>
                                 <dd class="font-medium text-purple-900">Rp{{ number_format($serviceRequest->snapshot_cleaning_price_per_hour ?? 0, 0, ',', '.') }}</dd>
                             </div>
-                            @if ($serviceRequest->cleaningAreas->isNotEmpty())
-                                <div class="col-span-2">
-                                    <dt class="text-purple-600">Area</dt>
-                                    <dd class="font-medium text-purple-900">{{ $serviceRequest->cleaningAreas->pluck('name')->join(', ') }}</dd>
-                                </div>
-                            @endif
+
                             @if ($serviceRequest->cleaningAddons->isNotEmpty())
                                 <div class="col-span-2">
                                     <dt class="text-purple-600">Pekerjaan Tambahan</dt>

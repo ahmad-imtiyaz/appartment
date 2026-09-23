@@ -34,13 +34,12 @@ Sistem manajemen layanan apartemen dengan 3 role: **admin**, **pekerja** (worker
 |-------|-------|------------|
 | **LaundryPricing** | `laundry_pricings` | `type` (cuci/cuci_setrika/setrika), `duration` (reguler/express), `price_per_kg` |
 | **CleaningPricing** | `cleaning_pricings` | `price_per_hour` (single active rate per hour) |
-| **AcPricing** | `ac_pricings` | `type` (ac-cleaning/ac-refill/ac-repair), `price` |
+| **AcPricing** | `ac_pricings` | `type` (ac-cleaning/ac-refill/ac-repair/ac-full-service), `price` |
 | **RepairPricing** | — | **No database table** — PHP class with constants `CATEGORIES` & `SEVERITIES` only (used for form validation) |
 
 ### Cleaning Configuration Models (Admin-managed)
 | Model | Table | Key Fields | Purpose |
 |-------|-------|------------|---------|
-| **CleaningArea** | `cleaning_areas` | `name`, `is_active` | Ruangan/area yang dibersihkan (kamar mandi, dapur, dll) |
 | **CleaningAddon** | `cleaning_addons` | `name`, `price`, `is_active` | Tambahan layanan (cuci jendela, oven, dll) |
 
 ### Detail & Mutation Models
@@ -59,7 +58,6 @@ Sistem manajemen layanan apartemen dengan 3 role: **admin**, **pekerja** (worker
 ### Pivot Tables
 | Table | Purpose |
 |-------|---------|
-| `cleaning_area_service_request` | Many-to-many: ServiceRequest ↔ CleaningArea |
 | `cleaning_addon_service_request` | Many-to-many: ServiceRequest ↔ CleaningAddon (dengan `snapshot_price`) |
 
 ---
@@ -132,7 +130,7 @@ $serviceRequest->calculateTotalPrice()  // laundry: weight × rate; cleaning: ho
 - **NEW Flow**: Pekerja `readyForPayment` (status → `waiting_payment`) → Guest `payLaundry` via `LaundryPaymentService` (saldo dipotong, `laundry_paid_at` terisi) → Pekerja `confirmDelivered` (upload foto after, status → `completed`, reward koin)
 
 ### Cleaning
-- Guest pilih: `cleaning_duration_hours` (1-12 jam), `cleaning_area_ids` (minimal 1 area wajib), `cleaning_addon_ids` (opsional)
+- Guest pilih: `cleaning_duration_hours` (1-12 jam), `cleaning_addon_ids` (opsional)
 - Harga: `snapshot_cleaning_price_per_hour` dari CleaningPricing (single active rate, locked saat create)
 - Total = `cleaning_duration_hours` × `snapshot_cleaning_price_per_hour` + Σ `snapshot_price` addons
 - Guest bayar saat complete (saldo dipotong di `TaskController@complete`)
@@ -244,7 +242,6 @@ awardForServiceRequest(ServiceRequest $sr, User $guest, float $amountSpent): ?Co
 | `PUT /cleaning-pricings` | CleaningPricingController@update | Update tarif cleaning per jam |
 | `resource ac-pricings` | AcPricingController | CRUD pricing AC |
 | `CRUD repair-pricings` | RepairPricingController | **REMOVED** — MnR pricing now fully manual (no reference price table) |
-| `resource cleaning-areas` | CleaningAreaController | **CRUD area cleaning (kamar mandi, dapur, dll)** |
 | `resource cleaning-addons` | CleaningAddonController | **CRUD addon cleaning (cuci jendela, oven, dll)** |
 | `GET /apartment-locations` | ApartmentLocationController@index | **List lokasi & tower** |
 | `POST /apartment-locations` | @storeLocation | **Tambah lokasi unit** |
@@ -307,7 +304,6 @@ awardForServiceRequest(ServiceRequest $sr, User $guest, float $amountSpent): ?Co
 - `app/Http/Controllers/Guest/ProfileController.php` — **Profil guest lengkap dengan cascading dropdown**
 - `app/Http/Controllers/Admin/ApartmentLocationController.php` — **CRUD lokasi unit & tower (admin)**
 - `app/Http/Controllers/Admin/CleaningPricingController.php` — **Edit tarif cleaning per jam**
-- `app/Http/Controllers/Admin/CleaningAreaController.php` — **CRUD area cleaning**
 - `app/Http/Controllers/Admin/CleaningAddonController.php` — **CRUD addon cleaning**
 
 ### Services
@@ -323,7 +319,6 @@ awardForServiceRequest(ServiceRequest $sr, User $guest, float $amountSpent): ?Co
 - `app/Models/ApartmentLocation.php` — **Master lokasi, relasi ke towers & users**
 - `app/Models/ApartmentTower.php` — **Tower, relasi ke location & users**
 - `app/Models/CleaningPricing.php` — **Single active rate per jam (price_per_hour)**
-- `app/Models/CleaningArea.php` — **Area cleaning (name, is_active), relasi ke ServiceRequest**
 - `app/Models/CleaningAddon.php` — **Addon cleaning (name, price, is_active), relasi ke ServiceRequest dengan pivot snapshot_price**
 
 ### Middleware
@@ -355,9 +350,9 @@ resources/views/
 │   ├── coin-redemption-products/{index,create,edit}.blade.php
 │   ├── apartment-locations/index.blade.php  # **Kelola lokasi & tower**
 │   ├── cleaning-pricings/edit.blade.php  # **Edit tarif cleaning per jam**
-│   ├── cleaning-areas/{index,create,edit}.blade.php  # **CRUD area cleaning**
 │   └── cleaning-addons/{index,create,edit}.blade.php  # **CRUD addon cleaning**
 │   # repair-pricings/ DELETED — MnR pricing now fully manual
+│   # cleaning-areas/ DELETED — cleaning simplified to duration + addons only
 ├── guest/
 │   ├── home.blade.php           # **Hero + services grid + marketplace slider (3 properti terbaru) + steps + trust**
 │   ├── balance.blade.php
@@ -409,8 +404,9 @@ resources/views/
 13. **Service Request Location**: All service requests now require `daerah`, `apartment_location_id`, `apartment_tower_id` (defaults from guest profile, cascading dropdown on order form)
 14. **Idempotent Payments**: Both `RepairPaymentService::charge()` and `LaundryPaymentService::charge()` are idempotent (check `price_approved_at` / `laundry_paid_at`)
 15. **Cleaning Pricing Changed**: Now per-hour rate (`price_per_hour`) + areas (required) + addons (optional) — no more fixed price per type. Total = hours × rate + Σ addon prices. Uses `CleaningPricing::current()` for active rate.
-16. **Cleaning Areas Required**: Guest must select at least 1 cleaning area when creating cleaning request
+16. **Cleaning Areas Required**: ~~Guest must select at least 1 cleaning area when creating cleaning request~~ **REMOVED** — cleaning now only requires duration + optional addons
 17. **RepairPricing Removed**: `repair_pricings` table & Eloquent model deleted. `RepairPricing` is now a plain PHP class with `CATEGORIES` & `SEVERITIES` constants only. Admin sets MnR price manually in `setPrice` (no suggested/reference price). `RepairPricingController` & views deleted. Admin sidebar no longer has Repair pricing menu.
+18. **CleaningArea Removed**: `cleaning_areas` table, model, controller, views, and routes deleted. Cleaning service simplified to duration (hours) + optional addons only. No more area selection required.
 
 ---
 
@@ -457,6 +453,7 @@ resources/views/
 | `2026_09_23_072859_create_cleaning_addons_table.php` | CleaningAddon model (name, price, is_active) |
 | `2026_09_23_072929_create_cleaning_addon_service_request_table.php` | Pivot: ServiceRequest ↔ CleaningAddon (with snapshot_price) |
 | `2026_09_23_073006_update_cleaning_fields_on_service_requests_table.php` | ServiceRequest: drop cleaning_type/snapshot_cleaning_price → add cleaning_duration_hours, snapshot_cleaning_price_per_hour |
+| `2026_09_23_201321_drop_cleaning_areas_tables.php` | Drop cleaning_areas table + cleaning_area_service_request pivot |
 
 ---
 
@@ -472,4 +469,4 @@ resources/views/
 
 ---
 
-*Generated from codebase analysis on 2026-09-19; updated 2026-09-22 with apartment location/tower system, cascading dropdowns, updated auth views, laundry payment flow (waiting_payment status), and marketplace slider on home; updated 2026-09-23 with cleaning pricing per-hour, cleaning areas & addons, admin CRUD for cleaning config; updated 2026-09-23 with AC full-service, AC repair/AC full-service survey pricing flow, ServiceRequest helper methods, and complete migration list; updated 2026-09-24 with RepairPricing removed (now plain PHP class), MnR pricing fully manual, RepairPricingController & views deleted*
+*Generated from codebase analysis on 2026-09-19; updated 2026-09-22 with apartment location/tower system, cascading dropdowns, updated auth views, laundry payment flow (waiting_payment status), and marketplace slider on home; updated 2026-09-23 with cleaning pricing per-hour, cleaning areas & addons, admin CRUD for cleaning config; updated 2026-09-23 with AC full-service, AC repair/AC full-service survey pricing flow, ServiceRequest helper methods, and complete migration list; updated 2026-09-24 with RepairPricing removed (now plain PHP class), MnR pricing fully manual, RepairPricingController & views deleted; updated 2026-09-24 with CleaningArea removed, cleaning simplified to duration + addons only*

@@ -121,10 +121,6 @@ class ServiceRequestController extends Controller
             ? \App\Models\CleaningPricing::current()
             : null;
 
-        $cleaningAreas = $service->slug === 'cleaning'
-            ? \App\Models\CleaningArea::active()->orderBy('name')->get()
-            : collect();
-
         $cleaningAddons = $service->slug === 'cleaning'
             ? \App\Models\CleaningAddon::active()->orderBy('name')->get()
             : collect();
@@ -140,7 +136,6 @@ class ServiceRequestController extends Controller
             'requests',
             'laundryPricings',
             'cleaningPricing',
-            'cleaningAreas',
             'cleaningAddons',
             'acPricings',
             'locations'
@@ -185,8 +180,6 @@ class ServiceRequestController extends Controller
 
             // cleaning-specific fields
             'cleaning_duration_hours' => ['nullable', 'integer', 'min:1', 'max:12'],
-            'cleaning_area_ids' => ['nullable', 'array'],
-            'cleaning_area_ids.*' => ['exists:cleaning_areas,id'],
             'cleaning_addon_ids' => ['nullable', 'array'],
             'cleaning_addon_ids.*' => ['exists:cleaning_addons,id'],
 
@@ -234,8 +227,6 @@ class ServiceRequestController extends Controller
         if ($isCleaning) {
             $request->validate([
                 'cleaning_duration_hours' => ['required', 'integer', 'min:1', 'max:12'],
-                'cleaning_area_ids' => ['required', 'array', 'min:1'],
-                'cleaning_area_ids.*' => ['exists:cleaning_areas,id'],
             ]);
 
             $pricing = \App\Models\CleaningPricing::current();
@@ -281,7 +272,6 @@ class ServiceRequestController extends Controller
             ]);
 
             if ($isCleaning) {
-                $serviceRequest->cleaningAreas()->attach($validated['cleaning_area_ids']);
 
                 if (!empty($validated['cleaning_addon_ids'])) {
                     $addons = \App\Models\CleaningAddon::whereIn('id', $validated['cleaning_addon_ids'])

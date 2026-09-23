@@ -160,25 +160,6 @@
             <p class="ui-price-note">Total dihitung otomatis sesuai durasi.</p>
         </div>
 
-        @if ($cleaningAreas->isNotEmpty())
-            <div class="ui-divider ui-form">
-                <h3 class="ui-heading">Area yang Dibersihkan</h3>
-                <p class="ui-sub">Pilih area/ruangan yang akan dibersihkan.</p>
-
-                @php $oldAreas = old('cleaning_area_ids', []); @endphp
-                <div class="ui-stack" style="margin-top:8px">
-                    @foreach ($cleaningAreas as $area)
-                        <label style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid #E5E7EB;border-radius:10px">
-                            <input type="checkbox" name="cleaning_area_ids_display[]" value="{{ $area->id }}"
-                                @checked(in_array($area->id, $oldAreas)) class="cleaning-area-checkbox-display">
-                            <span style="font-size:13px;color:#111827">{{ $area->name }}</span>
-                        </label>
-                    @endforeach
-                </div>
-                <x-input-error :messages="$errors->get('cleaning_area_ids')" class="mt-2" />
-            </div>
-        @endif
-
         @if ($cleaningAddons->isNotEmpty())
             <div class="ui-divider ui-form">
                 <h3 class="ui-heading">Pekerjaan Tambahan (Opsional)</h3>
@@ -326,7 +307,6 @@
                     {{-- Cleaning hidden fields --}}
                     @if ($service->slug === 'cleaning')
                         <input type="hidden" name="cleaning_duration_hours" id="form-cleaning-duration" value="{{ old('cleaning_duration_hours') }}">
-                        <div id="cleaning-area-hidden-wrap"></div>
                         <div id="cleaning-addon-hidden-wrap"></div>
                     @endif
 
@@ -671,9 +651,7 @@ const cleaningDurationRadios = document.querySelectorAll('.cleaning-duration-rad
 const customDurationWrap = document.getElementById('custom-duration-wrap');
 const customDurationInput = document.getElementById('custom-duration-input');
 const formCleaningDuration = document.getElementById('form-cleaning-duration');
-const cleaningAreaCheckboxes = document.querySelectorAll('.cleaning-area-checkbox-display');
 const cleaningAddonCheckboxes = document.querySelectorAll('.cleaning-addon-checkbox-display');
-const cleaningAreaHiddenWrap = document.getElementById('cleaning-area-hidden-wrap');
 const cleaningAddonHiddenWrap = document.getElementById('cleaning-addon-hidden-wrap');
 const cleaningTotalInfo = document.getElementById('cleaning-total-info');
 const cleaningTotalValue = document.getElementById('cleaning-total-value');
@@ -716,7 +694,6 @@ function updateCleaningTotal() {
         customDurationWrap.classList.toggle('hidden', !isCustom);
     }
 
-    syncHiddenCheckboxes(cleaningAreaCheckboxes, cleaningAreaHiddenWrap, 'cleaning_area_ids[]');
     syncHiddenCheckboxes(cleaningAddonCheckboxes, cleaningAddonHiddenWrap, 'cleaning_addon_ids[]');
 
     if (!hours) {
@@ -745,14 +722,21 @@ function updateCleaningTotal() {
     }
 }
 
-cleaningDurationRadios.forEach(r => r.addEventListener('change', updateCleaningTotal));
-if (customDurationInput) customDurationInput.addEventListener('input', updateCleaningTotal);
-cleaningAreaCheckboxes.forEach(cb => cb.addEventListener('change', updateCleaningTotal));
-cleaningAddonCheckboxes.forEach(cb => cb.addEventListener('change', updateCleaningTotal));
+// Event Listeners untuk Cleaning Duration & Addons
+if (cleaningDurationRadios) {
+    cleaningDurationRadios.forEach(r => r.addEventListener('change', updateCleaningTotal));
+}
+if (customDurationInput) {
+    customDurationInput.addEventListener('input', updateCleaningTotal);
+}
+if (cleaningAddonCheckboxes) {
+    cleaningAddonCheckboxes.forEach(cb => cb.addEventListener('change', updateCleaningTotal));
+}
 
+// Inisialisasi awal saat halaman dimuat
 updateCleaningTotal();
 
-   // ==============================
+// ==============================
 // AC selection
 // ==============================
 

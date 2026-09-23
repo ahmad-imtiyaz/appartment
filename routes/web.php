@@ -3,7 +3,6 @@
 use App\Http\Controllers\Admin\CoinRedemptionController as AdminCoinRedemptionController;
 use App\Http\Controllers\Admin\CoinRedemptionProductController;
 use App\Http\Controllers\Admin\CoinSettingController;
-use App\Http\Controllers\Admin\CleaningAreaController;
 use App\Http\Controllers\Admin\CleaningAddonController;
 use App\Http\Controllers\Admin\CleaningPricingController;
 use App\Http\Controllers\Admin\DashboardController;
@@ -327,34 +326,6 @@ Route::middleware(['auth', 'role:admin'])
             ->name('laundry-pricings.update');
 
 
-
-        /*
-        |--------------------------------------------------------------------------
-        | MnR / Repair Pricing
-        |--------------------------------------------------------------------------
-        */
-
-        Route::get('repair-pricings', [\App\Http\Controllers\Admin\RepairPricingController::class, 'index'])
-            ->name('repair-pricings.index');
-
-        Route::get('repair-pricings/create', [\App\Http\Controllers\Admin\RepairPricingController::class, 'create'])
-            ->name('repair-pricings.create');
-
-        Route::post('repair-pricings', [\App\Http\Controllers\Admin\RepairPricingController::class, 'store'])
-            ->name('repair-pricings.store');
-
-        Route::get('repair-pricings/{pricing}/edit', [\App\Http\Controllers\Admin\RepairPricingController::class, 'edit'])
-            ->name('repair-pricings.edit');
-
-        Route::put('repair-pricings/{pricing}', [\App\Http\Controllers\Admin\RepairPricingController::class, 'update'])
-            ->name('repair-pricings.update');
-
-        Route::patch('repair-pricings/{pricing}/toggle', [\App\Http\Controllers\Admin\RepairPricingController::class, 'toggle'])
-            ->name('repair-pricings.toggle');
-
-        Route::delete('repair-pricings/{pricing}', [\App\Http\Controllers\Admin\RepairPricingController::class, 'destroy'])
-            ->name('repair-pricings.destroy');
-
         /*
         |--------------------------------------------------------------------------
         | Cleaning Pricing
@@ -366,15 +337,6 @@ Route::middleware(['auth', 'role:admin'])
 
         Route::put('/cleaning-pricings', [CleaningPricingController::class, 'update'])
             ->name('cleaning-pricings.update');
-
-        /*
-        |--------------------------------------------------------------------------
-        | Cleaning Areas
-        |--------------------------------------------------------------------------
-        */
-
-        Route::resource('cleaning-areas', CleaningAreaController::class)
-            ->except(['show']);
 
         /*
         |--------------------------------------------------------------------------

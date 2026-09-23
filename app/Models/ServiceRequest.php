@@ -97,14 +97,6 @@ class ServiceRequest extends Model
         return $this->belongsTo(ApartmentTower::class);
     }
 
-    public function cleaningAreas(): BelongsToMany
-    {
-        return $this->belongsToMany(
-            CleaningArea::class,
-            'cleaning_area_service_request'
-        );
-    }
-
     public function cleaningAddons(): BelongsToMany
     {
         return $this->belongsToMany(
