@@ -345,6 +345,7 @@ calculateFee(float $amount): float
 - `app/Services/RepairPaymentService.php` — Atomic charge untuk MnR
 - `app/Services/LaundryPaymentService.php` — **Atomic charge untuk laundry (idempotent, cek laundry_paid_at)**
 - `app/Services/CoinRewardService.php` — Reward koin berdasarkan tier
+- `app/Services/AdminWhatsappLink.php` — **Generate wa.me link ke admin dengan data user (nama, email, phone, status, lokasi, unit)**
 
 ### Models (Relations & Helpers)
 - `app/Models/User.php` — Role helpers, all relationships, **apartment location/tower relations**, **withdrawalRequests()**
@@ -403,7 +404,8 @@ resources/views/
 │   ├── withdrawals/{index,create}.blade.php  # **Form & riwayat penarikan**
 │   └── partials/
 │       ├── header-card.blade.php  # **Dengan banner topup pending**
-│       └── topup-pending.blade.php  # **Banner notif topup pending**
+│       ├── topup-pending.blade.php  # **Banner notif topup pending**
+│       └── contact-admin.blade.php  # **WhatsApp Chat Admin card**
 ├── worker/
 │   └── tasks/{index,show}.blade.php  # **Detail tugas dengan lokasi, readyForPayment, confirmDelivered**
 ├── profile/
@@ -427,6 +429,7 @@ resources/views/
 - SQLite/MySQL/PostgreSQL
 - Vite + Tailwind CSS (frontend)
 - Laravel Breeze (auth scaffolding)
+- **Config: `ADMIN_WHATSAPP` di `.env` (format 08xxx atau 628xxx) untuk fitur Chat Admin via WhatsApp**
 
 ---
 
@@ -452,6 +455,7 @@ resources/views/
 18. **CleaningArea Removed**: `cleaning_areas` table, model, controller, views, and routes deleted. Cleaning service simplified to duration (hours) + optional addons only. No more area selection required.
 19. **Withdrawal System**: Guest ajukan tarik saldo → saldo ditahan + fee dihitung → admin approve (sudah transfer) atau reject (saldo dikembalikan via mutation). WithdrawalSetting tunggal (min_amount, fee_type flat/percent, fee_value). BalanceMutation created untuk debit (ajukan) dan credit (reject).
 20. **Topup Pending Banner**: Home & balance page menampilkan banner notif jika ada topup pending (count + amount).
+21. **WhatsApp Contact Admin**: Guest home page menampilkan card "Chat Admin" (WhatsApp link) dengan data user pre-filled (nama, email, phone, status, lokasi, unit). Butuh `ADMIN_WHATSAPP` di `.env`. Service: `AdminWhatsappLink::for($user)`. Partial: `guest.partials.contact-admin`. Disesuaikan untuk Flutter (`target="_blank"` tidak dipakai, link dicegat via `onNavigationRequest`).
 
 ---
 
@@ -515,4 +519,4 @@ resources/views/
 
 ---
 
-*Generated from codebase analysis on 2026-09-19; updated 2026-09-22 with apartment location/tower system, cascading dropdowns, updated auth views, laundry payment flow (waiting_payment status), and marketplace slider on home; updated 2026-09-23 with cleaning pricing per-hour, cleaning areas & addons, admin CRUD for cleaning config; updated 2026-09-23 with AC full-service, AC repair/AC full-service survey pricing flow, ServiceRequest helper methods, and complete migration list; updated 2026-09-24 with RepairPricing removed (now plain PHP class), MnR pricing fully manual, RepairPricingController & views deleted; updated 2026-09-24 with CleaningArea removed, cleaning simplified to duration + addons only; updated 2026-09-24 with Withdrawal system (WithdrawalRequest, WithdrawalSetting, admin approve/reject, fee calculation, balance mutation)*
+*Generated from codebase analysis on 2026-09-19; updated 2026-09-22 with apartment location/tower system, cascading dropdowns, updated auth views, laundry payment flow (waiting_payment status), and marketplace slider on home; updated 2026-09-23 with cleaning pricing per-hour, cleaning areas & addons, admin CRUD for cleaning config; updated 2026-09-23 with AC full-service, AC repair/AC full-service survey pricing flow, ServiceRequest helper methods, and complete migration list; updated 2026-09-24 with RepairPricing removed (now plain PHP class), MnR pricing fully manual, RepairPricingController & views deleted; updated 2026-09-24 with CleaningArea removed, cleaning simplified to duration + addons only; updated 2026-09-24 with Withdrawal system (WithdrawalRequest, WithdrawalSetting, admin approve/reject, fee calculation, balance mutation); updated 2026-09-24 with WhatsApp Contact Admin feature (AdminWhatsappLink service, config/oregonet.php, guest partial, ADMIN_WHATSAPP env)*
