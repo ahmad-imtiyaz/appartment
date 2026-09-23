@@ -35,7 +35,7 @@ Sistem manajemen layanan apartemen dengan 3 role: **admin**, **pekerja** (worker
 | **LaundryPricing** | `laundry_pricings` | `type` (cuci/cuci_setrika/setrika), `duration` (reguler/express), `price_per_kg` |
 | **CleaningPricing** | `cleaning_pricings` | `price_per_hour` (single active rate per hour) |
 | **AcPricing** | `ac_pricings` | `type` (ac-cleaning/ac-refill/ac-repair), `price` |
-| **RepairPricing** | `repair_pricings` | `category`, `severity` (ringan/sedang/berat), `price` — harga patok MnR |
+| **RepairPricing** | — | **No database table** — PHP class with constants `CATEGORIES` & `SEVERITIES` only (used for form validation) |
 
 ### Cleaning Configuration Models (Admin-managed)
 | Model | Table | Key Fields | Purpose |
@@ -150,7 +150,7 @@ $serviceRequest->calculateTotalPrice()  // laundry: weight × rate; cleaning: ho
 - Guest pilih: `damage_category` (dari RepairPricing::CATEGORIES) + `urgency`
 - **Tidak ada harga upfront** — `snapshot_repair_price` = null
 - Pekerja `survey` → isi `damage_category`, `severity` (ringan/sedang/berat)
-- Admin `setPrice` → cek harga patok dari RepairPricing, set `total_price`, status → `waiting_approval`
+- Admin `setPrice` → **manual input harga** (tidak ada lagi harga acuan dari tabel), set `total_price`, status → `waiting_approval`
 - Guest `approvePrice` → saldo dipotong via `RepairPaymentService`, status → `in_progress`
 - Guest `rejectPrice` → status → `rejected`
 
@@ -243,7 +243,7 @@ awardForServiceRequest(ServiceRequest $sr, User $guest, float $amountSpent): ?Co
 | `GET /cleaning-pricings` | CleaningPricingController@edit | **Edit tarif cleaning per jam (single active rate)** |
 | `PUT /cleaning-pricings` | CleaningPricingController@update | Update tarif cleaning per jam |
 | `resource ac-pricings` | AcPricingController | CRUD pricing AC |
-| `CRUD repair-pricings` | RepairPricingController | CRUD pricing MnR (with toggle) |
+| `CRUD repair-pricings` | RepairPricingController | **REMOVED** — MnR pricing now fully manual (no reference price table) |
 | `resource cleaning-areas` | CleaningAreaController | **CRUD area cleaning (kamar mandi, dapur, dll)** |
 | `resource cleaning-addons` | CleaningAddonController | **CRUD addon cleaning (cuci jendela, oven, dll)** |
 | `GET /apartment-locations` | ApartmentLocationController@index | **List lokasi & tower** |
@@ -318,7 +318,7 @@ awardForServiceRequest(ServiceRequest $sr, User $guest, float $amountSpent): ?Co
 ### Models (Relations & Helpers)
 - `app/Models/User.php` — Role helpers, all relationships, **apartment location/tower relations**
 - `app/Models/ServiceRequest.php` — Status helpers (isWaitingPayment, isLaundryPaid), service type checks, calculateTotalPrice (laundry + **cleaning**), **lokasi relations**, **cleaningAreas, cleaningAddons**
-- `app/Models/RepairPricing.php` — Categories & severities constants, scopeByCategoryAndSeverity
+- `app/Models/RepairPricing.php` — **PHP class (non-Eloquent) dengan constants: `CATEGORIES` & `SEVERITIES` untuk validasi form** — **no database table**
 - `app/Models/CoinSetting.php` — Tier reward logic
 - `app/Models/ApartmentLocation.php` — **Master lokasi, relasi ke towers & users**
 - `app/Models/ApartmentTower.php` — **Tower, relasi ke location & users**
@@ -357,6 +357,7 @@ resources/views/
 │   ├── cleaning-pricings/edit.blade.php  # **Edit tarif cleaning per jam**
 │   ├── cleaning-areas/{index,create,edit}.blade.php  # **CRUD area cleaning**
 │   └── cleaning-addons/{index,create,edit}.blade.php  # **CRUD addon cleaning**
+│   # repair-pricings/ DELETED — MnR pricing now fully manual
 ├── guest/
 │   ├── home.blade.php           # **Hero + services grid + marketplace slider (3 properti terbaru) + steps + trust**
 │   ├── balance.blade.php
@@ -409,6 +410,7 @@ resources/views/
 14. **Idempotent Payments**: Both `RepairPaymentService::charge()` and `LaundryPaymentService::charge()` are idempotent (check `price_approved_at` / `laundry_paid_at`)
 15. **Cleaning Pricing Changed**: Now per-hour rate (`price_per_hour`) + areas (required) + addons (optional) — no more fixed price per type. Total = hours × rate + Σ addon prices. Uses `CleaningPricing::current()` for active rate.
 16. **Cleaning Areas Required**: Guest must select at least 1 cleaning area when creating cleaning request
+17. **RepairPricing Removed**: `repair_pricings` table & Eloquent model deleted. `RepairPricing` is now a plain PHP class with `CATEGORIES` & `SEVERITIES` constants only. Admin sets MnR price manually in `setPrice` (no suggested/reference price). `RepairPricingController` & views deleted. Admin sidebar no longer has Repair pricing menu.
 
 ---
 
@@ -441,7 +443,7 @@ resources/views/
 | `2026_09_18_155957_add_notif_seen_at_to_users_table.php` | Add `notif_seen_at` to users |
 | `2026_09_18_162646_create_coin_redemption_products_table.php` | Coin redemption products |
 | `2026_09_18_162735_create_coin_redemptions_table.php` | Guest coin redemption requests |
-| `2026_09_18_211024_create_repair_pricings_table.php` | MnR pricing (category, severity, price) |
+| `2026_09_18_211024_create_repair_pricings_table.php` | MnR pricing (category, severity, price) — **TABLE NO LONGER USED** (model now plain PHP class) |
 | `2026_09_18_211029_add_repair_flow_to_service_requests.php` | MnR fields (survey, price_approval, status waiting_approval) |
 | `2026_09_22_112129_create_apartment_locations_table.php` | Master apartment locations |
 | `2026_09_22_112210_create_apartment_towers_table.php` | Apartment towers (FK to locations) |
@@ -470,4 +472,4 @@ resources/views/
 
 ---
 
-*Generated from codebase analysis on 2026-09-19; updated 2026-09-22 with apartment location/tower system, cascading dropdowns, updated auth views, laundry payment flow (waiting_payment status), and marketplace slider on home; updated 2026-09-23 with cleaning pricing per-hour, cleaning areas & addons, admin CRUD for cleaning config; updated 2026-09-23 with AC full-service, AC repair/AC full-service survey pricing flow, ServiceRequest helper methods, and complete migration list*
+*Generated from codebase analysis on 2026-09-19; updated 2026-09-22 with apartment location/tower system, cascading dropdowns, updated auth views, laundry payment flow (waiting_payment status), and marketplace slider on home; updated 2026-09-23 with cleaning pricing per-hour, cleaning areas & addons, admin CRUD for cleaning config; updated 2026-09-23 with AC full-service, AC repair/AC full-service survey pricing flow, ServiceRequest helper methods, and complete migration list; updated 2026-09-24 with RepairPricing removed (now plain PHP class), MnR pricing fully manual, RepairPricingController & views deleted*

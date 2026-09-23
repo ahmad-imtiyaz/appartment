@@ -58,12 +58,10 @@ class TaskController extends Controller
     public function survey(Request $request, ServiceRequest $serviceRequest): RedirectResponse
     {
         abort_unless($serviceRequest->worker_id === auth()->id(), 403);
-        // Menggunakan helper requiresSurveyPricing() agar tidak MnR-only
         abort_unless($serviceRequest->requiresSurveyPricing(), 404);
         abort_if($serviceRequest->status !== 'in_progress', 422, 'Tugas belum dalam progress.');
         abort_if($serviceRequest->survey_reported_at !== null, 422, 'Survey untuk tugas ini sudah dikirim.');
 
-        // 1. Logika Khusus Maintenance & Repair (MnR)
         if ($serviceRequest->isMaintenance()) {
             $validated = $request->validate([
                 'damage_category' => ['required', Rule::in([...array_keys(\App\Models\RepairPricing::CATEGORIES), 'lainnya'])],
@@ -89,9 +87,7 @@ class TaskController extends Controller
                     'survey_reported_at' => now(),
                 ]);
             });
-        }
-        // 2. Logika untuk Layanan Lain (misal: AC Repair / Full Service)
-        else {
+        } else {
             $validated = $request->validate([
                 'survey_notes' => ['required', 'string', 'max:1000'],
             ]);
@@ -102,7 +98,6 @@ class TaskController extends Controller
             ]);
         }
 
-        // Notif ke admin
         $admin = $serviceRequest->assignedBy ?? User::where('role', 'admin')->first();
         $admin?->notify(new SurveyReportedNotification($serviceRequest));
 
@@ -132,7 +127,6 @@ class TaskController extends Controller
         return back()->with('success', 'Berat berhasil dicatat. Total harga: Rp' . number_format($totalPrice, 0, ',', '.'));
     }
 
-    // worker menandai laundry selesai dicuci → guest harus bayar sebelum diantar
     public function readyForPayment(ServiceRequest $serviceRequest): RedirectResponse
     {
         abort_unless($serviceRequest->worker_id === auth()->id(), 403);
@@ -145,7 +139,6 @@ class TaskController extends Controller
         return back()->with('success', 'Laundry selesai dicuci. Menunggu guest melakukan pembayaran.');
     }
 
-    // worker konfirmasi guest sudah menerima laundry (setelah dibayar) → completed
     public function confirmDelivered(Request $request, ServiceRequest $serviceRequest): RedirectResponse
     {
         abort_unless($serviceRequest->worker_id === auth()->id(), 403);
@@ -203,7 +196,7 @@ class TaskController extends Controller
             $cost = match (true) {
                 $serviceRequest->service->slug === 'laundry' => $serviceRequest->total_price ?? 0,
                 $serviceRequest->service->slug === 'cleaning' => $serviceRequest->total_price ?? 0,
-                $isSurveyPriced => $serviceRequest->total_price ?? 0, // Sudah dibayar saat approve
+                $isSurveyPriced => $serviceRequest->total_price ?? 0,
                 $serviceRequest->service->slug === 'ac' => $serviceRequest->snapshot_ac_price ?? 0,
                 default => $serviceRequest->service->base_price ?? 0,
             };
@@ -230,7 +223,6 @@ class TaskController extends Controller
                 ]);
             }
 
-            // Reward koin berdasarkan tier CoinSetting yang aktif
             $rewardBase = $isSurveyPriced ? ($serviceRequest->total_price ?? 0) : $cost;
             (new CoinRewardService())->awardForServiceRequest($serviceRequest, $guest, $rewardBase);
 

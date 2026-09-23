@@ -290,12 +290,7 @@
                         <div class="mt-4 pt-4 border-t border-gray-100">
                             <dt class="text-gray-500 text-sm mb-2">Harga</dt>
                             <dl class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                                @if ($serviceRequest->snapshot_repair_price)
-                                    <div>
-                                        <dt class="text-gray-500">Harga Acuan</dt>
-                                        <dd class="font-medium">Rp{{ number_format($serviceRequest->snapshot_repair_price, 0, ',', '.') }}</dd>
-                                    </div>
-                                @endif
+
                                 <div>
                                     <dt class="text-gray-500">Harga Final</dt>
                                     <dd class="font-bold text-green-700">Rp{{ number_format($serviceRequest->total_price, 0, ',', '.') }}</dd>
@@ -386,30 +381,12 @@
             Set Harga {{ $serviceRequest->isMaintenance() ? 'Perbaikan' : 'AC Service' }}
         </h3>
 
-        @php $suggestedPrice = null; @endphp
 
-        @if ($serviceRequest->isMaintenance())
-            @php
-                $detail = $serviceRequest->maintenanceDetail;
-                $suggestedPrice = $detail
-                    ? \App\Models\RepairPricing::byCategoryAndSeverity($detail->damage_category, $detail->severity ?? '')->value('price')
-                    : null;
-            @endphp
-            @if ($suggestedPrice !== null)
-                <p class="text-sm text-gray-600 mb-4">
-                    Harga acuan untuk kategori & tingkat ini:
-                    <span class="font-semibold text-gray-900">Rp{{ number_format($suggestedPrice, 0, ',', '.') }}</span>
-                </p>
-            @else
-                <p class="text-sm text-amber-600 mb-4">
-                    Tidak ada harga acuan untuk kombinasi kategori & tingkat ini — silakan input harga manual.
-                </p>
-            @endif
-        @else
-            <p class="text-sm text-gray-600 mb-4">
-                Tidak ada harga acuan untuk AC repair/full service — tentukan harga berdasarkan catatan survey teknisi di atas (sparepart + jasa).
-            </p>
-        @endif
+      <p class="text-sm text-gray-600 mb-4">
+            Tidak ada harga acuan — tentukan harga final berdasarkan catatan survey
+            {{ $serviceRequest->isMaintenance() ? 'pekerja' : 'teknisi' }} di atas
+            ({{ $serviceRequest->isMaintenance() ? 'material & jasa' : 'sparepart & jasa' }}).
+        </p>
 
         <form method="POST" action="{{ route('admin.service-requests.set-price', $serviceRequest) }}" class="space-y-4">
             @csrf
@@ -418,13 +395,13 @@
                     {{ __('Harga Final') }} <span class="text-red-500">*</span>
                 </x-input-label>
                 <x-text-input id="price" type="number" name="price" min="0" step="1000" required class="mt-1 block w-full"
-                              value="{{ old('price', $suggestedPrice) }}" />
+                              value="{{ old('price') }}" />
                 <x-input-error :messages="$errors->get('price')" class="mt-2" />
             </div>
             <div>
-                <x-input-label for="price_change_note" :value="$serviceRequest->isMaintenance() ? __('Alasan Perubahan Harga (wajib jika berbeda dari harga acuan)') : __('Catatan Harga (rincian sparepart & jasa, opsional)')" />
+                <x-input-label for="price_change_note" :value="__('Catatan Harga (rincian material/sparepart & jasa, opsional)')" />
                 <textarea name="price_change_note" id="price_change_note" rows="2" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-4 py-2"
-                          placeholder="{{ $serviceRequest->isMaintenance() ? 'Contoh: material tambahan karena kerusakan lebih parah dari laporan awal' : 'Contoh: 1x kapasitor AC Rp150.000 + jasa Rp100.000' }}">{{ old('price_change_note') }}</textarea>
+                          placeholder="Contoh: 1x kapasitor AC Rp150.000 + jasa Rp100.000">{{ old('price_change_note') }}</textarea>
                 <x-input-error :messages="$errors->get('price_change_note')" class="mt-2" />
             </div>
             <x-primary-button>

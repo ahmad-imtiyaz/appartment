@@ -377,40 +377,7 @@
                 </div>
             @endif
 
-            <!-- Complete Form (for in_progress status) -->
-            @if ($serviceRequest->status === 'in_progress' && !$serviceRequest->isLaundry() && (!$serviceRequest->requiresSurveyPricing() || $serviceRequest->price_approved_at))
-                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
-                    <h3 class="font-semibold text-gray-900 mb-4">Tandai Selesai</h3>
-                    <form method="POST" action="{{ route('worker.tasks.complete', $serviceRequest) }}" enctype="multipart/form-data" class="space-y-4">
-                        @csrf
 
-                        @if($serviceRequest->requiresSurveyPricing() && $serviceRequest->total_price)
-                            <div class="bg-green-50 rounded-lg p-3 mb-4">
-                                <p class="font-medium text-green-900">
-                                    Harga Disetujui: Rp{{ number_format($serviceRequest->total_price, 0, ',', '.') }}
-                                </p>
-                            </div>
-                        @endif
-
-                        <div>
-                            <x-input-label for="worker_notes" :value="__('Catatan Pekerja')" />
-                            <textarea name="worker_notes" id="worker_notes" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-4 py-2" placeholder="Catatan hasil kerjaan...">{{ old('worker_notes') }}</textarea>
-                            <x-input-error :messages="$errors->get('worker_notes')" class="mt-2" />
-                        </div>
-
-                        <div>
-                            <x-input-label for="photos" :value="__('Foto Hasil (Opsional, max 5)')" />
-                            <input type="file" name="photos[]" id="photos" accept="image/*" multiple class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" />
-                            <x-input-error :messages="$errors->get('photos')" class="mt-2" />
-                            <p class="mt-1 text-xs text-gray-500">Maksimal 5 foto, masing-masing max 2MB</p>
-                        </div>
-
-                        <x-danger-button type="submit" class="w-full sm:w-auto">
-                            Tandai Selesai
-                        </x-danger-button>
-                    </form>
-                </div>
-            @endif
 
             <!-- Complete Form (for in_progress status) -->
             @if ($serviceRequest->status === 'in_progress' && !$serviceRequest->isLaundry() && (!$serviceRequest->requiresSurveyPricing() || $serviceRequest->price_approved_at))

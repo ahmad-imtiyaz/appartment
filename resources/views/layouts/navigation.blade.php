@@ -84,7 +84,7 @@
     ['route' => 'admin.cleaning-areas.index', 'label' => 'Area Cleaning', 'icon' => 'sparkles'],
     ['route' => 'admin.cleaning-addons.index', 'label' => 'Tambahan Cleaning', 'icon' => 'sparkles'],
     ['route' => 'admin.ac-pricings.index', 'label' => 'AC', 'icon' => 'cloud'],
-    ['route' => 'admin.repair-pricings.index', 'label' => 'Repair', 'icon' => 'wrench'],
+
 ],
                     'Penukaran Koin' => [
                         ['route' => 'admin.coin-redemption-products.index', 'label' => 'Produk Tukar Koin', 'icon' => 'gift'],

@@ -3,14 +3,12 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\RepairPricing;
 use App\Models\ServiceRequest;
 use App\Models\User;
 use App\Notifications\PriceSetNotification;
 use App\Notifications\TaskAssignedNotification;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 
 class ServiceRequestController extends Controller
 {
@@ -68,36 +66,14 @@ class ServiceRequestController extends Controller
             'Survey dari pekerja belum masuk, harga belum bisa di-set.'
         );
 
-        $suggestedPrice = null;
 
-        // Logika khusus jika layanan berjenis Maintenance & Repair (MnR)
-        if ($serviceRequest->isMaintenance()) {
-            $detail = $serviceRequest->maintenanceDetail;
-            abort_if(!$detail, 422, 'Data survey tidak ditemukan.');
-
-            // Cari harga acuan dari price list berdasarkan kategori & keparahan
-            $suggestedPrice = RepairPricing::query()
-                ->where('category', $detail->damage_category)
-                ->where('severity', $detail->severity)
-                ->where('is_active', true)
-                ->value('price');
-        }
 
         $validated = $request->validate([
             'price' => ['required', 'numeric', 'min:0'],
-            'price_change_note' => [
-                Rule::requiredIf(fn() => $suggestedPrice !== null
-                    && round((float) $request->input('price'), 2) !== round((float) $suggestedPrice, 2)),
-                'nullable',
-                'string',
-                'max:255',
-            ],
-        ], [
-            'price_change_note.required' => 'Wajib isi alasan kalau harga diubah dari harga acuan.',
+            'price_change_note' => ['nullable', 'string', 'max:255'],
         ]);
 
         $serviceRequest->update([
-            'snapshot_repair_price' => $suggestedPrice,
             'total_price' => $validated['price'],
             'price_change_note' => $validated['price_change_note'] ?? null,
             'status' => 'waiting_approval',
