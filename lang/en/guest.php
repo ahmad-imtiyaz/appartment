@@ -407,7 +407,7 @@ return [
         'confirm_cancel'       => 'Cancel order #:id?',
     ],
 
-    /*
+   /*
     |--------------------------------------------------------------------------
     | Service Request Show
     |--------------------------------------------------------------------------
@@ -429,14 +429,14 @@ return [
         'urgency'            => 'Urgency',
 
         'price_approval'     => 'Price Approval',
-        'survey_done'        => 'The worker has completed the survey and the admin has set the repair cost:',
+        'survey_done'        => 'The survey has been completed, here is the final price from our team:',
         'current_balance'    => 'Your current balance: :amount',
         'approve_pay'        => 'Approve & Pay',
         'reject'             => 'Reject',
 
         'confirm_reject'     => 'Reject this price? The request will be cancelled and you will need to submit it again.',
 
-        'in_progress_note'     => 'Please wait, your request is currently being processed.',
+        'in_progress_note'    => 'Please wait, your request is currently being processed.',
         'laundry_payment'      => 'Laundry Payment',
         'laundry_ready'        => 'Your laundry has been washed. Please pay before it is delivered:',
         'laundry_already_paid' => 'You have already paid for this laundry. Waiting to be delivered to your unit.',
@@ -451,7 +451,7 @@ return [
         'comment_placeholder' => 'Write about your experience...',
         'send_feedback'      => 'Send Feedback',
 
-        'pending_note' => 'Please wait, your request is being processed.',
+        'pending_note'       => 'Please wait, your request is being processed.',
     ],
 
     /*

@@ -216,6 +216,23 @@ class ServiceRequest extends Model
         return $this->service->slug === 'maintenance-repair';
     }
 
+    public function isAcRepair(): bool
+    {
+        return $this->ac_type === 'ac-repair';
+    }
+
+    public function isAcFullService(): bool
+    {
+        return $this->ac_type === 'ac-full-service';
+    }
+
+    // MnR & AC Repair/Full Service pakai alur survey -> set harga -> approve
+    public function requiresSurveyPricing(): bool
+    {
+        return $this->isMaintenance()
+            || ($this->isAc() && in_array($this->ac_type, ['ac-repair', 'ac-full-service']));
+    }
+
     // MnR: harga final sudah disetujui guest & saldo sudah dipotong
     public function isPriceApproved(): bool
     {

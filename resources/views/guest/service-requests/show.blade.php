@@ -227,6 +227,32 @@
                 </div>
             @endif
 
+            {{-- Survey AC (repair/full-service) --}}
+@if (in_array($serviceRequest->ac_type ?? null, ['ac-repair', 'ac-full-service']) && $serviceRequest->survey_reported_at)
+    <div class="ui-card ui-rise">
+
+        <h3 class="ui-heading" style="margin-bottom:6px">
+            Hasil Survey Teknisi
+        </h3>
+
+        <p class="ui-row-meta">
+            Disurvey pada {{ $serviceRequest->survey_reported_at->translatedFormat('d M Y H:i') }}
+        </p>
+
+        @if ($serviceRequest->survey_notes)
+            <div class="ui-note" style="margin-top:10px">
+                <span class="ui-note-title">Catatan Teknisi</span>
+                {{ $serviceRequest->survey_notes }}
+            </div>
+        @endif
+
+    </div>
+@elseif (in_array($serviceRequest->ac_type ?? null, ['ac-repair', 'ac-full-service']) && $serviceRequest->status === 'in_progress' && !$serviceRequest->survey_reported_at)
+    <div class="ui-alert" style="background:#EFF6FF;color:#1E40AF">
+        Teknisi sedang menuju lokasi untuk survey unit AC Anda (gratis, tanpa biaya).
+    </div>
+@endif
+
 
             {{-- Persetujuan harga --}}
             @if ($serviceRequest->status === 'waiting_approval')

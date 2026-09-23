@@ -26,9 +26,9 @@ class PriceSetNotification extends Notification implements ShouldQueue
         $sr = $this->serviceRequest->loadMissing('service');
 
         return (new MailMessage)
-            ->subject('Harga Perbaikan Sudah Ditetapkan: ' . $sr->service->name)
+            ->subject('Harga Ditetapkan: ' . $sr->service->name)
             ->greeting('Halo ' . $notifiable->name . ',')
-            ->line('Admin telah menetapkan harga final untuk permintaan perbaikan kamu.')
+            ->line('Admin telah menetapkan harga final untuk permintaan "' . $sr->service->name . '" kamu.')
             ->line('Total Harga: Rp' . number_format($sr->total_price, 0, ',', '.'))
             ->when($sr->price_change_note, fn ($mail) => $mail->line('Catatan: ' . $sr->price_change_note))
             ->line('Mohon setujui atau tolak harga ini melalui dashboard.')
@@ -41,7 +41,7 @@ class PriceSetNotification extends Notification implements ShouldQueue
         return [
             'service_request_id' => $this->serviceRequest->id,
             'service_name' => $this->serviceRequest->service->name,
-            'message' => 'Harga perbaikan sudah ditetapkan: Rp' . number_format($this->serviceRequest->total_price, 0, ',', '.'),
+            'message' => 'Harga untuk "' . $this->serviceRequest->service->name . '" sudah ditetapkan: Rp' . number_format($this->serviceRequest->total_price, 0, ',', '.'),
         ];
     }
 }

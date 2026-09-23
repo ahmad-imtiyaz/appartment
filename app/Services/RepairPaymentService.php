@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\DB;
 class RepairPaymentService
 {
     /**
-     * Potong saldo guest sebesar harga final (total_price) order Maintenance & Repair,
+     * Potong saldo guest sebesar harga final (total_price) order berbasis survey/repair,
      * tandai harga sudah disetujui, dan kembalikan status ke in_progress.
      *
      * Return false kalau saldo tidak cukup (tidak ada data yang berubah).
@@ -19,7 +19,10 @@ class RepairPaymentService
     public function charge(ServiceRequest $serviceRequest): bool
     {
         $paid = DB::transaction(function () use ($serviceRequest) {
-            $locked = ServiceRequest::whereKey($serviceRequest->getKey())->lockForUpdate()->firstOrFail();
+            $locked = ServiceRequest::whereKey($serviceRequest->getKey())
+                ->with('service')
+                ->lockForUpdate()
+                ->firstOrFail();
 
             if ($locked->price_approved_at) {
                 return true;
@@ -48,7 +51,7 @@ class RepairPaymentService
                 'balance_after' => $after,
                 'reference_type' => 'ServiceRequest',
                 'reference_id' => $locked->id,
-                'description' => 'Pembayaran jasa Maintenance & Repair (harga disetujui)',
+                'description' => 'Pembayaran jasa ' . $locked->service->name . ' (harga disetujui)',
             ]);
 
             $locked->update([

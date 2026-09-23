@@ -12,7 +12,7 @@ class AcPricingController extends Controller
 {
     public function index(Request $request): View
     {
-        $pricings = AcPricing::when($request->search, fn ($q) => $q->where('type', 'like', "%{$request->search}%"))
+        $pricings = AcPricing::when($request->search, fn($q) => $q->where('type', 'like', "%{$request->search}%"))
             ->latest()
             ->paginate(20);
 
@@ -27,7 +27,7 @@ class AcPricingController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'type' => ['required', 'in:ac-cleaning,ac-refill,ac-repair'],
+            'type' => ['required', 'in:ac-cleaning,ac-refill,ac-repair,ac-full-service'],
             'price' => ['required', 'numeric', 'min:0'],
             'is_active' => ['boolean'],
         ]);
@@ -65,8 +65,8 @@ class AcPricingController extends Controller
     {
         // Check if there are any active AC service requests
         $activeOrders = \App\Models\ServiceRequest::whereHas('service', function ($q) {
-                $q->where('services.slug', 'ac');
-            })
+            $q->where('services.slug', 'ac');
+        })
             ->whereIn('status', ['pending', 'assigned', 'in_progress'])
             ->exists();
 

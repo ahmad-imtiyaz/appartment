@@ -58,36 +58,51 @@ class TaskController extends Controller
     public function survey(Request $request, ServiceRequest $serviceRequest): RedirectResponse
     {
         abort_unless($serviceRequest->worker_id === auth()->id(), 403);
-        abort_unless($serviceRequest->isMaintenance(), 404);
+        // Menggunakan helper requiresSurveyPricing() agar tidak MnR-only
+        abort_unless($serviceRequest->requiresSurveyPricing(), 404);
         abort_if($serviceRequest->status !== 'in_progress', 422, 'Tugas belum dalam progress.');
         abort_if($serviceRequest->survey_reported_at !== null, 422, 'Survey untuk tugas ini sudah dikirim.');
 
-        $validated = $request->validate([
-            'damage_category' => ['required', Rule::in([...array_keys(\App\Models\RepairPricing::CATEGORIES), 'lainnya'])],
-            'severity' => ['required', Rule::in(array_keys(\App\Models\RepairPricing::SEVERITIES))],
-            'location' => ['nullable', 'string', 'max:100'],
-            'description' => ['nullable', 'string', 'max:1000'],
-            'survey_notes' => ['nullable', 'string', 'max:1000'],
-        ]);
+        // 1. Logika Khusus Maintenance & Repair (MnR)
+        if ($serviceRequest->isMaintenance()) {
+            $validated = $request->validate([
+                'damage_category' => ['required', Rule::in([...array_keys(\App\Models\RepairPricing::CATEGORIES), 'lainnya'])],
+                'severity' => ['required', Rule::in(array_keys(\App\Models\RepairPricing::SEVERITIES))],
+                'location' => ['nullable', 'string', 'max:100'],
+                'description' => ['nullable', 'string', 'max:1000'],
+                'survey_notes' => ['nullable', 'string', 'max:1000'],
+            ]);
 
-        DB::transaction(function () use ($serviceRequest, $validated) {
-            $serviceRequest->maintenanceDetail()->updateOrCreate(
-                ['service_request_id' => $serviceRequest->id],
-                [
-                    'damage_category' => $validated['damage_category'],
-                    'severity' => $validated['severity'],
-                    'location' => $validated['location'] ?? null,
-                    'description' => $validated['description'] ?? null,
-                ]
-            );
+            DB::transaction(function () use ($serviceRequest, $validated) {
+                $serviceRequest->maintenanceDetail()->updateOrCreate(
+                    ['service_request_id' => $serviceRequest->id],
+                    [
+                        'damage_category' => $validated['damage_category'],
+                        'severity' => $validated['severity'],
+                        'location' => $validated['location'] ?? null,
+                        'description' => $validated['description'] ?? null,
+                    ]
+                );
+
+                $serviceRequest->update([
+                    'survey_notes' => $validated['survey_notes'] ?? null,
+                    'survey_reported_at' => now(),
+                ]);
+            });
+        }
+        // 2. Logika untuk Layanan Lain (misal: AC Repair / Full Service)
+        else {
+            $validated = $request->validate([
+                'survey_notes' => ['required', 'string', 'max:1000'],
+            ]);
 
             $serviceRequest->update([
-                'survey_notes' => $validated['survey_notes'] ?? null,
+                'survey_notes' => $validated['survey_notes'],
                 'survey_reported_at' => now(),
             ]);
-        });
+        }
 
-        // Notif ke admin yang assign tugas ini (fallback: admin pertama, kalau assigned_by kosong)
+        // Notif ke admin
         $admin = $serviceRequest->assignedBy ?? User::where('role', 'admin')->first();
         $admin?->notify(new SurveyReportedNotification($serviceRequest));
 
@@ -158,7 +173,7 @@ class TaskController extends Controller
             'status' => 'completed',
         ]);
 
-        (new \App\Services\CoinRewardService())
+        (new CoinRewardService())
             ->awardForServiceRequest($serviceRequest, $serviceRequest->user, $serviceRequest->total_price ?? 0);
 
         return back()->with('success', 'Laundry ditandai selesai & sudah diterima guest.');
@@ -170,34 +185,37 @@ class TaskController extends Controller
         abort_if($serviceRequest->isLaundry(), 422, 'Laundry pakai alur tersendiri: selesai cuci → bayar → konfirmasi terima.');
         abort_if(!$serviceRequest->isInProgress(), 422, 'Tugas ini belum berstatus sedang dikerjakan.');
 
+        $isSurveyPriced = $serviceRequest->requiresSurveyPricing();
+
+        if ($isSurveyPriced) {
+            abort_if(!$serviceRequest->isPriceApproved(), 422, 'Harga belum disetujui & dibayar guest.');
+        }
+
         $validated = $request->validate([
             'worker_notes' => ['nullable', 'string', 'max:1000'],
             'photos' => ['nullable', 'array', 'max:5'],
             'photos.*' => ['image', 'max:2048'],
         ]);
 
-        DB::transaction(function () use ($request, $validated, $serviceRequest) {
+        DB::transaction(function () use ($request, $validated, $serviceRequest, $isSurveyPriced) {
             $serviceRequest->loadMissing('service', 'user');
 
-            $cost = match ($serviceRequest->service->slug) {
-    'laundry' => $serviceRequest->total_price ?? 0,
-    'cleaning' => $serviceRequest->total_price ?? 0,
-    'ac' => $serviceRequest->snapshot_ac_price ?? 0,
-    'maintenance-repair' => 0,
-    default => $serviceRequest->service->base_price ?? 0,
-};
+            $cost = match (true) {
+                $serviceRequest->service->slug === 'laundry' => $serviceRequest->total_price ?? 0,
+                $serviceRequest->service->slug === 'cleaning' => $serviceRequest->total_price ?? 0,
+                $isSurveyPriced => $serviceRequest->total_price ?? 0, // Sudah dibayar saat approve
+                $serviceRequest->service->slug === 'ac' => $serviceRequest->snapshot_ac_price ?? 0,
+                default => $serviceRequest->service->base_price ?? 0,
+            };
 
-            $isMaintenance = $serviceRequest->service->slug === 'maintenance-repair';
             $guest = $serviceRequest->user()->lockForUpdate()->first();
 
-            if (!$isMaintenance) {
+            if (!$isSurveyPriced) {
                 abort_if($guest->balance < $cost, 422, 'Saldo guest tidak cukup untuk menyelesaikan tugas ini.');
-            }
 
-            $balanceBefore = $guest->balance;
-            $balanceAfter = $balanceBefore - $cost;
+                $balanceBefore = $guest->balance;
+                $balanceAfter = $balanceBefore - $cost;
 
-            if (!$isMaintenance) {
                 $guest->update(['balance' => $balanceAfter]);
 
                 BalanceMutation::create([
@@ -213,10 +231,8 @@ class TaskController extends Controller
             }
 
             // Reward koin berdasarkan tier CoinSetting yang aktif
-             $rewardBase = $isMaintenance ? ($serviceRequest->total_price ?? 0) : $cost;
+            $rewardBase = $isSurveyPriced ? ($serviceRequest->total_price ?? 0) : $cost;
             (new CoinRewardService())->awardForServiceRequest($serviceRequest, $guest, $rewardBase);
-
-
 
             foreach ($request->file('photos', []) as $photo) {
                 $serviceRequest->photos()->create([
@@ -226,7 +242,7 @@ class TaskController extends Controller
             }
 
             $serviceRequest->update([
-                'cost' => $isMaintenance ? ($serviceRequest->total_price ?? 0) : $cost,
+                'cost' => $isSurveyPriced ? ($serviceRequest->total_price ?? 0) : $cost,
                 'worker_notes' => $validated['worker_notes'] ?? null,
                 'completed_at' => now(),
                 'status' => 'completed',

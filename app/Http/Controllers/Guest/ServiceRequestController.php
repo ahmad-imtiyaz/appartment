@@ -191,7 +191,7 @@ class ServiceRequestController extends Controller
             'cleaning_addon_ids.*' => ['exists:cleaning_addons,id'],
 
             // ac-specific fields
-            'ac_type' => ['nullable', 'in:ac-cleaning,ac-refill,ac-repair'],
+            'ac_type' => ['nullable', 'in:ac-cleaning,ac-refill,ac-repair,ac-full-service'],
             'snapshot_ac_price' => ['nullable', 'numeric', 'min:0'],
 
             // maintenance fields
@@ -246,9 +246,19 @@ class ServiceRequestController extends Controller
 
         if ($isAc) {
             $request->validate([
-                'ac_type' => ['required', 'in:ac-cleaning,ac-refill,ac-repair'],
-                'snapshot_ac_price' => ['required', 'numeric', 'min:0'],
+                'ac_type' => ['required', 'in:ac-cleaning,ac-refill,ac-repair,ac-full-service'],
             ]);
+
+            $needsUpfrontPrice = in_array($request->ac_type, ['ac-cleaning', 'ac-refill']);
+
+            if ($needsUpfrontPrice) {
+                $request->validate([
+                    'snapshot_ac_price' => ['required', 'numeric', 'min:0'],
+                ]);
+            } else {
+                // ac-repair & ac-full-service: survey dulu, harga ditentukan belakangan
+                $validated['snapshot_ac_price'] = null;
+            }
         }
 
         $serviceRequest = DB::transaction(function () use ($request, $validated, $service, $isMaintenance, $isLaundry, $isCleaning, $isAc) {

@@ -59,22 +59,29 @@ class ServiceRequestController extends Controller
 
     public function setPrice(Request $request, ServiceRequest $serviceRequest): RedirectResponse
     {
-        abort_unless($serviceRequest->isMaintenance(), 404);
+        // Menggunakan helper requiresSurveyPricing() agar berlaku fleksibel
+        abort_unless($serviceRequest->requiresSurveyPricing(), 404);
+
         abort_if(
             $serviceRequest->status !== 'in_progress' || !$serviceRequest->survey_reported_at,
             422,
             'Survey dari pekerja belum masuk, harga belum bisa di-set.'
         );
 
-        $detail = $serviceRequest->maintenanceDetail;
-        abort_if(!$detail, 422, 'Data survey tidak ditemukan.');
+        $suggestedPrice = null;
 
-        // Harga acuan dari price list (null kalau kategori "Lainnya" atau kombinasi belum di-patok)
-        $suggestedPrice = RepairPricing::query()
-            ->where('category', $detail->damage_category)
-            ->where('severity', $detail->severity)
-            ->where('is_active', true)
-            ->value('price');
+        // Logika khusus jika layanan berjenis Maintenance & Repair (MnR)
+        if ($serviceRequest->isMaintenance()) {
+            $detail = $serviceRequest->maintenanceDetail;
+            abort_if(!$detail, 422, 'Data survey tidak ditemukan.');
+
+            // Cari harga acuan dari price list berdasarkan kategori & keparahan
+            $suggestedPrice = RepairPricing::query()
+                ->where('category', $detail->damage_category)
+                ->where('severity', $detail->severity)
+                ->where('is_active', true)
+                ->value('price');
+        }
 
         $validated = $request->validate([
             'price' => ['required', 'numeric', 'min:0'],

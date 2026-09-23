@@ -17,6 +17,12 @@ Sistem manajemen layanan apartemen dengan 3 role: **admin**, **pekerja** (worker
 | **TopupRequest** | `topup_requests` | `user_id`, `payment_method_id`, `amount`, `status` (pending/approved/rejected) | Request isi saldo |
 | **PaymentMethod** | `payment_methods` | `type` (bank_transfer/qris), `bank_name`, `qr_image` | Metode pembayaran topup |
 
+### ServiceRequest AC Types
+- `ac-cleaning` — Cuci AC (fixed price upfront)
+- `ac-refill` — Isi Freon (fixed price upfront)
+- `ac-repair` — Perbaikan AC (survey → admin set price → guest approve)
+- `ac-full-service` — Full Service AC (survey → admin set price → guest approve)
+
 ### Apartment Location Models
 | Model | Table | Key Fields | Purpose |
 |-------|-------|------------|---------|
@@ -103,6 +109,20 @@ pending → assigned → in_progress → [waiting_approval (MnR only)] → compl
 
 ---
 
+### ServiceRequest Helper Methods (Model)
+```php
+// ServiceRequest.php
+$serviceRequest->isAcRepair()       // ac_type === 'ac-repair'
+$serviceRequest->isAcFullService()  // ac_type === 'ac-full-service'
+$serviceRequest->requiresSurveyPricing() // true untuk MnR, ac-repair, ac-full-service
+$serviceRequest->isPriceApproved()  // price_approved_at !== null
+$serviceRequest->isWaitingPayment() // status === 'waiting_payment'
+$serviceRequest->isLaundryPaid()    // laundry_paid_at !== null
+$serviceRequest->calculateTotalPrice()  // laundry: weight × rate; cleaning: hours × rate + addons
+```
+
+---
+
 ## Service-Specific Logic
 
 ### Laundry
@@ -118,9 +138,13 @@ pending → assigned → in_progress → [waiting_approval (MnR only)] → compl
 - Guest bayar saat complete (saldo dipotong di `TaskController@complete`)
 
 ### AC
-- Guest pilih: `ac_type` (cleaning/refill/repair)
-- Harga: `snapshot_ac_price` dari AcPricing (locked saat create)
-- Guest bayar saat complete
+- Guest pilih: `ac_type` (ac-cleaning/ac-refill/ac-repair/ac-full-service)
+- **ac-cleaning & ac-refill**: Harga fixed upfront (`snapshot_ac_price` dari AcPricing, locked saat create), bayar saat complete
+- **ac-repair & ac-full-service**: **MnR-style flow** — tidak ada harga upfront (`snapshot_ac_price` = null)
+  1. Pekerja `survey` → isi `survey_notes`
+  2. Admin `setPrice` → set `total_price`, status → `waiting_approval`
+  3. Guest `approvePrice` → saldo dipotong via `RepairPaymentService`, status → `in_progress`
+  4. Guest `rejectPrice` → status → `rejected`
 
 ### Maintenance & Repair (MnR)
 - Guest pilih: `damage_category` (dari RepairPricing::CATEGORIES) + `urgency`
@@ -388,6 +412,52 @@ resources/views/
 
 ---
 
+## Database Migrations (Complete List)
+
+| Migration File | Purpose |
+|----------------|---------|
+| `0001_01_01_000000_create_users_table.php` | Base users table |
+| `0001_01_01_000001_create_cache_table.php` | Laravel cache table |
+| `0001_01_01_000002_create_jobs_table.php` | Laravel jobs table |
+| `2026_09_16_000001_add_role_and_balance_to_users_table.php` | Add `role`, `balance` to users |
+| `2026_09_16_000002_create_payment_methods_table.php` | Payment methods (bank/qris) |
+| `2026_09_16_000003_create_topup_requests_table.php` | Topup requests |
+| `2026_09_16_000004_create_balance_mutations_table.php` | Balance mutation log |
+| `2026_09_16_000005_create_services_table.php` | Master services (laundry, cleaning, ac, maintenance-repair) |
+| `2026_09_16_000006_create_service_requests_table.php` | Core service_requests table |
+| `2026_09_16_000007_create_maintenance_details_table.php` | MnR survey details |
+| `2026_09_16_000008_create_service_request_photos_table.php` | Before/after photos |
+| `2026_09_16_000009_create_product_listings_table.php` | Marketplace listings |
+| `2026_09_16_000010_add_assignment_columns_to_service_requests_table.php` | `worker_id`, `assigned_by`, `assigned_at`, `accepted_at`, `completed_at` |
+| `2026_09_16_000011_create_service_request_feedbacks_table.php` | Guest feedback to workers |
+| `2026_09_16_000012_laundry_features.php` | Laundry fields (type, duration, price_per_kg, weight, total_price, collected_at, weighed_at) |
+| `2026_09_17_000013_create_cleaning_pricings_table.php` | Cleaning pricing (type, price) |
+| `2026_09_17_133707_add_cleaning_fields_to_service_requests_table.php` | Cleaning fields (cleaning_type, snapshot_cleaning_price) |
+| `2026_09_17_144859_create_ac_pricings_table.php` | AC pricing (type, price) |
+| `2026_09_17_144927_add_ac_columns_to_service_requests_table.php` | AC fields (ac_type, snapshot_ac_price) |
+| `2026_09_18_140138_create_coin_settings_table.php` | Coin reward tiers (min_amount → coin_reward) |
+| `2026_09_18_140246_create_coin_mutations_table.php` | Coin mutation log |
+| `2026_09_18_140328_add_coin_balance_to_users_table.php` | Add `coin_balance` to users |
+| `2026_09_18_155957_add_notif_seen_at_to_users_table.php` | Add `notif_seen_at` to users |
+| `2026_09_18_162646_create_coin_redemption_products_table.php` | Coin redemption products |
+| `2026_09_18_162735_create_coin_redemptions_table.php` | Guest coin redemption requests |
+| `2026_09_18_211024_create_repair_pricings_table.php` | MnR pricing (category, severity, price) |
+| `2026_09_18_211029_add_repair_flow_to_service_requests.php` | MnR fields (survey, price_approval, status waiting_approval) |
+| `2026_09_22_112129_create_apartment_locations_table.php` | Master apartment locations |
+| `2026_09_22_112210_create_apartment_towers_table.php` | Apartment towers (FK to locations) |
+| `2026_09_22_112255_add_registration_fields_to_users_table.php` | User profile: status, daerah, location_id, tower_id |
+| `2026_09_22_140505_add_waiting_payment_status_to_service_requests_table.php` | Add `waiting_payment` status + `laundry_paid_at` |
+| `2026_09_22_150947_add_location_fields_to_service_requests_table.php` | ServiceRequest: daerah, apartment_location_id, apartment_tower_id |
+| `2026_09_22_153114_repair_location_fields_on_service_requests_table.php` | Fix FK constraints for location fields |
+| `2026_09_23_072715_update_cleaning_pricings_to_per_hour.php` | CleaningPricing: drop type/price → add price_per_hour (single active rate) |
+| `2026_09_23_072745_create_cleaning_areas_table.php` | CleaningArea model (name, is_active) |
+| `2026_09_23_072835_create_cleaning_area_service_request_table.php` | Pivot: ServiceRequest ↔ CleaningArea |
+| `2026_09_23_072859_create_cleaning_addons_table.php` | CleaningAddon model (name, price, is_active) |
+| `2026_09_23_072929_create_cleaning_addon_service_request_table.php` | Pivot: ServiceRequest ↔ CleaningAddon (with snapshot_price) |
+| `2026_09_23_073006_update_cleaning_fields_on_service_requests_table.php` | ServiceRequest: drop cleaning_type/snapshot_cleaning_price → add cleaning_duration_hours, snapshot_cleaning_price_per_hour |
+
+---
+
 ## Quick Reference: Creating New Service Type
 
 1. Add slug to `Service` model/constants
@@ -400,4 +470,4 @@ resources/views/
 
 ---
 
-*Generated from codebase analysis on 2026-09-19; updated 2026-09-22 with apartment location/tower system, cascading dropdowns, updated auth views, laundry payment flow (waiting_payment status), and marketplace slider on home; updated 2026-09-23 with cleaning pricing per-hour, cleaning areas & addons, admin CRUD for cleaning config*
+*Generated from codebase analysis on 2026-09-19; updated 2026-09-22 with apartment location/tower system, cascading dropdowns, updated auth views, laundry payment flow (waiting_payment status), and marketplace slider on home; updated 2026-09-23 with cleaning pricing per-hour, cleaning areas & addons, admin CRUD for cleaning config; updated 2026-09-23 with AC full-service, AC repair/AC full-service survey pricing flow, ServiceRequest helper methods, and complete migration list*

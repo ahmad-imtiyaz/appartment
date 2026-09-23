@@ -215,63 +215,80 @@
 @endif
 
 
-            {{-- ================= AC ================= --}}
-            @if ($service->slug === 'ac' && $acPricings->isNotEmpty())
-                <div class="ui-card ui-rise">
+   {{-- ================= AC ================= --}}
+@if ($service->slug === 'ac' && $acPricings->isNotEmpty())
+    <div class="ui-card ui-rise">
 
-                    <h3 class="ui-heading">{{ __('guest.detail.ac_title') }}</h3>
-                    <p class="ui-sub">{{ __('guest.detail.ac_subtitle') }}</p>
+        <h3 class="ui-heading">{{ __('guest.detail.ac_title') }}</h3>
+        <p class="ui-sub">{{ __('guest.detail.ac_subtitle') }}</p>
 
-                    @php
-                        $acIconConfig = [
-                            'ac-cleaning' => [
-                                'tone' => 'cyan',
-                                'icon' => '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9M9.5 4.5L12 6.5l2.5-2M9.5 19.5l2.5-2 2.5 2"/></svg>',
-                            ],
-                            'ac-refill' => [
-                                'tone' => 'sky',
-                                'icon' => '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 2v20M2 12h20" /></svg>',
-                            ],
-                            'ac-repair' => [
-                                'tone' => 'blue',
-                                'icon' => '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.877-5.877" /></svg>',
-                            ],
-                        ];
-                        $preselectedAc = old('ac_type') ?: request('type');
-                    @endphp
+        @php
+            $acIconConfig = [
+                'ac-cleaning' => [
+                    'tone' => 'cyan',
+                    'icon' => '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9M9.5 4.5L12 6.5l2.5-2M9.5 19.5l2.5-2 2.5 2"/></svg>',
+                ],
+                'ac-refill' => [
+                    'tone' => 'sky',
+                    'icon' => '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 2v20M2 12h20" /></svg>',
+                ],
+                'ac-repair' => [
+                    'tone' => 'blue',
+                    'icon' => '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.877-5.877" /></svg>',
+                ],
+                'ac-full-service' => [
+                    'tone' => 'red',
+                    'icon' => '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28z"/><circle cx="12" cy="12" r="3"/></svg>',
+                ],
+            ];
+            $preselectedAc = old('ac_type') ?: request('type');
+            $surveyBasedTypes = ['ac-repair', 'ac-full-service'];
+        @endphp
 
-                    <div class="ui-opts ui-opts--3">
-                        @foreach ($acPricings as $pricing)
-                            @php
-                                $cfg = $acIconConfig[$pricing->type] ?? ['icon' => '', 'tone' => 'red'];
-                                $checked = $preselectedAc === $pricing->type ? 'checked' : '';
-                            @endphp
-                            <label class="ui-opt" for="ac-{{ $pricing->type }}">
-                                <input type="radio" name="ac_type_display" value="{{ $pricing->type }}"
-                                       data-price="{{ $pricing->price }}"
-                                       data-label="{{ $pricing->typeLabel() }}"
-                                       {{ $checked }} id="ac-{{ $pricing->type }}"
-                                       class="ac-type-radio">
-                                <div class="ui-opt-box">
-                                    <span class="ui-ico tone-{{ $cfg['tone'] }}">{!! $cfg['icon'] !!}</span>
-                                    <span class="ui-opt-name">{{ $pricing->typeLabel() }}</span>
-                                </div>
-                            </label>
-                        @endforeach
-                    </div>
+       <div class="ui-opts ui-opts--3">
+    @foreach ($acPricings as $pricing)
+        @php
+            $cfg = $acIconConfig[$pricing->type] ?? ['icon' => '', 'tone' => 'red'];
+            $checked = $preselectedAc === $pricing->type ? 'checked' : '';
+            $isSurveyType = in_array($pricing->type, $surveyBasedTypes);
+        @endphp
+        <label class="ui-opt" for="ac-{{ $pricing->type }}">
+            <input type="radio" name="ac_type_display" value="{{ $pricing->type }}"
+                   data-price="{{ $pricing->price }}"
+                   data-label="{{ $pricing->typeLabel() }}"
+                   data-survey="{{ $isSurveyType ? '1' : '0' }}"
+                   {{ $checked }} id="ac-{{ $pricing->type }}"
+                   class="ac-type-radio">
+            <div class="ui-opt-box">
+                <span class="ui-ico tone-{{ $cfg['tone'] }}">{!! $cfg['icon'] !!}</span>
+                <span class="ui-opt-name">{{ $pricing->typeLabel() }}</span>
+            </div>
+        </label>
+    @endforeach
+</div>
 
-                    <div id="ac-price-info" class="hidden" style="margin-top:16px">
-                        <div class="ui-price">
-                            <div>
-                                <p class="ui-price-label">{{ __('guest.detail.selected_service') }}</p>
-                                <p class="ui-price-name" id="selected-ac-label">-</p>
-                            </div>
-                            <p class="ui-price-value" id="selected-ac-price">Rp 0</p>
-                        </div>
-                    </div>
+        {{-- Deskripsi cakupan khusus Full Service --}}
+        <div id="ac-full-service-note" class="ui-alert hidden" style="background:#EFF6FF;color:#1E40AF;margin-top:10px">
+            Full Service mencakup pengecekan menyeluruh unit AC Anda (cuci, cek freon, cek kelistrikan & komponen). Teknisi akan survey dulu tanpa biaya, lalu mengajukan rincian pergantian sparepart (jika ada) untuk Anda setujui sebelum dikerjakan.
+        </div>
 
+        <div id="ac-price-info" class="hidden" style="margin-top:16px">
+            <div class="ui-price">
+                <div>
+                    <p class="ui-price-label">{{ __('guest.detail.selected_service') }}</p>
+                    <p class="ui-price-name" id="selected-ac-label">-</p>
                 </div>
-            @endif
+                <p class="ui-price-value" id="selected-ac-price">Rp 0</p>
+            </div>
+        </div>
+
+        {{-- Info khusus untuk tipe AC yang butuh survey dulu --}}
+        <div id="ac-survey-info" class="ui-alert hidden" style="background:#FFFBEB;color:#92400E;margin-top:10px">
+            Survey unit gratis. Setelah teknisi mengecek kondisi AC, kami akan kirim rincian biaya (kalau ada penggantian sparepart) untuk Anda setujui sebelum pengerjaan dilanjutkan.
+        </div>
+
+    </div>
+@endif
 
 
             {{-- ================= FORM PESANAN ================= --}}
@@ -735,23 +752,35 @@ cleaningAddonCheckboxes.forEach(cb => cb.addEventListener('change', updateCleani
 
 updateCleaningTotal();
 
-    // ==============================
-    // AC selection
-    // ==============================
+   // ==============================
+// AC selection
+// ==============================
 
-    const acRadios = document.querySelectorAll('.ac-type-radio');
-    const formAcType = document.getElementById('form-ac-type');
-    const formAcPrice = document.getElementById('form-ac-price');
+const acRadios = document.querySelectorAll('.ac-type-radio');
+const formAcType = document.getElementById('form-ac-type');
+const formAcPrice = document.getElementById('form-ac-price');
 
-    const acPriceInfo = document.getElementById('ac-price-info');
-    const acLabelDisplay = document.getElementById('selected-ac-label');
-    const acPriceDisplay = document.getElementById('selected-ac-price');
+const acPriceInfo = document.getElementById('ac-price-info');
+const acLabelDisplay = document.getElementById('selected-ac-label');
+const acPriceDisplay = document.getElementById('selected-ac-price');
+const acFullServiceNote = document.getElementById('ac-full-service-note');
+const acSurveyInfo = document.getElementById('ac-survey-info');
 
-    function updateAcSelection() {
-        const checked = document.querySelector('input[name="ac_type_display"]:checked');
+function updateAcSelection() {
+    const checked = document.querySelector('input[name="ac_type_display"]:checked');
 
-        if (checked && formAcType && formAcPrice) {
-            formAcType.value = checked.value;
+    if (checked && formAcType && formAcPrice) {
+        formAcType.value = checked.value;
+        const isSurveyType = checked.dataset.survey === '1';
+
+        if (isSurveyType) {
+            // Tipe yang membutuhkan survey (ac-repair & ac-full-service)
+            formAcPrice.value = ''; // Kosongkan agar snapshot_ac_price bernilai null di backend
+
+            if (acPriceInfo) acPriceInfo.classList.add('hidden');
+            if (acSurveyInfo) acSurveyInfo.classList.remove('hidden');
+        } else {
+            // Tipe dengan harga pasti (ac-cleaning & ac-refill)
             formAcPrice.value = checked.dataset.price;
 
             if (acPriceInfo && acLabelDisplay && acPriceDisplay) {
@@ -759,18 +788,29 @@ updateCleaningTotal();
                 acLabelDisplay.textContent = checked.dataset.label;
                 acPriceDisplay.textContent = 'Rp ' + Number(checked.dataset.price).toLocaleString('id-ID');
             }
-        } else {
-            if (acPriceInfo) acPriceInfo.classList.add('hidden');
-            if (formAcType) formAcType.value = '';
-            if (formAcPrice) formAcPrice.value = '';
+            if (acSurveyInfo) acSurveyInfo.classList.add('hidden');
         }
+
+        // Tampilkan/sembunyikan catatan khusus Full Service
+        if (acFullServiceNote) {
+            acFullServiceNote.classList.toggle('hidden', checked.value !== 'ac-full-service');
+        }
+    } else {
+        // Reset tampilan jika tidak ada yang dipilih
+        if (acPriceInfo) acPriceInfo.classList.add('hidden');
+        if (acSurveyInfo) acSurveyInfo.classList.add('hidden');
+        if (acFullServiceNote) acFullServiceNote.classList.add('hidden');
+        if (formAcType) formAcType.value = '';
+        if (formAcPrice) formAcPrice.value = '';
     }
+}
 
-    acRadios.forEach(r => {
-        r.addEventListener('change', updateAcSelection);
-    });
+acRadios.forEach(r => {
+    r.addEventListener('change', updateAcSelection);
+});
 
-    updateAcSelection();
+// Inisialisasi saat pertama kali dimuat
+updateAcSelection();
     // ==============================
     // Maintenance & Repair selection
     // ==============================
