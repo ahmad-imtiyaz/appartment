@@ -114,62 +114,105 @@
 
 
             {{-- ================= CLEANING ================= --}}
-            @if ($service->slug === 'cleaning' && $cleaningPricings->isNotEmpty())
-                <div class="ui-card ui-rise">
+@if ($service->slug === 'cleaning' && $cleaningPricing)
+    <div class="ui-card ui-rise">
 
-                    <h3 class="ui-heading">{{ __('guest.detail.cleaning_title') }}</h3>
-                    <p class="ui-sub">{{ __('guest.detail.cleaning_subtitle') }}</p>
+        <h3 class="ui-heading">Durasi Pekerjaan</h3>
+        <p class="ui-sub">Pilih berapa lama Anda membutuhkan layanan cleaning.</p>
 
-                    @php
-                        $cleaningIconConfig = [
-                            'cleaning-regular' => [
-                                'tone' => 'purple',
-                                'icon' => '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5m4.75-11.396a24.301 24.301 0 014.5 0M14.25 3.104v5.714c0 .597.237 1.17.659 1.591L19.8 15.3m0 0a48.11 48.11 0 00-14.8 0M19.8 15.3l1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0112 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5" /></svg>',
-                            ],
-                            'cleaning-deep' => [
-                                'tone' => 'indigo',
-                                'icon' => '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9.53 16.122a3 3 0 00-5.78 1.128 2.25 2.25 0 01-2.4 2.245 4.5 4.5 0 008.4-2.245c0-.399-.078-.78-.22-1.128zm0 0a15.998 15.998 0 003.388-1.62m-5.043-.025a15.994 15.994 0 011.622-3.395m3.42 3.42a15.995 15.995 0 004.764-4.648l3.876-5.814a1.151 1.151 0 00-1.597-1.597L14.146 6.32a15.996 15.996 0 00-4.649 4.763m3.42 3.42a6.776 6.776 0 00-3.42-3.42" /></svg>',
-                            ],
-                            'cleaning-postmove' => [
-                                'tone' => 'orange',
-                                'icon' => '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" /></svg>',
-                            ],
-                        ];
-                        $preselected = old('cleaning_type') ?: request('type');
-                    @endphp
+        @php
+            $durationOptions = [1, 2, 3, 4];
+            $oldDuration = old('cleaning_duration_hours');
+            $isCustomDuration = $oldDuration && !in_array((int) $oldDuration, $durationOptions);
+        @endphp
 
-                    <div class="ui-opts ui-opts--3">
-                        @foreach ($cleaningPricings as $pricing)
-                            @php
-                                $cfg = $cleaningIconConfig[$pricing->type] ?? ['icon' => '', 'tone' => 'red'];
-                                $checked = $preselected === $pricing->type ? 'checked' : '';
-                            @endphp
-                            <label class="ui-opt" for="cleaning-{{ $pricing->type }}">
-                                <input type="radio" name="cleaning_type_display" value="{{ $pricing->type }}"
-                                       data-price="{{ $pricing->price }}"
-                                       data-label="{{ $pricing->typeLabel() }}"
-                                       {{ $checked }} id="cleaning-{{ $pricing->type }}"
-                                       class="cleaning-type-radio">
-                                <div class="ui-opt-box">
-                                    <span class="ui-ico tone-{{ $cfg['tone'] }}">{!! $cfg['icon'] !!}</span>
-                                    <span class="ui-opt-name">{{ $pricing->typeLabel() }}</span>
-                                </div>
-                            </label>
-                        @endforeach
+        <div class="ui-opts ui-opts--3">
+            @foreach ($durationOptions as $hours)
+                @php $checked = (string) $oldDuration === (string) $hours ? 'checked' : ''; @endphp
+                <label class="ui-opt" for="duration-{{ $hours }}">
+                    <input type="radio" name="cleaning_duration_display" value="{{ $hours }}" {{ $checked }}
+                           id="duration-{{ $hours }}" class="cleaning-duration-radio">
+                    <div class="ui-opt-box">
+                        <span class="ui-opt-name">{{ $hours }} jam</span>
                     </div>
-
-                    <div id="cleaning-price-info" class="hidden" style="margin-top:16px">
-                        <div class="ui-price">
-                            <div>
-                                <p class="ui-price-label">{{ __('guest.detail.selected_service') }}</p>
-                                <p class="ui-price-name" id="selected-cleaning-label">-</p>
-                            </div>
-                            <p class="ui-price-value" id="selected-cleaning-price">Rp 0</p>
-                        </div>
-                    </div>
-
+                </label>
+            @endforeach
+            <label class="ui-opt" for="duration-custom">
+                <input type="radio" name="cleaning_duration_display" value="custom" {{ $isCustomDuration ? 'checked' : '' }}
+                       id="duration-custom" class="cleaning-duration-radio">
+                <div class="ui-opt-box">
+                    <span class="ui-opt-name">+ Jam Lainnya</span>
                 </div>
-            @endif
+            </label>
+        </div>
+
+        <div id="custom-duration-wrap" class="{{ $isCustomDuration ? '' : 'hidden' }}" style="margin-top:10px">
+            <label for="custom-duration-input" class="ui-label">Jumlah jam</label>
+            <input type="number" id="custom-duration-input" min="1" max="12" class="ui-input"
+                   value="{{ $isCustomDuration ? $oldDuration : '' }}">
+        </div>
+
+        <div class="ui-price" style="margin-top:16px">
+            <div>
+                <p class="ui-price-label">Harga per Jam</p>
+                <p class="ui-price-value">Rp {{ number_format($cleaningPricing->price_per_hour, 0, ',', '.') }}</p>
+            </div>
+            <p class="ui-price-note">Total dihitung otomatis sesuai durasi.</p>
+        </div>
+
+        @if ($cleaningAreas->isNotEmpty())
+            <div class="ui-divider ui-form">
+                <h3 class="ui-heading">Area yang Dibersihkan</h3>
+                <p class="ui-sub">Pilih area/ruangan yang akan dibersihkan.</p>
+
+                @php $oldAreas = old('cleaning_area_ids', []); @endphp
+                <div class="ui-stack" style="margin-top:8px">
+                    @foreach ($cleaningAreas as $area)
+                        <label style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid #E5E7EB;border-radius:10px">
+                            <input type="checkbox" name="cleaning_area_ids_display[]" value="{{ $area->id }}"
+                                @checked(in_array($area->id, $oldAreas)) class="cleaning-area-checkbox-display">
+                            <span style="font-size:13px;color:#111827">{{ $area->name }}</span>
+                        </label>
+                    @endforeach
+                </div>
+                <x-input-error :messages="$errors->get('cleaning_area_ids')" class="mt-2" />
+            </div>
+        @endif
+
+        @if ($cleaningAddons->isNotEmpty())
+            <div class="ui-divider ui-form">
+                <h3 class="ui-heading">Pekerjaan Tambahan (Opsional)</h3>
+                <p class="ui-sub">Bisa ditambahkan sesuai kebutuhan, harga otomatis masuk ke total.</p>
+
+                @php $oldAddons = old('cleaning_addon_ids', []); @endphp
+                <div class="ui-stack" style="margin-top:8px">
+                    @foreach ($cleaningAddons as $addon)
+                        <label style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border:1px solid #E5E7EB;border-radius:10px">
+                            <span style="display:flex;align-items:center;gap:10px">
+                                <input type="checkbox" name="cleaning_addon_ids_display[]" value="{{ $addon->id }}"
+                                    data-price="{{ $addon->price }}"
+                                        @checked(in_array($addon->id, $oldAddons)) class="cleaning-addon-checkbox-display">
+                                <span style="font-size:13px;color:#111827">{{ $addon->name }}</span>
+                            </span>
+                            <span style="font-size:13px;color:#6B7280">Rp {{ number_format($addon->price, 0, ',', '.') }}</span>
+                        </label>
+                    @endforeach
+                </div>
+            </div>
+        @endif
+
+        <div id="cleaning-total-info" class="hidden" style="margin-top:16px">
+            <div class="ui-price">
+                <div>
+                    <p class="ui-price-label">Estimasi Total</p>
+                    <p class="ui-price-note" id="cleaning-total-breakdown">-</p>
+                </div>
+                <p class="ui-price-value" id="cleaning-total-value">Rp 0</p>
+            </div>
+        </div>
+
+    </div>
+@endif
 
 
             {{-- ================= AC ================= --}}
@@ -265,8 +308,9 @@
 
                     {{-- Cleaning hidden fields --}}
                     @if ($service->slug === 'cleaning')
-                        <input type="hidden" name="cleaning_type" id="form-cleaning-type" value="{{ old('cleaning_type') }}">
-                        <input type="hidden" name="snapshot_cleaning_price" id="form-cleaning-price" value="{{ old('snapshot_cleaning_price') }}">
+                        <input type="hidden" name="cleaning_duration_hours" id="form-cleaning-duration" value="{{ old('cleaning_duration_hours') }}">
+                        <div id="cleaning-area-hidden-wrap"></div>
+                        <div id="cleaning-addon-hidden-wrap"></div>
                     @endif
 
                     {{-- AC hidden fields --}}
@@ -603,66 +647,93 @@
     updatePrice();
 
 
-    // ==============================
-    // Cleaning selection
-    // ==============================
+  // ==============================
+// Cleaning selection
+// ==============================
+const cleaningDurationRadios = document.querySelectorAll('.cleaning-duration-radio');
+const customDurationWrap = document.getElementById('custom-duration-wrap');
+const customDurationInput = document.getElementById('custom-duration-input');
+const formCleaningDuration = document.getElementById('form-cleaning-duration');
+const cleaningAreaCheckboxes = document.querySelectorAll('.cleaning-area-checkbox-display');
+const cleaningAddonCheckboxes = document.querySelectorAll('.cleaning-addon-checkbox-display');
+const cleaningAreaHiddenWrap = document.getElementById('cleaning-area-hidden-wrap');
+const cleaningAddonHiddenWrap = document.getElementById('cleaning-addon-hidden-wrap');
+const cleaningTotalInfo = document.getElementById('cleaning-total-info');
+const cleaningTotalValue = document.getElementById('cleaning-total-value');
+const cleaningTotalBreakdown = document.getElementById('cleaning-total-breakdown');
 
-    const cleaningRadios = document.querySelectorAll('.cleaning-type-radio');
-    const formCleaningType = document.getElementById('form-cleaning-type');
-    const formCleaningPrice = document.getElementById('form-cleaning-price');
+const cleaningPricePerHour = @json($cleaningPricing->price_per_hour ?? 0);
 
-    const cleaningPriceInfo = document.getElementById('cleaning-price-info');
-    const cleaningLabelDisplay = document.getElementById('selected-cleaning-label');
-    const cleaningPriceDisplay = document.getElementById('selected-cleaning-price');
+function getSelectedDurationHours() {
+    const checked = document.querySelector('input[name="cleaning_duration_display"]:checked');
+    if (!checked) return null;
+    if (checked.value === 'custom') {
+        const val = parseInt(customDurationInput?.value, 10);
+        return val > 0 ? val : null;
+    }
+    return parseInt(checked.value, 10);
+}
 
-    function updateCleaningSelection() {
-        const checked = document.querySelector(
-            'input[name="cleaning_type_display"]:checked'
-        );
-
-        if (
-            checked &&
-            formCleaningType &&
-            formCleaningPrice
-        ) {
-            formCleaningType.value = checked.value;
-            formCleaningPrice.value = checked.dataset.price;
-
-            if (
-                cleaningPriceInfo &&
-                cleaningLabelDisplay &&
-                cleaningPriceDisplay
-            ) {
-                cleaningPriceInfo.classList.remove('hidden');
-
-                cleaningLabelDisplay.textContent =
-                    checked.dataset.label;
-
-                cleaningPriceDisplay.textContent =
-                    'Rp ' + Number(checked.dataset.price).toLocaleString('id-ID');
-            }
-        } else {
-            if (cleaningPriceInfo) {
-                cleaningPriceInfo.classList.add('hidden');
-            }
-
-            if (formCleaningType) {
-                formCleaningType.value = '';
-            }
-
-            if (formCleaningPrice) {
-                formCleaningPrice.value = '';
-            }
+function syncHiddenCheckboxes(sourceCheckboxes, wrapEl, fieldName) {
+    if (!wrapEl) return;
+    wrapEl.innerHTML = '';
+    sourceCheckboxes.forEach(cb => {
+        if (cb.checked) {
+            const hidden = document.createElement('input');
+            hidden.type = 'hidden';
+            hidden.name = fieldName;
+            hidden.value = cb.value;
+            wrapEl.appendChild(hidden);
         }
+    });
+}
+
+function updateCleaningTotal() {
+    if (!formCleaningDuration) return;
+
+    const hours = getSelectedDurationHours();
+    formCleaningDuration.value = hours ?? '';
+
+    if (customDurationWrap) {
+        const isCustom = document.querySelector('input[name="cleaning_duration_display"]:checked')?.value === 'custom';
+        customDurationWrap.classList.toggle('hidden', !isCustom);
     }
 
-    cleaningRadios.forEach(r => {
-        r.addEventListener('change', updateCleaningSelection);
+    syncHiddenCheckboxes(cleaningAreaCheckboxes, cleaningAreaHiddenWrap, 'cleaning_area_ids[]');
+    syncHiddenCheckboxes(cleaningAddonCheckboxes, cleaningAddonHiddenWrap, 'cleaning_addon_ids[]');
+
+    if (!hours) {
+        if (cleaningTotalInfo) cleaningTotalInfo.classList.add('hidden');
+        return;
+    }
+
+    let addonTotal = 0;
+    let addonCount = 0;
+    cleaningAddonCheckboxes.forEach(cb => {
+        if (cb.checked) {
+            addonTotal += Number(cb.dataset.price);
+            addonCount++;
+        }
     });
 
-    // Initialize cleaning saat halaman dibuka
-    // termasuk ketika menggunakan old() atau ?type=
-    updateCleaningSelection();
+    const total = (hours * cleaningPricePerHour) + addonTotal;
+
+    if (cleaningTotalInfo && cleaningTotalValue) {
+        cleaningTotalInfo.classList.remove('hidden');
+        cleaningTotalValue.textContent = 'Rp ' + Number(total).toLocaleString('id-ID');
+        if (cleaningTotalBreakdown) {
+            cleaningTotalBreakdown.textContent = hours + ' jam × Rp' + Number(cleaningPricePerHour).toLocaleString('id-ID')
+                + (addonCount > 0 ? ' + ' + addonCount + ' tambahan' : '');
+        }
+    }
+}
+
+cleaningDurationRadios.forEach(r => r.addEventListener('change', updateCleaningTotal));
+if (customDurationInput) customDurationInput.addEventListener('input', updateCleaningTotal);
+cleaningAreaCheckboxes.forEach(cb => cb.addEventListener('change', updateCleaningTotal));
+cleaningAddonCheckboxes.forEach(cb => cb.addEventListener('change', updateCleaningTotal));
+
+updateCleaningTotal();
 
     // ==============================
     // AC selection

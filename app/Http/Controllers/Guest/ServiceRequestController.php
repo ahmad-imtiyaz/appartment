@@ -117,8 +117,16 @@ class ServiceRequestController extends Controller
             ? LaundryPricing::active()->latest()->get()
             : collect();
 
-        $cleaningPricings = $service->slug === 'cleaning'
-            ? CleaningPricing::active()->latest()->get()
+        $cleaningPricing = $service->slug === 'cleaning'
+            ? \App\Models\CleaningPricing::current()
+            : null;
+
+        $cleaningAreas = $service->slug === 'cleaning'
+            ? \App\Models\CleaningArea::active()->orderBy('name')->get()
+            : collect();
+
+        $cleaningAddons = $service->slug === 'cleaning'
+            ? \App\Models\CleaningAddon::active()->orderBy('name')->get()
             : collect();
 
         $acPricings = $service->slug === 'ac'
@@ -127,7 +135,16 @@ class ServiceRequestController extends Controller
 
         $locations = \App\Models\ApartmentLocation::with('towers')->where('is_active', true)->orderBy('name')->get();
 
-        return view('guest.service-requests.service-detail', compact('service', 'requests', 'laundryPricings', 'cleaningPricings', 'acPricings', 'locations'));
+        return view('guest.service-requests.service-detail', compact(
+            'service',
+            'requests',
+            'laundryPricings',
+            'cleaningPricing',
+            'cleaningAreas',
+            'cleaningAddons',
+            'acPricings',
+            'locations'
+        ));
     }
 
     public function create(): View
@@ -167,8 +184,11 @@ class ServiceRequestController extends Controller
             'snapshot_price_per_kg' => ['nullable', 'numeric', 'min:0'],
 
             // cleaning-specific fields
-            'cleaning_type' => ['nullable', 'in:cleaning-regular,cleaning-deep,cleaning-postmove'],
-            'snapshot_cleaning_price' => ['nullable', 'numeric', 'min:0'],
+            'cleaning_duration_hours' => ['nullable', 'integer', 'min:1', 'max:12'],
+            'cleaning_area_ids' => ['nullable', 'array'],
+            'cleaning_area_ids.*' => ['exists:cleaning_areas,id'],
+            'cleaning_addon_ids' => ['nullable', 'array'],
+            'cleaning_addon_ids.*' => ['exists:cleaning_addons,id'],
 
             // ac-specific fields
             'ac_type' => ['nullable', 'in:ac-cleaning,ac-refill,ac-repair'],
@@ -213,9 +233,15 @@ class ServiceRequestController extends Controller
 
         if ($isCleaning) {
             $request->validate([
-                'cleaning_type' => ['required', 'in:cleaning-regular,cleaning-deep,cleaning-postmove'],
-                'snapshot_cleaning_price' => ['required', 'numeric', 'min:0'],
+                'cleaning_duration_hours' => ['required', 'integer', 'min:1', 'max:12'],
+                'cleaning_area_ids' => ['required', 'array', 'min:1'],
+                'cleaning_area_ids.*' => ['exists:cleaning_areas,id'],
             ]);
+
+            $pricing = \App\Models\CleaningPricing::current();
+            abort_if(!$pricing, 422, 'Tarif cleaning belum diatur admin.');
+
+            $validated['snapshot_cleaning_price_per_hour'] = $pricing->price_per_hour;
         }
 
         if ($isAc) {
@@ -238,11 +264,29 @@ class ServiceRequestController extends Controller
                 'laundry_type' => $isLaundry ? $validated['laundry_type'] : null,
                 'laundry_duration' => $isLaundry ? $validated['laundry_duration'] : null,
                 'snapshot_price_per_kg' => $isLaundry ? $validated['snapshot_price_per_kg'] : null,
-                'cleaning_type' => $isCleaning ? $validated['cleaning_type'] : null,
-                'snapshot_cleaning_price' => $isCleaning ? $validated['snapshot_cleaning_price'] : null,
+                'cleaning_duration_hours' => $isCleaning ? $validated['cleaning_duration_hours'] : null,
+                'snapshot_cleaning_price_per_hour' => $isCleaning ? $validated['snapshot_cleaning_price_per_hour'] : null,
                 'ac_type' => $isAc ? $validated['ac_type'] : null,
                 'snapshot_ac_price' => $isAc ? $validated['snapshot_ac_price'] : null,
             ]);
+
+            if ($isCleaning) {
+                $serviceRequest->cleaningAreas()->attach($validated['cleaning_area_ids']);
+
+                if (!empty($validated['cleaning_addon_ids'])) {
+                    $addons = \App\Models\CleaningAddon::whereIn('id', $validated['cleaning_addon_ids'])
+                        ->active()
+                        ->get();
+
+                    foreach ($addons as $addon) {
+                        $serviceRequest->cleaningAddons()->attach($addon->id, [
+                            'snapshot_price' => $addon->price,
+                        ]);
+                    }
+                }
+
+                $serviceRequest->calculateTotalPrice();
+            }
 
             if ($isMaintenance) {
                 MaintenanceDetail::create([

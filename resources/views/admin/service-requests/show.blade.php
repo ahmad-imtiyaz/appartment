@@ -147,12 +147,30 @@
         <h4 class="font-semibold text-gray-900 mb-2">Detail Cleaning</h4>
         <div class="grid grid-cols-2 gap-3 text-sm">
             <div>
-                <dt class="text-blue-600">Tipe Cleaning</dt>
-                <dd class="font-medium">{{ $serviceRequest->cleaning_type ?? '-' }}</dd>
+                <dt class="text-blue-600">Durasi</dt>
+                <dd class="font-medium">{{ $serviceRequest->cleaning_duration_hours ?? '-' }} jam</dd>
             </div>
             <div>
-                <dt class="text-blue-600">Harga</dt>
-                <dd class="font-medium">Rp{{ number_format($serviceRequest->snapshot_cleaning_price ?? 0, 0, ',', '.') }}</dd>
+                <dt class="text-blue-600">Harga / Jam</dt>
+                <dd class="font-medium">Rp{{ number_format($serviceRequest->snapshot_cleaning_price_per_hour ?? 0, 0, ',', '.') }}</dd>
+            </div>
+            @if ($serviceRequest->cleaningAreas->isNotEmpty())
+                <div class="md:col-span-2">
+                    <dt class="text-blue-600">Area</dt>
+                    <dd class="font-medium">{{ $serviceRequest->cleaningAreas->pluck('name')->join(', ') }}</dd>
+                </div>
+            @endif
+            @if ($serviceRequest->cleaningAddons->isNotEmpty())
+                <div class="md:col-span-2">
+                    <dt class="text-blue-600">Pekerjaan Tambahan</dt>
+                    <dd class="font-medium">
+                        {{ $serviceRequest->cleaningAddons->map(fn ($a) => $a->name . ' (Rp' . number_format($a->pivot->snapshot_price, 0, ',', '.') . ')')->join(', ') }}
+                    </dd>
+                </div>
+            @endif
+            <div>
+                <dt class="text-blue-600">Total Harga</dt>
+                <dd class="font-bold text-green-700">Rp{{ number_format($serviceRequest->total_price ?? 0, 0, ',', '.') }}</dd>
             </div>
         </div>
     </div>

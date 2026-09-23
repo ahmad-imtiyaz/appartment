@@ -79,11 +79,13 @@
                         ['route' => 'admin.apartment-locations.index', 'label' => 'Lokasi & Tower', 'icon' => 'building'],
                     ],
                     'Harga layanan' => [
-                        ['route' => 'admin.laundry-pricings.index', 'label' => 'Laundry', 'icon' => 'tag'],
-                        ['route' => 'admin.cleaning-pricings.index', 'label' => 'Cleaning', 'icon' => 'sparkles'],
-                        ['route' => 'admin.ac-pricings.index', 'label' => 'AC', 'icon' => 'cloud'],
-                        ['route' => 'admin.repair-pricings.index', 'label' => 'Repair', 'icon' => 'wrench'],
-                    ],
+    ['route' => 'admin.laundry-pricings.index', 'label' => 'Laundry', 'icon' => 'tag'],
+    ['route' => 'admin.cleaning-pricings.index', 'label' => 'Cleaning', 'icon' => 'sparkles'],
+    ['route' => 'admin.cleaning-areas.index', 'label' => 'Area Cleaning', 'icon' => 'sparkles'],
+    ['route' => 'admin.cleaning-addons.index', 'label' => 'Tambahan Cleaning', 'icon' => 'sparkles'],
+    ['route' => 'admin.ac-pricings.index', 'label' => 'AC', 'icon' => 'cloud'],
+    ['route' => 'admin.repair-pricings.index', 'label' => 'Repair', 'icon' => 'wrench'],
+],
                     'Penukaran Koin' => [
                         ['route' => 'admin.coin-redemption-products.index', 'label' => 'Produk Tukar Koin', 'icon' => 'gift'],
                         ['route' => 'admin.coin-redemptions.index', 'label' => 'Kelola Penukaran', 'icon' => 'coin'],

@@ -1,12 +1,12 @@
 <x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Edit Harga Cleaning') }}
+            {{ __('Kelola Harga Cleaning') }}
         </h2>
     </x-slot>
 
     <div class="py-8 px-4 sm:px-6 lg:px-8">
-        <div class="max-w-2xl mx-auto">
+        <div class="max-w-lg mx-auto">
             @if (session('success'))
                 <div class="mb-6 p-3 bg-green-50 text-green-800 rounded-lg">
                     {{ session('success') }}
@@ -14,49 +14,25 @@
             @endif
 
             <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                <h3 class="font-semibold text-gray-900 mb-4">Konfigurasi Harga</h3>
+                <p class="text-sm text-gray-500 mb-4">
+                    Cleaning pakai 1 tarif flat per jam yang berlaku untuk semua guest.
+                </p>
 
-                <form method="POST" action="{{ route('admin.cleaning-pricings.update', $pricing) }}" class="space-y-4">
+                <form method="POST" action="{{ route('admin.cleaning-pricings.update') }}">
                     @csrf
                     @method('PUT')
 
-                    <div>
-                        <x-input-label for="type">
-                            {{ __('Jenis Cleaning') }} <span class="text-red-500">*</span>
-                        </x-input-label>
-                        <select name="type" id="type" disabled class="mt-1 block w-full rounded-md border-gray-300 bg-gray-50 shadow-sm sm:text-sm px-4 py-2 text-gray-700">
-                            <option value="{{ $pricing->type }}" selected>{{ $pricing->typeLabel() }}</option>
-                        </select>
-                        <p class="mt-1 text-xs text-gray-500">Jenis tidak bisa diubah. Ubah harga atau statusnya saja.</p>
-                    </div>
+                    <x-input-label for="price_per_hour" :value="__('Harga per Jam (Rp)')" />
+                    <x-text-input id="price_per_hour" name="price_per_hour" type="number" step="0.01" min="0"
+                        value="{{ old('price_per_hour', $pricing->price_per_hour ?? '') }}"
+                        required class="mt-1 block w-full" />
+                    <x-input-error :messages="$errors->get('price_per_hour')" class="mt-2" />
 
-                    <div>
-                        <x-input-label for="price">
-                            {{ __('Harga per Sesi') }} <span class="text-red-500">*</span>
-                        </x-input-label>
-                        <x-text-input id="price" type="number" name="price" min="0" step="1000" required class="mt-1 block w-full" placeholder="Contoh: 100000" value="{{ old('price', $pricing->price) }}" />
-                        <x-input-error :messages="$errors->get('price')" class="mt-2" />
-                        <p class="mt-1 text-xs text-gray-500">Harga per sesi, misalnya 100000 untuk Rp 100.000/sesi</p>
-                    </div>
-
-                    <div>
-                        <label for="is_active" class="flex items-center gap-3">
-                            <input type="checkbox" name="is_active" id="is_active" value="1" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                                   @checked(old('is_active', $pricing->is_active))>
-                            <span class="text-sm font-medium text-gray-700">Harga aktif</span>
-                        </label>
-                        <x-input-error :messages="$errors->get('is_active')" class="mt-2" />
-                    </div>
-
-                    <div class="pt-4">
-                        <x-primary-button type="submit" class="w-full">
-                            Simpan Perubahan
-                        </x-primary-button>
-                    </div>
+                    <x-primary-button class="mt-6">
+                        Simpan
+                    </x-primary-button>
                 </form>
             </div>
-
-            <a href="{{ route('admin.cleaning-pricings.index') }}" class="inline-block mt-6 text-indigo-600 hover:underline">← Kembali ke Daftar</a>
         </div>
     </div>
 </x-app-layout>

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
@@ -36,8 +37,8 @@ class ServiceRequest extends Model
         'weighed_at',
         'laundry_paid_at',
         // cleaning
-        'cleaning_type',
-        'snapshot_cleaning_price',
+        'cleaning_duration_hours',
+        'snapshot_cleaning_price_per_hour',
         // ac
         'ac_type',
         'snapshot_ac_price',
@@ -86,7 +87,7 @@ class ServiceRequest extends Model
         return $this->belongsTo(User::class, 'assigned_by');
     }
 
-        public function apartmentLocation(): BelongsTo
+    public function apartmentLocation(): BelongsTo
     {
         return $this->belongsTo(ApartmentLocation::class);
     }
@@ -94,6 +95,24 @@ class ServiceRequest extends Model
     public function apartmentTower(): BelongsTo
     {
         return $this->belongsTo(ApartmentTower::class);
+    }
+
+    public function cleaningAreas(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            CleaningArea::class,
+            'cleaning_area_service_request'
+        );
+    }
+
+    public function cleaningAddons(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            CleaningAddon::class,
+            'cleaning_addon_service_request'
+        )
+            ->withPivot('snapshot_price')
+            ->withTimestamps();
     }
 
     // hanya terisi kalau service-nya Maintenance & Repair
@@ -205,13 +224,33 @@ class ServiceRequest extends Model
 
     public function calculateTotalPrice(): void
     {
-        if (!$this->isLaundry() || !$this->billable_weight || !$this->snapshot_price_per_kg) {
+        if ($this->isLaundry() && $this->billable_weight && $this->snapshot_price_per_kg) {
+            $billableWeight = max($this->billable_weight, 1);
+
+            $this->total_price = round(
+                $billableWeight * $this->snapshot_price_per_kg,
+                2
+            );
+
+            $this->save();
+
             return;
         }
 
-        $billableWeight = max($this->billable_weight, 1);
-        $this->total_price = round($billableWeight * $this->snapshot_price_per_kg, 2);
-        $this->save();
+        if (
+            $this->isCleaning() &&
+            $this->cleaning_duration_hours &&
+            $this->snapshot_cleaning_price_per_hour
+        ) {
+            $base = $this->cleaning_duration_hours
+                * $this->snapshot_cleaning_price_per_hour;
+
+            $addonTotal = $this->cleaningAddons()->sum('snapshot_price');
+
+            $this->total_price = round($base + $addonTotal, 2);
+
+            $this->save();
+        }
     }
 
     public function billableWeightLabel(): string

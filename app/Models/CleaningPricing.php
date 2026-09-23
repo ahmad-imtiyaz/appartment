@@ -3,51 +3,31 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Builder;
 
 class CleaningPricing extends Model
 {
     protected $fillable = [
-        'type',
-        'price',
+        'price_per_hour',
         'is_active',
     ];
 
     protected function casts(): array
     {
         return [
-            'price' => 'decimal:2',
+            'price_per_hour' => 'decimal:2',
             'is_active' => 'boolean',
         ];
     }
 
-    public function scopeActive($query)
+    public function scopeActive(Builder $query): Builder
     {
         return $query->where('is_active', true);
     }
 
-    public function scopeByType($query, string $type)
+    // ambil tarif per-jam yang sedang berlaku (cuma 1 row aktif)
+    public static function current(): ?self
     {
-        return $query->where('type', $type)
-            ->where('is_active', true);
-    }
-
-    public function isActive(): bool
-    {
-        return $this->is_active;
-    }
-
-    public function typeLabel(): string
-    {
-        return match ($this->type) {
-            'cleaning-regular' => 'Regular Cleaning',
-            'cleaning-deep'    => 'Deep Cleaning',
-            'cleaning-postmove' => 'Post Move-in',
-            default => $this->type,
-        };
-    }
-
-    public function typeKey(): string
-    {
-        return $this->type;
+        return static::active()->latest()->first();
     }
 }

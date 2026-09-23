@@ -27,9 +27,15 @@ Sistem manajemen layanan apartemen dengan 3 role: **admin**, **pekerja** (worker
 | Model | Table | Key Fields |
 |-------|-------|------------|
 | **LaundryPricing** | `laundry_pricings` | `type` (cuci/cuci_setrika/setrika), `duration` (reguler/express), `price_per_kg` |
-| **CleaningPricing** | `cleaning_pricings` | `type` (cleaning-regular/cleaning-deep/cleaning-postmove), `price` |
+| **CleaningPricing** | `cleaning_pricings` | `price_per_hour` (single active rate per hour) |
 | **AcPricing** | `ac_pricings` | `type` (ac-cleaning/ac-refill/ac-repair), `price` |
 | **RepairPricing** | `repair_pricings` | `category`, `severity` (ringan/sedang/berat), `price` — harga patok MnR |
+
+### Cleaning Configuration Models (Admin-managed)
+| Model | Table | Key Fields | Purpose |
+|-------|-------|------------|---------|
+| **CleaningArea** | `cleaning_areas` | `name`, `is_active` | Ruangan/area yang dibersihkan (kamar mandi, dapur, dll) |
+| **CleaningAddon** | `cleaning_addons` | `name`, `price`, `is_active` | Tambahan layanan (cuci jendela, oven, dll) |
 
 ### Detail & Mutation Models
 | Model | Table | Purpose |
@@ -43,6 +49,12 @@ Sistem manajemen layanan apartemen dengan 3 role: **admin**, **pekerja** (worker
 | **CoinRedemptionProduct** | `coin_redemption_products` | Produk tukar koin (name, coin_cost, stock) |
 | **CoinRedemption** | `coin_redemptions` | Request tukar koin guest |
 | **ProductListing** | `product_listings` | Marketplace barang (admin post, guest lihat + WA link) |
+
+### Pivot Tables
+| Table | Purpose |
+|-------|---------|
+| `cleaning_area_service_request` | Many-to-many: ServiceRequest ↔ CleaningArea |
+| `cleaning_addon_service_request` | Many-to-many: ServiceRequest ↔ CleaningAddon (dengan `snapshot_price`) |
 
 ---
 
@@ -100,9 +112,10 @@ pending → assigned → in_progress → [waiting_approval (MnR only)] → compl
 - **NEW Flow**: Pekerja `readyForPayment` (status → `waiting_payment`) → Guest `payLaundry` via `LaundryPaymentService` (saldo dipotong, `laundry_paid_at` terisi) → Pekerja `confirmDelivered` (upload foto after, status → `completed`, reward koin)
 
 ### Cleaning
-- Guest pilih: `cleaning_type` (regular/deep/postmove)
-- Harga: `snapshot_cleaning_price` dari CleaningPricing (locked saat create)
-- Guest bayar saat complete
+- Guest pilih: `cleaning_duration_hours` (1-12 jam), `cleaning_area_ids` (minimal 1 area wajib), `cleaning_addon_ids` (opsional)
+- Harga: `snapshot_cleaning_price_per_hour` dari CleaningPricing (single active rate, locked saat create)
+- Total = `cleaning_duration_hours` × `snapshot_cleaning_price_per_hour` + Σ `snapshot_price` addons
+- Guest bayar saat complete (saldo dipotong di `TaskController@complete`)
 
 ### AC
 - Guest pilih: `ac_type` (cleaning/refill/repair)
@@ -203,9 +216,12 @@ awardForServiceRequest(ServiceRequest $sr, User $guest, float $amountSpent): ?Co
 | `POST /service-requests/{sr}/assign` | @assign | Assign pekerja + notif |
 | `POST /service-requests/{sr}/set-price` | @setPrice | Set harga MnR + notif guest |
 | `resource laundry-pricings` | LaundryPricingController | CRUD pricing laundry |
-| `resource cleaning-pricings` | CleaningPricingController | CRUD pricing cleaning |
+| `GET /cleaning-pricings` | CleaningPricingController@edit | **Edit tarif cleaning per jam (single active rate)** |
+| `PUT /cleaning-pricings` | CleaningPricingController@update | Update tarif cleaning per jam |
 | `resource ac-pricings` | AcPricingController | CRUD pricing AC |
 | `CRUD repair-pricings` | RepairPricingController | CRUD pricing MnR (with toggle) |
+| `resource cleaning-areas` | CleaningAreaController | **CRUD area cleaning (kamar mandi, dapur, dll)** |
+| `resource cleaning-addons` | CleaningAddonController | **CRUD addon cleaning (cuci jendela, oven, dll)** |
 | `GET /apartment-locations` | ApartmentLocationController@index | **List lokasi & tower** |
 | `POST /apartment-locations` | @storeLocation | **Tambah lokasi unit** |
 | `DELETE /apartment-locations/{apartmentLocation}` | @destroyLocation | **Hapus lokasi (jika tidak ada user)** |
@@ -258,7 +274,7 @@ awardForServiceRequest(ServiceRequest $sr, User $guest, float $amountSpent): ?Co
 ## Key Files to Understand
 
 ### Controllers (Business Logic)
-- `app/Http/Controllers/Guest/ServiceRequestController.php` — Create request all services, approve/reject price MnR, **payLaundry, cascading dropdown lokasi**
+- `app/Http/Controllers/Guest/ServiceRequestController.php` — Create request all services, approve/reject price MnR, **payLaundry, cascading dropdown lokasi, cleaning areas/addons**
 - `app/Http/Controllers/Admin/ServiceRequestController.php` — Assign worker, setPrice MnR
 - `app/Http/Controllers/Worker/TaskController.php` — Accept, survey, weigh, **readyForPayment, confirmDelivered**, complete (payment + coin reward)
 - `app/Http/Controllers/Admin/TopupController.php` — Approve/reject topup (saldo mutation)
@@ -266,6 +282,9 @@ awardForServiceRequest(ServiceRequest $sr, User $guest, float $amountSpent): ?Co
 - `app/Http/Controllers/Auth/RegisteredUserController.php` — **Register dengan cascading dropdown lokasi/tower**
 - `app/Http/Controllers/Guest/ProfileController.php` — **Profil guest lengkap dengan cascading dropdown**
 - `app/Http/Controllers/Admin/ApartmentLocationController.php` — **CRUD lokasi unit & tower (admin)**
+- `app/Http/Controllers/Admin/CleaningPricingController.php` — **Edit tarif cleaning per jam**
+- `app/Http/Controllers/Admin/CleaningAreaController.php` — **CRUD area cleaning**
+- `app/Http/Controllers/Admin/CleaningAddonController.php` — **CRUD addon cleaning**
 
 ### Services
 - `app/Services/RepairPaymentService.php` — Atomic charge untuk MnR
@@ -274,11 +293,14 @@ awardForServiceRequest(ServiceRequest $sr, User $guest, float $amountSpent): ?Co
 
 ### Models (Relations & Helpers)
 - `app/Models/User.php` — Role helpers, all relationships, **apartment location/tower relations**
-- `app/Models/ServiceRequest.php` — Status helpers (isWaitingPayment, isLaundryPaid), service type checks, calculateTotalPrice, **lokasi relations**
+- `app/Models/ServiceRequest.php` — Status helpers (isWaitingPayment, isLaundryPaid), service type checks, calculateTotalPrice (laundry + **cleaning**), **lokasi relations**, **cleaningAreas, cleaningAddons**
 - `app/Models/RepairPricing.php` — Categories & severities constants, scopeByCategoryAndSeverity
 - `app/Models/CoinSetting.php` — Tier reward logic
 - `app/Models/ApartmentLocation.php` — **Master lokasi, relasi ke towers & users**
 - `app/Models/ApartmentTower.php` — **Tower, relasi ke location & users**
+- `app/Models/CleaningPricing.php` — **Single active rate per jam (price_per_hour)**
+- `app/Models/CleaningArea.php` — **Area cleaning (name, is_active), relasi ke ServiceRequest**
+- `app/Models/CleaningAddon.php` — **Addon cleaning (name, price, is_active), relasi ke ServiceRequest dengan pivot snapshot_price**
 
 ### Middleware
 - `app/Http/Middleware/EnsureUserHasRole.php` — Role-based access
@@ -307,7 +329,10 @@ resources/views/
 │   ├── coin-settings/{index,create,edit}.blade.php
 │   ├── coin-redemptions/{index,show}.blade.php
 │   ├── coin-redemption-products/{index,create,edit}.blade.php
-│   └── apartment-locations/index.blade.php  # **Kelola lokasi & tower**
+│   ├── apartment-locations/index.blade.php  # **Kelola lokasi & tower**
+│   ├── cleaning-pricings/edit.blade.php  # **Edit tarif cleaning per jam**
+│   ├── cleaning-areas/{index,create,edit}.blade.php  # **CRUD area cleaning**
+│   └── cleaning-addons/{index,create,edit}.blade.php  # **CRUD addon cleaning**
 ├── guest/
 │   ├── home.blade.php           # **Hero + services grid + marketplace slider (3 properti terbaru) + steps + trust**
 │   ├── balance.blade.php
@@ -358,6 +383,8 @@ resources/views/
 12. **Laundry Payment Flow**: NEW status `waiting_payment` — worker calls `readyForPayment` after weighing → guest pays via `payLaundry` → worker calls `confirmDelivered` → completed + coin reward
 13. **Service Request Location**: All service requests now require `daerah`, `apartment_location_id`, `apartment_tower_id` (defaults from guest profile, cascading dropdown on order form)
 14. **Idempotent Payments**: Both `RepairPaymentService::charge()` and `LaundryPaymentService::charge()` are idempotent (check `price_approved_at` / `laundry_paid_at`)
+15. **Cleaning Pricing Changed**: Now per-hour rate (`price_per_hour`) + areas (required) + addons (optional) — no more fixed price per type. Total = hours × rate + Σ addon prices. Uses `CleaningPricing::current()` for active rate.
+16. **Cleaning Areas Required**: Guest must select at least 1 cleaning area when creating cleaning request
 
 ---
 
@@ -373,4 +400,4 @@ resources/views/
 
 ---
 
-*Generated from codebase analysis on 2026-09-19; updated 2026-09-22 with apartment location/tower system, cascading dropdowns, updated auth views, laundry payment flow (waiting_payment status), and marketplace slider on home*
+*Generated from codebase analysis on 2026-09-19; updated 2026-09-22 with apartment location/tower system, cascading dropdowns, updated auth views, laundry payment flow (waiting_payment status), and marketplace slider on home; updated 2026-09-23 with cleaning pricing per-hour, cleaning areas & addons, admin CRUD for cleaning config*

@@ -180,12 +180,12 @@ class TaskController extends Controller
             $serviceRequest->loadMissing('service', 'user');
 
             $cost = match ($serviceRequest->service->slug) {
-                'laundry' => $serviceRequest->total_price ?? 0, // dihitung dari berat, di-set saat worker input berat
-                'cleaning' => $serviceRequest->snapshot_cleaning_price ?? 0,
-                'ac' => $serviceRequest->snapshot_ac_price ?? 0,
-                'maintenance-repair' => 0, // sudah dipotong & tercatat saat approvePrice
-                default => $serviceRequest->service->base_price ?? 0,
-            };
+    'laundry' => $serviceRequest->total_price ?? 0,
+    'cleaning' => $serviceRequest->total_price ?? 0,
+    'ac' => $serviceRequest->snapshot_ac_price ?? 0,
+    'maintenance-repair' => 0,
+    default => $serviceRequest->service->base_price ?? 0,
+};
 
             $isMaintenance = $serviceRequest->service->slug === 'maintenance-repair';
             $guest = $serviceRequest->user()->lockForUpdate()->first();

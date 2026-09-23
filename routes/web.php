@@ -3,6 +3,9 @@
 use App\Http\Controllers\Admin\CoinRedemptionController as AdminCoinRedemptionController;
 use App\Http\Controllers\Admin\CoinRedemptionProductController;
 use App\Http\Controllers\Admin\CoinSettingController;
+use App\Http\Controllers\Admin\CleaningAreaController;
+use App\Http\Controllers\Admin\CleaningAddonController;
+use App\Http\Controllers\Admin\CleaningPricingController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\PaymentMethodController as AdminPaymentMethodController;
 use App\Http\Controllers\Admin\ProductListingController as AdminProductListingController;
@@ -358,12 +361,29 @@ Route::middleware(['auth', 'role:admin'])
         |--------------------------------------------------------------------------
         */
 
-        Route::resource('cleaning-pricings', \App\Http\Controllers\Admin\CleaningPricingController::class)
-            ->parameters(['cleaning-pricings' => 'pricing'])
-            ->except(['show', 'update']);
+        Route::get('/cleaning-pricings', [CleaningPricingController::class, 'edit'])
+            ->name('cleaning-pricings.index');
 
-        Route::put('/cleaning-pricings/{pricing}', [\App\Http\Controllers\Admin\CleaningPricingController::class, 'update'])
+        Route::put('/cleaning-pricings', [CleaningPricingController::class, 'update'])
             ->name('cleaning-pricings.update');
+
+        /*
+        |--------------------------------------------------------------------------
+        | Cleaning Areas
+        |--------------------------------------------------------------------------
+        */
+
+        Route::resource('cleaning-areas', CleaningAreaController::class)
+            ->except(['show']);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Cleaning Addons
+        |--------------------------------------------------------------------------
+        */
+
+        Route::resource('cleaning-addons', CleaningAddonController::class)
+            ->except(['show']);
 
         /*
         |--------------------------------------------------------------------------

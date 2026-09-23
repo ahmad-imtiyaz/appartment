@@ -126,6 +126,40 @@
                     </div>
                 @endif
 
+                @if ($serviceRequest->isCleaning())
+    <div class="mb-4 bg-purple-50 rounded-lg p-4">
+        <h4 class="font-semibold text-purple-900 mb-2">Detail Cleaning</h4>
+        <dl class="grid grid-cols-2 gap-3 text-sm">
+            <div>
+                <dt class="text-purple-600">Durasi</dt>
+                <dd class="font-medium text-purple-900">{{ $serviceRequest->cleaning_duration_hours ?? '-' }} jam</dd>
+            </div>
+            <div>
+                <dt class="text-purple-600">Harga / Jam</dt>
+                <dd class="font-medium text-purple-900">Rp{{ number_format($serviceRequest->snapshot_cleaning_price_per_hour ?? 0, 0, ',', '.') }}</dd>
+            </div>
+            @if ($serviceRequest->cleaningAreas->isNotEmpty())
+                <div class="col-span-2">
+                    <dt class="text-purple-600">Area</dt>
+                    <dd class="font-medium text-purple-900">{{ $serviceRequest->cleaningAreas->pluck('name')->join(', ') }}</dd>
+                </div>
+            @endif
+            @if ($serviceRequest->cleaningAddons->isNotEmpty())
+                <div class="col-span-2">
+                    <dt class="text-purple-600">Pekerjaan Tambahan</dt>
+                    <dd class="font-medium text-purple-900">
+                        {{ $serviceRequest->cleaningAddons->pluck('name')->join(', ') }}
+                    </dd>
+                </div>
+            @endif
+            <div>
+                <dt class="text-purple-600">Total Harga</dt>
+                <dd class="font-bold text-green-900 text-lg">Rp{{ number_format($serviceRequest->total_price ?? 0, 0, ',', '.') }}</dd>
+            </div>
+        </dl>
+    </div>
+@endif
+
                 @if ($serviceRequest->notes)
                     <div class="mb-4">
                         <dt class="text-gray-500 text-sm">Catatan Guest</dt>
