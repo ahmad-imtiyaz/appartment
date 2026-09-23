@@ -76,6 +76,7 @@
                         ['route' => 'admin.service-requests.index', 'label' => 'Service Request', 'icon' => 'clipboard'],
                         ['route' => 'admin.workers.index', 'label' => 'Pekerja', 'icon' => 'users'],
                         ['route' => 'admin.topups.index', 'label' => 'Top Up', 'icon' => 'banknotes'],
+                        ['route' => 'admin.withdrawals.index', 'label' => 'Penarikan Saldo', 'icon' => 'banknotes'],
                         ['route' => 'admin.apartment-locations.index', 'label' => 'Lokasi & Tower', 'icon' => 'building'],
                     ],
                     'Harga layanan' => [
@@ -93,6 +94,7 @@
                     'Lainnya' => [
                         ['route' => 'admin.payment-methods.index', 'label' => 'Payment Method', 'icon' => 'card'],
                         ['route' => 'admin.product-listings.index', 'label' => 'Jual-Beli', 'icon' => 'shop'],
+                        ['route' => 'admin.withdrawal-settings.index', 'label' => 'Setting Penarikan', 'icon' => 'card'],
                     ],
                 ] : [
                     'Utama' => [

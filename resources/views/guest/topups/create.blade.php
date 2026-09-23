@@ -6,16 +6,36 @@
 
 <div class="ui-page">
 
-    @include('guest.partials.page-hero', [
-        'title'    => __('guest.topup.title'),
-        'subtitle' => __('guest.topup.subtitle'),
-        'back'     => route('guest.home'),
-    ])
+       <div style="position:relative">
+
+        @include('guest.partials.page-hero', [
+            'title'    => __('guest.topup.title'),
+            'subtitle' => __('guest.topup.subtitle'),
+            'back'     => route('guest.home'),
+        ])
+
+        {{-- Tombol ke riwayat top up --}}
+        <a href="{{ route('guest.topups.index') }}"
+           aria-label="{{ __('guest.topup.history_title') }}"
+           title="{{ __('guest.topup.history_title') }}"
+           style="position:absolute;top:calc(16px + env(safe-area-inset-top, 0px));right:16px;z-index:10;
+                  width:40px;height:40px;border-radius:50%;
+                  display:flex;align-items:center;justify-content:center;
+                  background:rgba(255,255,255,.18);color:#fff;
+                  border:1px solid rgba(255,255,255,.28);
+                  -webkit-tap-highlight-color:transparent;">
+            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+        </a>
+
+    </div>
 
     <div class="ui-body">
         <div class="ui-pull ui-stack">
 
             @include('guest.partials.topup-balance')
+            @include('guest.partials.topup-pending')
 
 
             {{-- Alerts --}}

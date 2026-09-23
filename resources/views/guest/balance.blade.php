@@ -266,6 +266,8 @@
         <div class="p-3 bg-red-50 text-red-800 rounded-lg text-sm">{{ session('error') }}</div>
     @endif
 
+    @include('guest.partials.topup-pending')
+
     {{-- Saldo & Koin --}}
     <div class="wallet-card">
         <div class="wallet-grid">
@@ -292,7 +294,15 @@
         </div>
     </div>
 
-    {{-- Filter + daftar --}}
+    <a href="{{ route('guest.withdrawals.create') }}"
+   style="display:flex;align-items:center;justify-content:center;gap:6px;padding:11px;border-radius:14px;
+          background:#fff;border:1px solid #F1F1F1;font-size:13px;font-weight:700;color:#DC2626;text-decoration:none;">
+    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 19V5m0 0l-5 5m5-5l5 5"/>
+    </svg>
+    {{ __('guest.withdraw.title') }}
+</a>
+
    {{-- Filter + daftar --}}
 <div class="tab-row">
     <nav class="tab-pillbar" aria-label="{{ __('guest.balance.filter_aria') }}">

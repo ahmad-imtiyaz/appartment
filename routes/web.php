@@ -16,6 +16,8 @@ use App\Http\Controllers\Guest\FeedbackController;
 use App\Http\Controllers\Guest\ProfileController as GuestProfileController;
 use App\Http\Controllers\Guest\ServiceRequestController as GuestServiceRequestController;
 use App\Http\Controllers\Guest\TopupController as GuestTopupController;
+use App\Http\Controllers\Admin\WithdrawalController as AdminWithdrawalController;
+use App\Http\Controllers\Guest\WithdrawalController as GuestWithdrawalController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Worker\TaskController;
 use Illuminate\Support\Facades\Route;
@@ -174,6 +176,10 @@ Route::middleware(['auth', 'role:guest'])
         Route::post('/topups', [GuestTopupController::class, 'store'])
             ->name('topups.store');
 
+        Route::get('/withdrawals', [GuestWithdrawalController::class, 'index'])->name('withdrawals.index');
+        Route::get('/withdrawals/create', [GuestWithdrawalController::class, 'create'])->name('withdrawals.create');
+        Route::post('/withdrawals', [GuestWithdrawalController::class, 'store'])->name('withdrawals.store');
+
         /*
         |--------------------------------------------------------------------------
         | Balance
@@ -293,6 +299,14 @@ Route::middleware(['auth', 'role:admin'])
 
         Route::post('/topups/{topupRequest}/reject', [AdminTopupController::class, 'reject'])
             ->name('topups.reject');
+
+
+        Route::get('/withdrawals', [AdminWithdrawalController::class, 'index'])->name('withdrawals.index');
+        Route::post('/withdrawals/{withdrawalRequest}/approve', [AdminWithdrawalController::class, 'approve'])->name('withdrawals.approve');
+        Route::post('/withdrawals/{withdrawalRequest}/reject', [AdminWithdrawalController::class, 'reject'])->name('withdrawals.reject');
+
+        Route::get('/withdrawal-settings', [AdminWithdrawalController::class, 'settings'])->name('withdrawal-settings.index');
+        Route::put('/withdrawal-settings', [AdminWithdrawalController::class, 'updateSettings'])->name('withdrawal-settings.update');
 
         /*
         |--------------------------------------------------------------------------

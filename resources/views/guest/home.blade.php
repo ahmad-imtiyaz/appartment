@@ -426,9 +426,13 @@
 
     @include('guest.partials.header-card')
 
-    <div class="hm-body">
+        <div class="hm-body">
 
-        {{-- Layanan --}}
+    <div style="margin-bottom:18px">
+        @include('guest.partials.topup-pending')
+    </div>
+
+    {{-- Layanan --}}
         <section class="hm-section hm-rise" style="animation-delay:.05s">
 
             <h3 class="hm-heading">{{ __('guest.home.our_services') }}</h3>

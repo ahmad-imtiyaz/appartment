@@ -16,6 +16,7 @@
         <div class="ui-pull ui-stack">
 
             @include('guest.partials.topup-balance')
+            @include('guest.partials.topup-pending')
 
 
             {{-- Top Up Baru --}}
@@ -24,6 +25,11 @@
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m6-6H6"/>
                 </svg>
                 {{ __('guest.topup.new_topup') }}
+            </a>
+
+            {{-- Tarik Saldo --}}
+            <a href="{{ route('guest.withdrawals.index') }}" class="ui-btn ui-btn--outline">
+                {{ __('guest.withdraw.title') }}
             </a>
 
 
@@ -129,6 +135,13 @@
                                         {{ $topup->approved_at->translatedFormat('d M Y H:i') }}
                                     </p>
                                 @endif
+
+                                {{-- Sedang diproses --}}
+@if ($topup->status === 'pending')
+    <p class="ui-row-meta" style="margin-top:10px;color:#B45309">
+        {{ __('guest.topup.pending_note') }}
+    </p>
+@endif
 
                             </div>
 

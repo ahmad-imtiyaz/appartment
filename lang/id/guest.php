@@ -143,6 +143,8 @@ return [
         'coin_redeem_success'      => 'Permintaan penukaran koin berhasil diajukan. Menunggu persetujuan admin.',
         'coin_cancel_not_allowed'  => 'Hanya penukaran dengan status "Sedang Proses" yang bisa dibatalkan.',
         'coin_cancel_success'      => 'Penukaran koin dibatalkan, koin dikembalikan ke akun Anda.',
+
+        'withdraw_sent' => 'Pengajuan penarikan terkirim. Saldo sudah ditahan, menunggu admin mentransfer.',
     ],
 
     /*
@@ -609,9 +611,39 @@ return [
         'rejection_reason'    => 'Alasan Penolakan',
         'approved_at'         => 'Disetujui:',
 
+        'pending_banner_title' => 'Top up sedang diproses',
+        'pending_banner_desc'  => ':count pengajuan senilai :amount sedang diverifikasi admin. Saldo akan bertambah otomatis setelah disetujui.',
+        'pending_note'         => 'Sedang diverifikasi admin. Saldo akan bertambah setelah disetujui.',
+
         'status' => [
-            'pending'  => 'Menunggu',
-            'approved' => 'Disetujui',
+            'pending'  => 'Diproses',
+            'approved' => 'Selesai',
+            'rejected' => 'Ditolak',
+        ],
+
+    ],
+
+    'withdraw' => [
+        'title'          => 'Tarik Saldo',
+        'subtitle'       => 'Kirim saldo ke rekening Anda',
+        'info'           => 'Minimal penarikan :min. Biaya admin :fee. Saldo langsung ditahan saat pengajuan dan dikembalikan jika ditolak.',
+        'amount'         => 'Nominal Penarikan',
+        'min_placeholder' => 'Minimal Rp:min',
+        'fee'            => 'Biaya Admin',
+        'net'            => 'Yang Diterima',
+        'bank_name'      => 'Nama Bank',
+        'account_number' => 'No. Rekening',
+        'account_holder' => 'Atas Nama',
+        'submit'         => 'Ajukan Penarikan',
+        'history_title'  => 'Riwayat Penarikan',
+        'history_subtitle' => 'Daftar pengajuan penarikan saldo',
+        'new'            => 'Tarik Saldo Baru',
+        'empty_title'    => 'Belum ada penarikan saldo',
+        'pending_note'   => 'Sedang diproses admin. Dana akan ditransfer ke rekening Anda.',
+        'refunded'       => 'Saldo sudah dikembalikan ke akun Anda.',
+        'status' => [
+            'pending'  => 'Diproses',
+            'approved' => 'Selesai',
             'rejected' => 'Ditolak',
         ],
     ],

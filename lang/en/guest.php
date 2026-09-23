@@ -144,6 +144,8 @@ return [
         'coin_redeem_success'      => 'Coin redemption request submitted. Waiting for admin approval.',
         'coin_cancel_not_allowed'  => 'Only redemptions with the "Processing" status can be cancelled.',
         'coin_cancel_success'      => 'Coin redemption cancelled, your coins have been refunded.',
+
+        'withdraw_sent' => 'Withdrawal request sent. Your balance is on hold until admin transfers the funds.',
     ],
 
     /*
@@ -407,7 +409,7 @@ return [
         'confirm_cancel'       => 'Cancel order #:id?',
     ],
 
-   /*
+    /*
     |--------------------------------------------------------------------------
     | Service Request Show
     |--------------------------------------------------------------------------
@@ -610,9 +612,38 @@ return [
         'rejection_reason'    => 'Rejection Reason',
         'approved_at'         => 'Approved:',
 
+        'pending_banner_title' => 'Top up in progress',
+        'pending_banner_desc'  => ':count request(s) totaling :amount are being verified by admin. Your balance will be updated automatically once approved.',
+        'pending_note'         => 'Being verified by admin. Your balance will increase once approved.',
+
         'status' => [
-            'pending'  => 'Pending',
-            'approved' => 'Approved',
+            'pending'  => 'Processing',
+            'approved' => 'Completed',
+            'rejected' => 'Rejected',
+        ],
+    ],
+
+    'withdraw' => [
+        'title'          => 'Withdraw Balance',
+        'subtitle'       => 'Send your balance to your bank account',
+        'info'           => 'Minimum withdrawal :min. Admin fee :fee. Your balance is held on request and refunded if rejected.',
+        'amount'         => 'Withdrawal Amount',
+        'min_placeholder' => 'Minimum Rp:min',
+        'fee'            => 'Admin Fee',
+        'net'            => 'You Receive',
+        'bank_name'      => 'Bank Name',
+        'account_number' => 'Account No.',
+        'account_holder' => 'Account Holder',
+        'submit'         => 'Submit Withdrawal',
+        'history_title'  => 'Withdrawal History',
+        'history_subtitle' => 'Your balance withdrawal requests',
+        'new'            => 'New Withdrawal',
+        'empty_title'    => 'No withdrawals yet',
+        'pending_note'   => 'Being processed by admin. Funds will be sent to your account.',
+        'refunded'       => 'Your balance has been refunded.',
+        'status' => [
+            'pending'  => 'Processing',
+            'approved' => 'Completed',
             'rejected' => 'Rejected',
         ],
     ],

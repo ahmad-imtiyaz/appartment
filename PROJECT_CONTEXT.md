@@ -16,6 +16,8 @@ Sistem manajemen layanan apartemen dengan 3 role: **admin**, **pekerja** (worker
 | **ServiceRequest** | `service_requests` | `user_id`, `service_id`, `worker_id`, `assigned_by`, `status`, `cost`, `total_price`, `daerah`, `apartment_location_id`, `apartment_tower_id`, service-specific fields | Transaksi utama + lokasi layanan |
 | **TopupRequest** | `topup_requests` | `user_id`, `payment_method_id`, `amount`, `status` (pending/approved/rejected) | Request isi saldo |
 | **PaymentMethod** | `payment_methods` | `type` (bank_transfer/qris), `bank_name`, `qr_image` | Metode pembayaran topup |
+| **WithdrawalRequest** | `withdrawal_requests` | `user_id`, `amount`, `fee`, `net_amount`, `bank_name`, `account_number`, `account_holder_name`, `status` (pending/approved/rejected), `admin_note`, `processed_by`, `processed_at` | Request tarik saldo guest |
+| **WithdrawalSetting** | `withdrawal_settings` | `min_amount`, `fee_type` (flat/percent), `fee_value` | Setting penarikan (minimal, biaya admin) |
 
 ### ServiceRequest AC Types
 - `ac-cleaning` — Cuci AC (fixed price upfront)
@@ -107,6 +109,21 @@ pending → assigned → in_progress → [waiting_approval (MnR only)] → compl
 
 ---
 
+### Withdrawal Request Status Flow
+
+```
+pending → approved (admin transfer) → completed
+       ↘ rejected (admin tolak) → saldo dikembalikan
+```
+
+| Status | Meaning | Who Can Act |
+|--------|---------|-------------|
+| `pending` | Guest ajukan, saldo ditahan, menunggu admin transfer | Admin approve/reject |
+| `approved` | Admin sudah transfer, penarikan selesai | - |
+| `rejected` | Admin tolak, saldo dikembalikan ke guest | - |
+
+---
+
 ### ServiceRequest Helper Methods (Model)
 ```php
 // ServiceRequest.php
@@ -180,6 +197,14 @@ awardForServiceRequest(ServiceRequest $sr, User $guest, float $amountSpent): ?Co
 - Dipanggil di `TaskController@complete` untuk SEMUA jenis jasa (termasuk MnR pakai `total_price`)
 - Untuk laundry dipanggil di `TaskController@confirmDelivered` setelah guest bayar & worker konfirmasi antar
 
+### WithdrawalSetting
+```php
+current(): self
+calculateFee(float $amount): float
+```
+- `current()`: ambil/create setting tunggal (min_amount=10000, fee_type=flat, fee_value=0 default)
+- `calculateFee()`: hitung biaya admin (flat fee atau persentase), max fee = amount
+
 ---
 
 ## Routes Structure
@@ -215,6 +240,9 @@ awardForServiceRequest(ServiceRequest $sr, User $guest, float $amountSpent): ?Co
 | `GET /topups` | GuestTopupController@index | Riwayat topup |
 | `GET /topups/create` | @create | Form topup |
 | `POST /topups` | @store | Submit topup |
+| `GET /withdrawals` | GuestWithdrawalController@index | Riwayat penarikan |
+| `GET /withdrawals/create` | @create | Form penarikan |
+| `POST /withdrawals` | @store | Submit penarikan (saldo ditahan, fee dihitung) |
 | `GET /balance` | @balance | Riwayat mutasi saldo + koin |
 | `GET /profile` | GuestProfileController@edit | Edit profil lengkap (status, daerah, lokasi, tower, unit) |
 | `PATCH /profile` | @update | Update profil lengkap |
@@ -233,6 +261,11 @@ awardForServiceRequest(ServiceRequest $sr, User $guest, float $amountSpent): ?Co
 | `GET /topups` | TopupController@index | List topup pending |
 | `POST /topups/{tr}/approve` | @approve | Approve topup (+ saldo + mutation) |
 | `POST /topups/{tr}/reject` | @reject | Reject topup (w/ note) |
+| `GET /withdrawals` | AdminWithdrawalController@index | List penarikan pending (paginate 20) |
+| `POST /withdrawals/{withdrawalRequest}/approve` | @approve | Approve penarikan (tandai sudah transfer) |
+| `POST /withdrawals/{withdrawalRequest}/reject` | @reject | Reject penarikan (w/ note, saldo dikembalikan via mutation) |
+| `GET /withdrawal-settings` | AdminWithdrawalController@settings | Form setting penarikan (min_amount, fee_type, fee_value) |
+| `PUT /withdrawal-settings` | @updateSettings | Update setting penarikan |
 | `GET /service-requests` | ServiceRequestController@index | List all (filter by status) |
 | `GET /service-requests/{sr}` | @show | Detail + assign worker form |
 | `POST /service-requests/{sr}/assign` | @assign | Assign pekerja + notif |
@@ -305,6 +338,8 @@ awardForServiceRequest(ServiceRequest $sr, User $guest, float $amountSpent): ?Co
 - `app/Http/Controllers/Admin/ApartmentLocationController.php` — **CRUD lokasi unit & tower (admin)**
 - `app/Http/Controllers/Admin/CleaningPricingController.php` — **Edit tarif cleaning per jam**
 - `app/Http/Controllers/Admin/CleaningAddonController.php` — **CRUD addon cleaning**
+- `app/Http/Controllers/Guest/WithdrawalController.php` — **Guest penarikan saldo (create, index, store)**
+- `app/Http/Controllers/Admin/WithdrawalController.php` — **Admin penarikan (index, approve, reject, settings)**
 
 ### Services
 - `app/Services/RepairPaymentService.php` — Atomic charge untuk MnR
@@ -312,7 +347,7 @@ awardForServiceRequest(ServiceRequest $sr, User $guest, float $amountSpent): ?Co
 - `app/Services/CoinRewardService.php` — Reward koin berdasarkan tier
 
 ### Models (Relations & Helpers)
-- `app/Models/User.php` — Role helpers, all relationships, **apartment location/tower relations**
+- `app/Models/User.php` — Role helpers, all relationships, **apartment location/tower relations**, **withdrawalRequests()**
 - `app/Models/ServiceRequest.php` — Status helpers (isWaitingPayment, isLaundryPaid), service type checks, calculateTotalPrice (laundry + **cleaning**), **lokasi relations**, **cleaningAreas, cleaningAddons**
 - `app/Models/RepairPricing.php` — **PHP class (non-Eloquent) dengan constants: `CATEGORIES` & `SEVERITIES` untuk validasi form** — **no database table**
 - `app/Models/CoinSetting.php` — Tier reward logic
@@ -320,6 +355,8 @@ awardForServiceRequest(ServiceRequest $sr, User $guest, float $amountSpent): ?Co
 - `app/Models/ApartmentTower.php` — **Tower, relasi ke location & users**
 - `app/Models/CleaningPricing.php` — **Single active rate per jam (price_per_hour)**
 - `app/Models/CleaningAddon.php` — **Addon cleaning (name, price, is_active), relasi ke ServiceRequest dengan pivot snapshot_price**
+- `app/Models/WithdrawalRequest.php` — **Request tarik saldo (amount, fee, net_amount, bank details, status, processed_by)**
+- `app/Models/WithdrawalSetting.php` — **Setting penarikan (min_amount, fee_type, fee_value), calculateFee()**
 
 ### Middleware
 - `app/Http/Middleware/EnsureUserHasRole.php` — Role-based access
@@ -351,16 +388,22 @@ resources/views/
 │   ├── apartment-locations/index.blade.php  # **Kelola lokasi & tower**
 │   ├── cleaning-pricings/edit.blade.php  # **Edit tarif cleaning per jam**
 │   └── cleaning-addons/{index,create,edit}.blade.php  # **CRUD addon cleaning**
+│   ├── withdrawals/index.blade.php  # **List penarikan + approve/reject**
+│   └── withdrawals/settings.blade.php  # **Setting penarikan**
 │   # repair-pricings/ DELETED — MnR pricing now fully manual
 │   # cleaning-areas/ DELETED — cleaning simplified to duration + addons only
 ├── guest/
 │   ├── home.blade.php           # **Hero + services grid + marketplace slider (3 properti terbaru) + steps + trust**
-│   ├── balance.blade.php
+│   ├── balance.blade.php        # **Dengan banner topup pending + tab riwayat penarikan**
 │   ├── profile.blade.php        # **Profil lengkap dengan cascading dropdown**
 │   ├── topups/{index,create}.blade.php
 │   ├── service-requests/{index,create,show,category,service-detail}.blade.php
 │   ├── coin-redemptions/index.blade.php
-│   └── product-listings.blade.php
+│   ├── product-listings.blade.php
+│   ├── withdrawals/{index,create}.blade.php  # **Form & riwayat penarikan**
+│   └── partials/
+│       ├── header-card.blade.php  # **Dengan banner topup pending**
+│       └── topup-pending.blade.php  # **Banner notif topup pending**
 ├── worker/
 │   └── tasks/{index,show}.blade.php  # **Detail tugas dengan lokasi, readyForPayment, confirmDelivered**
 ├── profile/
@@ -407,6 +450,8 @@ resources/views/
 16. **Cleaning Areas Required**: ~~Guest must select at least 1 cleaning area when creating cleaning request~~ **REMOVED** — cleaning now only requires duration + optional addons
 17. **RepairPricing Removed**: `repair_pricings` table & Eloquent model deleted. `RepairPricing` is now a plain PHP class with `CATEGORIES` & `SEVERITIES` constants only. Admin sets MnR price manually in `setPrice` (no suggested/reference price). `RepairPricingController` & views deleted. Admin sidebar no longer has Repair pricing menu.
 18. **CleaningArea Removed**: `cleaning_areas` table, model, controller, views, and routes deleted. Cleaning service simplified to duration (hours) + optional addons only. No more area selection required.
+19. **Withdrawal System**: Guest ajukan tarik saldo → saldo ditahan + fee dihitung → admin approve (sudah transfer) atau reject (saldo dikembalikan via mutation). WithdrawalSetting tunggal (min_amount, fee_type flat/percent, fee_value). BalanceMutation created untuk debit (ajukan) dan credit (reject).
+20. **Topup Pending Banner**: Home & balance page menampilkan banner notif jika ada topup pending (count + amount).
 
 ---
 
@@ -454,6 +499,7 @@ resources/views/
 | `2026_09_23_072929_create_cleaning_addon_service_request_table.php` | Pivot: ServiceRequest ↔ CleaningAddon (with snapshot_price) |
 | `2026_09_23_073006_update_cleaning_fields_on_service_requests_table.php` | ServiceRequest: drop cleaning_type/snapshot_cleaning_price → add cleaning_duration_hours, snapshot_cleaning_price_per_hour |
 | `2026_09_23_201321_drop_cleaning_areas_tables.php` | Drop cleaning_areas table + cleaning_area_service_request pivot |
+| `2026_09_23_210300_create_withdrawal_tables.php` | Create withdrawal_settings + withdrawal_requests tables |
 
 ---
 
@@ -469,4 +515,4 @@ resources/views/
 
 ---
 
-*Generated from codebase analysis on 2026-09-19; updated 2026-09-22 with apartment location/tower system, cascading dropdowns, updated auth views, laundry payment flow (waiting_payment status), and marketplace slider on home; updated 2026-09-23 with cleaning pricing per-hour, cleaning areas & addons, admin CRUD for cleaning config; updated 2026-09-23 with AC full-service, AC repair/AC full-service survey pricing flow, ServiceRequest helper methods, and complete migration list; updated 2026-09-24 with RepairPricing removed (now plain PHP class), MnR pricing fully manual, RepairPricingController & views deleted; updated 2026-09-24 with CleaningArea removed, cleaning simplified to duration + addons only*
+*Generated from codebase analysis on 2026-09-19; updated 2026-09-22 with apartment location/tower system, cascading dropdowns, updated auth views, laundry payment flow (waiting_payment status), and marketplace slider on home; updated 2026-09-23 with cleaning pricing per-hour, cleaning areas & addons, admin CRUD for cleaning config; updated 2026-09-23 with AC full-service, AC repair/AC full-service survey pricing flow, ServiceRequest helper methods, and complete migration list; updated 2026-09-24 with RepairPricing removed (now plain PHP class), MnR pricing fully manual, RepairPricingController & views deleted; updated 2026-09-24 with CleaningArea removed, cleaning simplified to duration + addons only; updated 2026-09-24 with Withdrawal system (WithdrawalRequest, WithdrawalSetting, admin approve/reject, fee calculation, balance mutation)*

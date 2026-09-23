@@ -78,6 +78,8 @@ class TopupController extends Controller
 
         TopupRequest::create($validated);
 
-        return back()->with('success', 'Pengajuan top up terkirim, menunggu verifikasi admin.');
+        return redirect()
+            ->route('guest.topups.index')
+            ->with('success', __('guest.flash.topup_sent'));
     }
 }

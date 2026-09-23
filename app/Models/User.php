@@ -90,6 +90,11 @@ class User extends Authenticatable
         return $this->hasMany(BalanceMutation::class, 'user_id');
     }
 
+    public function withdrawalRequests(): HasMany
+    {
+        return $this->hasMany(WithdrawalRequest::class, 'user_id');
+    }
+
     // feedback yang DIA berikan ke pekerja
     public function feedbacksGiven(): HasMany
     {
