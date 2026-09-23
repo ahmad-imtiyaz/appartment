@@ -449,6 +449,8 @@ return [
         'comment_optional'    => 'Komentar (Opsional)',
         'comment_placeholder' => 'Tulis pengalaman Anda...',
         'send_feedback'       => 'Kirim Feedback',
+
+        'pending_note' => 'Mohon menunggu, permintaan Anda dalam proses.',
     ],
 
     /*

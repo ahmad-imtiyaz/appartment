@@ -79,7 +79,7 @@ class ServiceRequestController extends Controller
 
         abort_unless(isset($categories[$category]), 404);
 
- // Semua kategori (termasuk repair/MnR) diarahkan ke halaman service-detail
+        // Semua kategori (termasuk repair/MnR) diarahkan ke halaman service-detail
         // yang sama, dengan card-based selector.
         if (in_array($category, ['laundry', 'cleaning', 'ac', 'repair'])) {
             $slug = $category === 'repair' ? 'maintenance-repair' : $category;
@@ -153,9 +153,6 @@ class ServiceRequestController extends Controller
             'notes' => ['nullable', 'string', 'max:1000'],
             'scheduled_at' => ['nullable', 'date', 'after:now'],
 
-            // pesan error
-            'apartment_tower_id.exists' => 'Tower yang dipilih tidak sesuai dengan lokasi.',
-
             // lokasi — wajib untuk semua jasa
             'daerah' => ['required', 'in:Jakarta'],
             'apartment_location_id' => ['required', 'exists:apartment_locations,id'],
@@ -183,6 +180,9 @@ class ServiceRequestController extends Controller
             'urgency' => ['nullable', 'in:low,medium,high'],
             'photos' => ['nullable', 'array', 'max:5'],
             'photos.*' => ['image', 'max:2048'],
+        ], [
+            // pesan error custom
+            'apartment_tower_id.exists' => 'Tower yang dipilih tidak sesuai dengan lokasi.',
         ]);
 
         $service = Service::findOrFail($validated['service_id']);

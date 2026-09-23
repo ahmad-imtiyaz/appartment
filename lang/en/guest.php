@@ -326,15 +326,15 @@ return [
         'photos_title'                => 'Damage Photos (Optional, max 5)',
         'photos_hint'                 => 'Maximum 5 photos, up to 2MB each',
 
-        'location_title'         => 'Lokasi Layanan',
-        'daerah'                 => 'Daerah',
-        'choose_daerah'          => 'Pilih daerah',
-        'daerah_hint'            => 'Saat ini layanan baru tersedia untuk area Jakarta.',
-        'apartment_location'     => 'Lokasi Unit',
-        'choose_location'        => 'Pilih lokasi unit',
-        'apartment_tower'        => 'Tower',
-        'choose_location_first'  => 'Pilih lokasi unit dahulu',
-        'choose_tower'           => 'Pilih tower',
+        'location_title'        => 'Service Location',
+        'daerah'                => 'Area',
+        'choose_daerah'         => 'Select area',
+        'daerah_hint'           => 'Services are currently available only in the Jakarta area.',
+        'apartment_location'    => 'Unit Location',
+        'choose_location'       => 'Select unit location',
+        'apartment_tower'       => 'Tower',
+        'choose_location_first' => 'Select a unit location first',
+        'choose_tower'          => 'Select tower',
     ],
 
     /*
@@ -450,6 +450,8 @@ return [
         'comment_optional'   => 'Comment (Optional)',
         'comment_placeholder' => 'Write about your experience...',
         'send_feedback'      => 'Send Feedback',
+
+        'pending_note' => 'Please wait, your request is being processed.',
     ],
 
     /*

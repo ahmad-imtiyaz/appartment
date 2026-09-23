@@ -1,4 +1,4 @@
-```blade
+
 @extends('layouts.guest')
 
 @section('title', __('guest.show.title'))
@@ -147,6 +147,12 @@
 
             </div>
 
+            {{-- Status masih menunggu diproses admin --}}
+            @if ($serviceRequest->status === 'pending')
+                <div class="ui-alert" style="background:#FFFBEB;color:#92400E">
+                    {{ __('guest.show.pending_note') }}
+                </div>
+            @endif
 
             {{-- Status sedang diproses --}}
             @if ($serviceRequest->status === 'in_progress')
@@ -564,4 +570,4 @@
 </div>
 
 @endsection
-```
+
