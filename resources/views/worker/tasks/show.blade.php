@@ -352,29 +352,6 @@
                 </div>
             @endif
 
-            <!-- Weigh Form (for laundry tasks that haven't been weighed yet) -->
-            @if($serviceRequest->isLaundry() && $serviceRequest->status === 'in_progress' && !$serviceRequest->weighed_at)
-                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
-                    <h3 class="font-semibold text-gray-900 mb-4">Timbang Pakaian</h3>
-                    <form method="POST" action="{{ route('worker.tasks.weigh', $serviceRequest) }}" class="space-y-4">
-                        @csrf
-                        <div>
-                            <x-input-label for="billable_weight">
-                                {!! __('Berat Aktual (kg) <span class="text-red-500">*</span>') !!}
-                            </x-input-label>
-                            <x-text-input id="billable_weight" type="number" name="billable_weight" step="0.01" min="0.01" required class="mt-1 block w-full" placeholder="Contoh: 0.5, 1.0, 2.5" />
-                            <x-input-error :messages="$errors->get('billable_weight')" class="mt-2" />
-                            <p class="mt-1 text-xs text-gray-500">Berat minimum dihitung sebagai 1 kg</p>
-                        </div>
-                        <x-primary-button type="submit" class="w-full">
-                            Catat Berat & Hitung Total
-                        </x-primary-button>
-                    </form>
-                </div>
-            @endif
-
-
-
             <!-- Complete Form (for in_progress status) -->
             @if ($serviceRequest->status === 'in_progress' && !$serviceRequest->isLaundry() && (!$serviceRequest->requiresSurveyPricing() || $serviceRequest->price_approved_at))
                 <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
