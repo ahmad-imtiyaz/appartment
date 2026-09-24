@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Edit Produk Penukaran Koin') }}
+            {{ __('Edit Produk Penukaran Poin') }}
         </h2>
     </x-slot>
 
@@ -39,7 +39,7 @@
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
                         <div>
-                            <label for="coin_cost" class="block text-sm font-medium text-gray-700 mb-1">Harga Koin <span class="text-red-500">*</span></label>
+                            <label for="coin_cost" class="block text-sm font-medium text-gray-700 mb-1">Harga Poin <span class="text-red-500">*</span></label>
                             <input type="number" name="coin_cost" id="coin_cost" required min="1"
                                    value="{{ old('coin_cost', $product->coin_cost) }}"
                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">

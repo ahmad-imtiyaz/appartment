@@ -10,58 +10,23 @@ use Illuminate\View\View;
 
 class CoinSettingController extends Controller
 {
-    public function index(Request $request): View
+    public function index(): View
     {
-        $settings = CoinSetting::when($request->search, fn ($q) => $q->where('min_amount', 'like', "%{$request->search}%"))
-            ->orderBy('min_amount')
-            ->paginate(20);
+        $setting = CoinSetting::current();
 
-        return view('admin.coin-settings.index', compact('settings'));
+        return view('admin.coin-settings.index', compact('setting'));
     }
 
-    public function create(): View
-    {
-        return view('admin.coin-settings.create');
-    }
-
-    public function store(Request $request): RedirectResponse
+    public function update(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'min_amount' => ['required', 'numeric', 'min:0', 'unique:coin_settings,min_amount'],
-            'coin_reward' => ['required', 'integer', 'min:1'],
-            'is_active' => ['boolean'],
+            'increment_amount' => ['required', 'numeric', 'min:1'],
+            'points_per_increment' => ['required', 'integer', 'min:1'],
         ]);
 
-        CoinSetting::create($validated);
+        CoinSetting::current()->update($validated);
 
         return redirect()->route('admin.coin-settings.index')
-            ->with('success', 'Setting koin berhasil ditambahkan.');
-    }
-
-    public function edit(CoinSetting $coinSetting): View
-    {
-        return view('admin.coin-settings.edit', ['setting' => $coinSetting]);
-    }
-
-    public function update(Request $request, CoinSetting $coinSetting): RedirectResponse
-    {
-        $validated = $request->validate([
-            'min_amount' => ['required', 'numeric', 'min:0', 'unique:coin_settings,min_amount,' . $coinSetting->id],
-            'coin_reward' => ['required', 'integer', 'min:1'],
-            'is_active' => ['boolean'],
-        ]);
-
-        $coinSetting->update($validated);
-
-        return redirect()->route('admin.coin-settings.index')
-            ->with('success', 'Setting koin berhasil diperbarui.');
-    }
-
-    public function destroy(CoinSetting $coinSetting): RedirectResponse
-    {
-        $coinSetting->delete();
-
-        return redirect()->route('admin.coin-settings.index')
-            ->with('success', 'Setting koin berhasil dihapus.');
+            ->with('success', 'Setting poin berhasil diperbarui.');
     }
 }

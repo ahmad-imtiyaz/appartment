@@ -87,10 +87,10 @@
                         ['route' => 'admin.cleaning-addons.index', 'label' => 'Tambahan Cleaning', 'icon' => 'sparkles'],
                         ['route' => 'admin.ac-pricings.index', 'label' => 'AC', 'icon' => 'cloud'],
                     ],
-                    'Penukaran Koin' => [
-                        ['route' => 'admin.coin-redemption-products.index', 'label' => 'Produk Tukar Koin', 'icon' => 'gift'],
+                    'Penukaran Poin' => [
+                        ['route' => 'admin.coin-redemption-products.index', 'label' => 'Produk Tukar Poin', 'icon' => 'gift'],
                         ['route' => 'admin.coin-redemptions.index', 'label' => 'Kelola Penukaran', 'icon' => 'coin'],
-                        ['route' => 'admin.coin-settings.index', 'label' => 'Setting Koin', 'icon' => 'banknotes'],
+                        ['route' => 'admin.coin-settings.index', 'label' => 'Setting Poin', 'icon' => 'banknotes'],
                     ],
                     'Lainnya' => [
                         ['route' => 'admin.commission-settings.index', 'label' => 'Setting Potongan', 'icon' => 'percent'],

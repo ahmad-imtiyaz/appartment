@@ -18,18 +18,22 @@ class CoinRewardService
             return null;
         }
 
-        $tier = CoinSetting::active()
-            ->where('min_amount', '<=', $amountSpent)
-            ->orderByDesc('min_amount')
-            ->first();
+        $setting = CoinSetting::current();
 
-        if (!$tier) {
+        if ($setting->increment_amount <= 0) {
+
+            return null;
+        }
+
+         $multiples = (int) floor($amountSpent / (float) $setting->increment_amount);
+        $reward = $multiples * $setting->points_per_increment;
+
+        if ($reward <= 0) {
             return null;
         }
 
         $balanceBefore = $guest->coin_balance;
-        $balanceAfter = $balanceBefore + $tier->coin_reward;
-
+        $balanceAfter = $balanceBefore + $reward;
         $guest->update([
             'coin_balance' => $balanceAfter,
         ]);
@@ -37,7 +41,7 @@ class CoinRewardService
         return CoinMutation::create([
             'user_id' => $guest->id,
             'type' => 'earn',
-            'amount' => $tier->coin_reward,
+            'amount' => $reward,
             'balance_before' => $balanceBefore,
             'balance_after' => $balanceAfter,
             'reference_type' => 'ServiceRequest',

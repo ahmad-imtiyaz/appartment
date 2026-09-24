@@ -440,9 +440,11 @@ Route::middleware(['auth', 'role:admin'])
         |--------------------------------------------------------------------------
         */
 
-        Route::resource('coin-settings', \App\Http\Controllers\Admin\CoinSettingController::class)
-            ->parameters(['coin-settings' => 'coinSetting'])
-            ->except(['show']);
+        Route::get('/coin-settings', [CoinSettingController::class, 'index'])
+            ->name('coin-settings.index');
+
+        Route::put('/coin-settings', [CoinSettingController::class, 'update'])
+            ->name('coin-settings.update');
 
         /*
         |--------------------------------------------------------------------------

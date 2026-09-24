@@ -1,80 +1,52 @@
 <x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Kelola Setting Koin') }}
+            {{ __('Setting Poin') }}
         </h2>
     </x-slot>
 
     <div class="py-8 px-4 sm:px-6 lg:px-8">
-        <div class="max-w-6xl mx-auto">
+        <div class="max-w-xl mx-auto bg-white rounded-xl shadow-sm border border-gray-100 p-6">
             @if (session('success'))
                 <div class="mb-6 p-3 bg-green-50 text-green-800 rounded-lg">
                     {{ session('success') }}
                 </div>
             @endif
-            @if (session('error'))
-                <div class="mb-6 p-3 bg-red-50 text-red-800 rounded-lg">
-                    {{ session('error') }}
+
+            <p class="text-sm text-gray-500 mb-5">
+                Setiap kelipatan nominal di bawah ini memberi guest sejumlah poin,
+                dihitung otomatis setelah semua layanan yang dipilih selesai.
+            </p>
+
+            <form action="{{ route('admin.coin-settings.update') }}" method="POST" class="space-y-5">
+                @csrf
+                @method('PUT')
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Kelipatan Pengeluaran (Rp)</label>
+                    <input type="number" name="increment_amount" value="{{ old('increment_amount', $setting->increment_amount) }}" step="1" min="1"
+                           class="w-full rounded-lg border-gray-300 shadow-sm" required>
+                    <p class="text-xs text-gray-400 mt-1">Contoh: 50.000 berarti tiap kelipatan Rp50rb dari total jasa.</p>
+                    @error('increment_amount')
+                        <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
+                    @enderror
                 </div>
-            @endif
 
-            <div class="flex items-center justify-between mb-6">
-                <h3 class="font-semibold text-gray-900 text-lg">Daftar Tier Reward Koin</h3>
-                <a href="{{ route('admin.coin-settings.create') }}" class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors">
-                    + Tambah Tier
-                </a>
-            </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Poin per Kelipatan</label>
+                    <input type="number" name="points_per_increment" value="{{ old('points_per_increment', $setting->points_per_increment) }}" min="1"
+                           class="w-full rounded-lg border-gray-300 shadow-sm" required>
+                    @error('points_per_increment')
+                        <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
 
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                <table class="w-full">
-                    <thead class="bg-gray-50 border-b border-gray-100">
-                        <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Min. Pengeluaran</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Reward Koin</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Dibuat</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-100">
-                        @if ($settings->isEmpty())
-                            <tr>
-                                <td colspan="5" class="px-6 py-8 text-center text-gray-500">Belum ada setting koin</td>
-                            </tr>
-                        @else
-                            @foreach ($settings as $setting)
-                                <tr class="hover:bg-gray-50">
-                                    <td class="px-6 py-4 font-medium text-gray-900">Rp{{ number_format($setting->min_amount, 0, ',', '.') }} ke atas</td>
-                                    <td class="px-6 py-4 text-gray-700">{{ $setting->coin_reward }} koin</td>
-                                    <td class="px-6 py-4">
-                                        <span class="px-2 py-1 text-xs font-medium rounded-full @if($setting->is_active) bg-green-100 text-green-800 @else bg-gray-100 text-gray-600 @endif">
-                                            {{ $setting->is_active ? 'Aktif' : 'Nonaktif' }}
-                                        </span>
-                                    </td>
-                                    <td class="px-6 py-4 text-sm text-gray-500">{{ $setting->created_at->format('d M Y H:i') }}</td>
-                                    <td class="px-6 py-4">
-                                        <div class="flex items-center gap-2">
-                                            <a href="{{ route('admin.coin-settings.edit', $setting) }}" class="text-indigo-600 hover:text-indigo-900 text-sm font-medium">Edit</a>
-                                            <form action="{{ route('admin.coin-settings.destroy', $setting) }}" method="POST" class="inline"
-                                                  onsubmit="return confirm('Hapus tier ini?')">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="text-red-600 hover:text-red-900 text-sm font-medium">Hapus</button>
-                                            </form>
-                                        </div>
-                                    </td>
-                                </tr>
-                            @endforeach
-                        @endif
-                    </tbody>
-                </table>
-
-                @if ($settings->hasPages())
-                    <div class="px-6 py-4 border-t border-gray-100">
-                        {{ $settings->links() }}
-                    </div>
-                @endif
-            </div>
+                <div class="pt-2">
+                    <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700">
+                        Simpan
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </x-app-layout>

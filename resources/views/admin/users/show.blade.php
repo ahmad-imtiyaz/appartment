@@ -93,7 +93,7 @@
                 </div>
 
                 <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                    <p class="text-sm text-gray-500">Poin / Koin</p>
+                    <p class="text-sm text-gray-500">Poin</p>
                     <p class="mt-1 text-2xl font-semibold text-amber-600">
                         {{ number_format($coins, 0, ',', '.') }}
                     </p>

@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Kelola Produk Penukaran Koin') }}
+           {{ __('Kelola Produk Penukaran Poin') }}
         </h2>
     </x-slot>
 
@@ -60,7 +60,7 @@
                         <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
                         </svg>
-                        <p class="mt-2 text-gray-500">Belum ada produk penukaran koin</p>
+                        <p class="mt-2 text-gray-500">Belum ada produk penukaran poin</p>
                         <a href="{{ route('admin.coin-redemption-products.create') }}" class="mt-4 inline-block text-indigo-600 hover:text-indigo-800">
                             Buat produk pertama
                         </a>
@@ -72,7 +72,7 @@
                                 <tr>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gambar</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Harga Koin</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Harga Poin</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stok</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
@@ -100,7 +100,7 @@
                                             @endif
                                         </td>
                                         <td class="px-4 py-3 text-gray-900">
-                                            <span class="font-medium text-indigo-600">{{ number_format($product->coin_cost) }} Koin</span>
+                                            <span class="font-medium text-indigo-600">{{ number_format($product->coin_cost) }} Poin</span>
                                         </td>
                                         <td class="px-4 py-3">
                                             <span class="{{ $product->stock > 0 ? 'text-green-600' : 'text-red-600' }} font-medium">

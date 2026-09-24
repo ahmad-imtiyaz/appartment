@@ -2,7 +2,7 @@
     <x-slot name="header">
         <div class="flex items-center justify-between">
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                {{ __('Detail Penukaran Koin') }}
+                {{ __('Detail Penukaran Poin') }}
             </h2>
             <a href="{{ route('admin.coin-redemptions.index') }}"
                class="text-indigo-600 hover:text-indigo-800 text-sm font-medium">
@@ -43,8 +43,8 @@
                             <dd class="font-medium text-gray-900">{{ $coinRedemption->user->apartment_unit_number ?? '-' }}</dd>
                         </div>
                         <div>
-                            <dt class="text-gray-500">Koin Saat Ini</dt>
-                            <dd class="font-medium text-indigo-600">{{ number_format($coinRedemption->user->coin_balance) }} Koin</dd>
+                            <dt class="text-gray-500">Poin Saat Ini</dt>
+                            <dd class="font-medium text-indigo-600">{{ number_format($coinRedemption->user->coin_balance) }} Poin</dd>
                         </div>
                     </dl>
                 </div>
@@ -68,7 +68,7 @@
                             @if ($coinRedemption->product->description)
                                 <p class="text-sm text-gray-500">{{ $coinRedemption->product->description }}</p>
                             @endif
-                            <p class="text-indigo-600 font-medium mt-1">{{ number_format($coinRedemption->coin_cost) }} Koin</p>
+                            <p class="text-indigo-600 font-medium mt-1">{{ number_format($coinRedemption->coin_cost) }} Poin</p>
                         </div>
                     </div>
                 </div>
@@ -148,7 +148,7 @@
                             </div>
                             <button type="submit"
                                     class="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 transition-colors self-end"
-                                    onclick="return confirm('Reject penukaran ini? Koin akan dikembalikan ke guest.')">
+                                    onclick="return confirm('Reject penukaran ini? Poin akan dikembalikan ke guest.')">
                                 Reject
                             </button>
                         </form>

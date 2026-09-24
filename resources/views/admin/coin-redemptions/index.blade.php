@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Kelola Penukaran Koin') }}
+            {{ __('Kelola Penukaran Poin') }}
         </h2>
     </x-slot>
 
@@ -52,7 +52,7 @@
                         <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
                         </svg>
-                        <p class="mt-2 text-gray-500">Belum ada permintaan penukaran koin</p>
+                        <p class="mt-2 text-gray-500">Belum ada permintaan penukaran poin</p>
                     </div>
                 @else
                     <div class="overflow-x-auto">
@@ -61,7 +61,7 @@
                                 <tr>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Guest</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Produk</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Harga Koin</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Harga Poin</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
@@ -78,7 +78,7 @@
                                             <div class="font-medium text-gray-900">{{ $redemption->product->name }}</div>
                                         </td>
                                         <td class="px-4 py-3 text-gray-900">
-                                            <span class="font-medium text-indigo-600">{{ number_format($redemption->coin_cost) }} Koin</span>
+                                            <span class="font-medium text-indigo-600">{{ number_format($redemption->coin_cost) }} Poin</span>
                                         </td>
                                         <td class="px-4 py-3">
                                             @php
@@ -119,7 +119,7 @@
                                                         @csrf
                                                         <button type="submit"
                                                                 class="text-red-600 hover:text-red-800 text-sm font-medium"
-                                                                onclick="return confirm('Reject penukaran ini? Koin akan dikembalikan ke guest.')">
+                                                                onclick="return confirm('Reject penukaran ini? Poin akan dikembalikan ke guest.')">
                                                             Reject
                                                         </button>
                                                     </form>

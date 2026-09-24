@@ -150,10 +150,10 @@ return [
         'topup_sent'               => 'Pengajuan top up terkirim, menunggu verifikasi admin.',
 
         'coin_product_unavailable' => 'Produk tidak tersedia untuk ditukarkan.',
-        'coin_insufficient'        => 'Koin Anda tidak mencukupi untuk menukarkan produk ini.',
-        'coin_redeem_success'      => 'Permintaan penukaran koin berhasil diajukan. Menunggu persetujuan admin.',
+        'coin_insufficient'        => 'Poin Anda tidak mencukupi untuk menukarkan produk ini.',
+        'coin_redeem_success'      => 'Permintaan penukaran poin berhasil diajukan. Menunggu persetujuan admin.',
         'coin_cancel_not_allowed'  => 'Hanya penukaran dengan status "Sedang Proses" yang bisa dibatalkan.',
-        'coin_cancel_success'      => 'Penukaran koin dibatalkan, koin dikembalikan ke akun Anda.',
+        'coin_cancel_success'      => 'Penukaran poin dibatalkan, poin dikembalikan ke akun Anda.',
 
         'withdraw_sent' => 'Pengajuan penarikan terkirim. Saldo sudah ditahan, menunggu admin mentransfer.',
     ],
@@ -475,24 +475,24 @@ return [
     'balance' => [
         'title'           => 'Saldo & Riwayat Mutasi',
         'current_balance' => 'Saldo Saat Ini',
-        'your_coins'      => 'Koin Anda',
-        'coin_unit'       => 'Koin',
+        'your_coins'      => 'Poin Anda',
+        'coin_unit'       => 'Poin',
 
         'filter_aria'     => 'Filter mutasi',
 
         'tab_all'         => 'Semua',
         'tab_balance'     => 'Saldo',
-        'tab_coin'        => 'Koin',
+        'tab_coin'        => 'Poin',
 
         'empty_all'      => 'Belum ada riwayat mutasi',
         'empty_balance'  => 'Belum ada riwayat mutasi saldo',
-        'empty_coin'     => 'Belum ada riwayat mutasi koin',
+        'empty_coin'     => 'Belum ada riwayat mutasi poin',
 
         'in'             => 'Masuk',
         'out'            => 'Keluar',
 
         'unit_balance'   => 'Saldo',
-        'unit_coin'      => 'Koin',
+        'unit_coin'      => 'Poin',
     ],
 
     /*
@@ -554,21 +554,21 @@ return [
     */
 
     'coin' => [
-        'title'             => 'Penukaran Koin',
+        'title'             => 'Penukaran Poin',
         'tab_products'      => 'Produk Tersedia',
         'tab_history'       => 'Riwayat Penukaran',
         'no_products'       => 'Belum ada produk yang bisa ditukarkan',
         'no_history'        => 'Belum ada riwayat penukaran',
         'stock'             => 'Stok: :count',
         'out_of_stock'      => 'Stok Habis',
-        'insufficient_coin' => 'Koin Tidak Cukup',
+        'insufficient_coin' => 'Poin Tidak Cukup',
         'redeem_now'        => 'Tukar Sekarang',
-        'confirm_redeem'    => 'Yakin ingin menukarkan :cost koin untuk :name?',
+        'confirm_redeem'    => 'Yakin ingin menukarkan :cost poin untuk :name?',
         'status_processing' => 'Sedang Proses',
         'status_completed'  => 'Berhasil Ditukarkan',
         'status_cancelled'  => 'Dibatalkan',
         'admin_note_label'  => 'Catatan:',
-        'confirm_cancel'    => 'Yakin ingin membatalkan penukaran ini? Koin akan dikembalikan.',
+        'confirm_cancel'    => 'Yakin ingin membatalkan penukaran ini? Poin akan dikembalikan.',
         'cancel'            => 'Batalkan',
     ],
 

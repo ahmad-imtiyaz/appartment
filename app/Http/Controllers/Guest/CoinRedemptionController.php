@@ -35,7 +35,7 @@ class CoinRedemptionController extends Controller
         $user = auth()->user();
 
         if ($user->coin_balance < $product->coin_cost) {
-            return back()->with('error', 'Koin Anda tidak mencukupi untuk menukarkan produk ini.');
+            return back()->with('error', 'Poin Anda tidak mencukupi untuk menukarkan produk ini.');
         }
 
         // Deduct coins
@@ -61,14 +61,14 @@ class CoinRedemptionController extends Controller
             'balance_after' => $balanceAfter,
             'reference_type' => 'CoinRedemption',
             'reference_id' => $redemption->id,
-            'description' => 'Penukaran koin: ' . $product->name,
+            'description' => 'Penukaran poin: ' . $product->name,
         ]);
 
         // Decrease product stock
         $product->decrement('stock');
 
         return redirect()->route('guest.coin-redemptions.index')
-            ->with('success', 'Permintaan penukaran koin berhasil diajukan. Menunggu persetujuan admin.');
+           ->with('success', 'Permintaan penukaran poin berhasil diajukan. Menunggu persetujuan admin.');
     }
 
     public function cancel(CoinRedemption $coinRedemption): RedirectResponse
@@ -110,6 +110,6 @@ class CoinRedemptionController extends Controller
         ]);
 
         return redirect()->route('guest.coin-redemptions.index')
-            ->with('success', 'Penukaran koin dibatalkan, koin dikembalikan ke akun Anda.');
+           ->with('success', 'Penukaran poin dibatalkan, poin dikembalikan ke akun Anda.');
     }
 }

@@ -55,7 +55,7 @@ class CoinRedemptionProductController extends Controller
         CoinRedemptionProduct::create($validated);
 
         return redirect()->route('admin.coin-redemption-products.index')
-            ->with('success', 'Produk penukaran koin berhasil ditambahkan.');
+            ->with('success', 'Produk penukaran poin berhasil ditambahkan.');
     }
 
     public function edit(CoinRedemptionProduct $coinRedemptionProduct): View
@@ -84,7 +84,7 @@ class CoinRedemptionProductController extends Controller
         $coinRedemptionProduct->update($validated);
 
         return redirect()->route('admin.coin-redemption-products.index')
-            ->with('success', 'Produk penukaran koin berhasil diperbarui.');
+             ->with('success', 'Produk penukaran poin berhasil diperbarui.');
     }
 
     public function destroy(CoinRedemptionProduct $coinRedemptionProduct): RedirectResponse
@@ -96,6 +96,6 @@ class CoinRedemptionProductController extends Controller
         $coinRedemptionProduct->delete();
 
         return redirect()->route('admin.coin-redemption-products.index')
-            ->with('success', 'Produk penukaran koin berhasil dihapus.');
+            ->with('success', 'Produk penukaran poin berhasil dihapus.');
     }
 }

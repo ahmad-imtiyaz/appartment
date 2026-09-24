@@ -7,21 +7,28 @@ use Illuminate\Database\Eloquent\Model;
 class CoinSetting extends Model
 {
     protected $fillable = [
-        'min_amount',
-        'coin_reward',
+        'increment_amount',
+        'points_per_increment',
         'is_active',
     ];
 
     protected function casts(): array
     {
         return [
-            'min_amount' => 'decimal:2',
+            'increment_amount' => 'decimal:2',
             'is_active' => 'boolean',
         ];
     }
 
-    public function scopeActive($query)
+    /**
+     * Ambil (atau buat) satu-satunya baris setting aktif.
+     * Pola sama seperti CommissionSetting::current() / WithdrawalSetting::current().
+     */
+    public static function current(): self
     {
-        return $query->where('is_active', true);
+        return static::firstOrCreate(
+            ['is_active' => true],
+            ['increment_amount' => 50000, 'points_per_increment' => 1]
+        );
     }
 }

@@ -54,7 +54,7 @@ class CoinRedemptionController extends Controller
         ]);
 
         return redirect()->route('admin.coin-redemptions.index')
-            ->with('success', 'Penukaran koin berhasil di-approve.');
+             ->with('success', 'Penukaran poin berhasil di-approve.');
     }
 
     public function reject(Request $request, CoinRedemption $coinRedemption): RedirectResponse
@@ -90,6 +90,6 @@ class CoinRedemptionController extends Controller
         ]);
 
         return redirect()->route('admin.coin-redemptions.index')
-            ->with('success', 'Penukaran koin ditolak, koin dikembalikan ke user.');
+            ->with('success', 'Penukaran poin ditolak, poin dikembalikan ke user.');
     }
 }
