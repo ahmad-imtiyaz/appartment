@@ -66,6 +66,7 @@
                     'gift'       => '<path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />',
                     'coin'       => '<circle cx="12" cy="12" r="10" /><path d="M12 6v12M6 12h12" />',
                     'wrench'     => '<path d="M14.5 3.5a3.5 3.5 0 0 0-4.6 4.3L4 13.7V16h2.3l5.9-5.9a3.5 3.5 0 0 0 4.3-4.6l-2.3 2.3-1.4-1.4 2.3-2.3Z" />',
+                    'percent'    => '<line x1="15" y1="5" x2="5" y2="15" /><circle cx="6.5" cy="6.5" r="1.7" /><circle cx="13.5" cy="13.5" r="1.7" />',
                 ];
 
                 $navGroups = $role === 'admin' ? [
@@ -75,23 +76,24 @@
                     'Operasional' => [
                         ['route' => 'admin.service-requests.index', 'label' => 'Service Request', 'icon' => 'clipboard'],
                         ['route' => 'admin.workers.index', 'label' => 'Pekerja', 'icon' => 'users'],
+                        ['route' => 'admin.users.index', 'label' => 'Kelola User', 'icon' => 'users'],
                         ['route' => 'admin.topups.index', 'label' => 'Top Up', 'icon' => 'banknotes'],
                         ['route' => 'admin.withdrawals.index', 'label' => 'Penarikan Saldo', 'icon' => 'banknotes'],
                         ['route' => 'admin.apartment-locations.index', 'label' => 'Lokasi & Tower', 'icon' => 'building'],
                     ],
                     'Harga layanan' => [
-    ['route' => 'admin.laundry-pricings.index', 'label' => 'Laundry', 'icon' => 'tag'],
-    ['route' => 'admin.cleaning-pricings.index', 'label' => 'Cleaning', 'icon' => 'sparkles'],
-    ['route' => 'admin.cleaning-addons.index', 'label' => 'Tambahan Cleaning', 'icon' => 'sparkles'],
-    ['route' => 'admin.ac-pricings.index', 'label' => 'AC', 'icon' => 'cloud'],
-
-],
+                        ['route' => 'admin.laundry-pricings.index', 'label' => 'Laundry', 'icon' => 'tag'],
+                        ['route' => 'admin.cleaning-pricings.index', 'label' => 'Cleaning', 'icon' => 'sparkles'],
+                        ['route' => 'admin.cleaning-addons.index', 'label' => 'Tambahan Cleaning', 'icon' => 'sparkles'],
+                        ['route' => 'admin.ac-pricings.index', 'label' => 'AC', 'icon' => 'cloud'],
+                    ],
                     'Penukaran Koin' => [
                         ['route' => 'admin.coin-redemption-products.index', 'label' => 'Produk Tukar Koin', 'icon' => 'gift'],
                         ['route' => 'admin.coin-redemptions.index', 'label' => 'Kelola Penukaran', 'icon' => 'coin'],
                         ['route' => 'admin.coin-settings.index', 'label' => 'Setting Koin', 'icon' => 'banknotes'],
                     ],
                     'Lainnya' => [
+                        ['route' => 'admin.commission-settings.index', 'label' => 'Setting Potongan', 'icon' => 'percent'],
                         ['route' => 'admin.payment-methods.index', 'label' => 'Payment Method', 'icon' => 'card'],
                         ['route' => 'admin.product-listings.index', 'label' => 'Jual-Beli', 'icon' => 'shop'],
                         ['route' => 'admin.withdrawal-settings.index', 'label' => 'Setting Penarikan', 'icon' => 'card'],

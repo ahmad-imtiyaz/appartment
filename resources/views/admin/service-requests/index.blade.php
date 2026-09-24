@@ -20,14 +20,37 @@
                 </div>
             @endif
 
-            <!-- Filter -->
+            <!-- Tab Filter Jasa -->
+            <div class="mb-4 -mx-4 sm:mx-0 px-4 sm:px-0 overflow-x-auto">
+                <div class="flex gap-2 w-max sm:w-auto">
+                    <a href="{{ route('admin.service-requests.index', array_filter(['status' => request('status')])) }}"
+                       class="px-4 py-2 text-sm font-medium rounded-full border whitespace-nowrap
+                              {{ !$serviceName ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50' }}">
+                        Semua Jasa
+                    </a>
+                    @foreach ($serviceNames as $name)
+                        <a href="{{ route('admin.service-requests.index', array_filter(['service' => $name, 'status' => request('status')])) }}"
+                           class="px-4 py-2 text-sm font-medium rounded-full border whitespace-nowrap
+                                  {{ $serviceName === $name ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50' }}">
+                            {{ $name }}
+                        </a>
+                    @endforeach
+                </div>
+            </div>
+
+            <!-- Filter Status -->
             <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-6">
                 <form method="GET" class="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+                    @if ($serviceName)
+                        <input type="hidden" name="service" value="{{ $serviceName }}">
+                    @endif
+
                     <select name="status" class="w-full sm:w-auto rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-4 py-2 bg-white">
                         <option value="">Semua Status</option>
                         <option value="pending" {{ request()->status === 'pending' ? 'selected' : '' }}>Pending</option>
                         <option value="assigned" {{ request()->status === 'assigned' ? 'selected' : '' }}>Assigned</option>
                         <option value="in_progress" {{ request()->status === 'in_progress' ? 'selected' : '' }}>In Progress</option>
+                        <option value="waiting_approval" {{ request()->status === 'waiting_approval' ? 'selected' : '' }}>Waiting Approval</option>
                         <option value="completed" {{ request()->status === 'completed' ? 'selected' : '' }}>Completed</option>
                         <option value="rejected" {{ request()->status === 'rejected' ? 'selected' : '' }}>Rejected</option>
                     </select>
@@ -54,6 +77,7 @@
                                 @if($sr->status === 'pending') bg-yellow-100 text-yellow-800
                                 @elseif($sr->status === 'assigned') bg-blue-100 text-blue-800
                                 @elseif($sr->status === 'in_progress') bg-purple-100 text-purple-800
+                                @elseif($sr->status === 'waiting_approval') bg-orange-100 text-orange-800
                                 @elseif($sr->status === 'completed') bg-green-100 text-green-800
                                 @elseif($sr->status === 'rejected') bg-red-100 text-red-800
                                 @else bg-gray-100 text-gray-800 @endif">
@@ -66,7 +90,15 @@
                             <dd class="text-gray-900 font-medium text-right">{{ $sr->service->name }}</dd>
 
                             <dt class="text-gray-500">Pekerja</dt>
-                            <dd class="text-gray-900 text-right">{{ $sr->worker->name ?? '-' }}</dd>
+                            <dd class="text-gray-900 text-right">
+                                @if ($sr->worker)
+                                    {{ $sr->worker->name }}
+                                @elseif ($sr->isOpenOffer())
+                                    <span class="text-orange-600">Ditawarkan ke {{ $sr->candidates_count }} pekerja</span>
+                                @else
+                                    -
+                                @endif
+                            </dd>
 
                             <dt class="text-gray-500">Dibuat</dt>
                             <dd class="text-gray-900 text-right">{{ $sr->created_at->format('d M Y H:i') }}</dd>
@@ -124,6 +156,7 @@
                                                 @if($sr->status === 'pending') bg-yellow-100 text-yellow-800
                                                 @elseif($sr->status === 'assigned') bg-blue-100 text-blue-800
                                                 @elseif($sr->status === 'in_progress') bg-purple-100 text-purple-800
+                                                @elseif($sr->status === 'waiting_approval') bg-orange-100 text-orange-800
                                                 @elseif($sr->status === 'completed') bg-green-100 text-green-800
                                                 @elseif($sr->status === 'rejected') bg-red-100 text-red-800
                                                 @else bg-gray-100 text-gray-800 @endif">
@@ -134,6 +167,8 @@
                                             @if ($sr->worker)
                                                 <div class="font-medium text-gray-900">{{ $sr->worker->name }}</div>
                                                 <div class="text-sm text-gray-500">{{ $sr->worker->phone }}</div>
+                                            @elseif ($sr->isOpenOffer())
+                                                <span class="text-sm text-orange-600">Ditawarkan ke {{ $sr->candidates_count }} pekerja</span>
                                             @else
                                                 <span class="text-gray-400">-</span>
                                             @endif

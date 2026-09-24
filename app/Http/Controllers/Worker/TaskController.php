@@ -13,23 +13,45 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
-use Illuminate\View\View;
 
 class TaskController extends Controller
 {
     public function index()
     {
-        $tasks = auth()->user()->assignedTasks()
+        // Tugas milik saya
+        $assigned = auth()->user()->assignedTasks()
             ->with(['service', 'user', 'maintenanceDetail'])
             ->latest()
             ->get();
 
+        // Tawaran multi-assign yang belum diambil siapa pun
+        $offered = ServiceRequest::with(['service', 'user', 'maintenanceDetail'])
+            ->where('status', 'assigned')
+            ->whereNull('worker_id')
+            ->whereHas('candidates', fn ($q) => $q->where('users.id', auth()->id()))
+            ->latest()
+            ->get();
+
+        $tasks = $assigned->concat($offered)->sortByDesc('created_at')->values();
+
         return view('worker.tasks.index', compact('tasks'));
     }
 
-    public function show(ServiceRequest $serviceRequest): View
+    public function show(ServiceRequest $serviceRequest)
     {
-        abort_unless($serviceRequest->worker_id === auth()->id(), 403);
+        $isOwner = $serviceRequest->worker_id === auth()->id();
+        $isCandidate = $serviceRequest->candidates()->where('users.id', auth()->id())->exists();
+
+        if (!$isOwner) {
+            // Dulu ditawari, tapi sudah diambil pekerja lain
+            if ($isCandidate && $serviceRequest->worker_id !== null) {
+                return redirect()
+                    ->route('worker.tasks.index')
+                    ->with('error', 'Tugas ini sudah diambil pekerja lain.');
+            }
+
+            abort_unless($isCandidate, 403);
+        }
 
         $serviceRequest->load(['service', 'user', 'maintenanceDetail', 'photos']);
 
@@ -38,25 +60,64 @@ class TaskController extends Controller
 
     public function accept(ServiceRequest $serviceRequest): RedirectResponse
     {
-        abort_unless($serviceRequest->worker_id === auth()->id(), 403);
+        $workerId = auth()->id();
 
-        // Sudah di-ACC (mis. tombol terklik dua kali): anggap sukses, jangan error.
-        if ($serviceRequest->status === 'in_progress' && $serviceRequest->accepted_at !== null) {
+        // Kunci baris supaya kalau 2 pekerja klik ACC bersamaan, hanya 1 yang berhasil
+        $result = DB::transaction(function () use ($serviceRequest, $workerId) {
+            $locked = ServiceRequest::with('service')
+                ->lockForUpdate()
+                ->findOrFail($serviceRequest->id);
+
+            // Sudah di-ACC oleh saya sendiri (mis. tombol terklik dua kali): anggap sukses
+            if ($locked->worker_id === $workerId && $locked->status === 'in_progress' && $locked->accepted_at !== null) {
+                return 'already_mine';
+            }
+
+            // Sudah diambil orang lain
+            if ($locked->worker_id !== null && $locked->worker_id !== $workerId) {
+                return 'taken';
+            }
+
+            // Belum diambil siapa pun: saya harus termasuk kandidat
+            if ($locked->worker_id === null) {
+                $isCandidate = $locked->candidates()->where('users.id', $workerId)->exists();
+
+                if (!$isCandidate) {
+                    return 'forbidden';
+                }
+            }
+
+            if (!$locked->isWaitingAcceptance()) {
+                return 'invalid_status';
+            }
+
+            $data = [
+                'worker_id' => $workerId,
+                'accepted_at' => now(),
+                'status' => 'in_progress',
+            ];
+
+            if ($locked->isLaundry()) {
+                $data['collected_at'] = now();
+            }
+
+            $locked->update($data);
+
+            return 'accepted';
+        });
+
+        abort_if($result === 'forbidden', 403);
+        abort_if($result === 'invalid_status', 422, 'Tugas ini tidak dalam status menunggu ACC.');
+
+        if ($result === 'taken') {
+            return redirect()
+                ->route('worker.tasks.index')
+                ->with('error', 'Yah, tugas ini sudah diambil pekerja lain.');
+        }
+
+        if ($result === 'already_mine') {
             return back()->with('success', 'Tugas sudah diterima sebelumnya.');
         }
-
-        abort_if(!$serviceRequest->isWaitingAcceptance(), 422, 'Tugas ini tidak dalam status menunggu ACC.');
-
-        $data = [
-            'accepted_at' => now(),
-            'status' => 'in_progress',
-        ];
-
-        if ($serviceRequest->isLaundry()) {
-            $data['collected_at'] = now();
-        }
-
-        $serviceRequest->update($data);
 
         return back()->with('success', 'Tugas diterima, status diubah jadi sedang dikerjakan.');
     }
@@ -165,11 +226,14 @@ class TaskController extends Controller
             ]);
         }
 
+        $gross = (float) ($serviceRequest->total_price ?? 0);
+
         $serviceRequest->update([
-            'cost' => $serviceRequest->total_price ?? 0,
+            'cost' => $gross,
             'worker_notes' => $validated['worker_notes'] ?? null,
             'completed_at' => now(),
             'status' => 'completed',
+            ...ServiceRequest::commissionFor($gross),
         ]);
 
         (new CoinRewardService())
@@ -239,11 +303,14 @@ class TaskController extends Controller
                 ]);
             }
 
+            $finalCost = $isSurveyPriced ? ($serviceRequest->total_price ?? 0) : $cost;
+
             $serviceRequest->update([
-                'cost' => $isSurveyPriced ? ($serviceRequest->total_price ?? 0) : $cost,
+                'cost' => $finalCost,
                 'worker_notes' => $validated['worker_notes'] ?? null,
                 'completed_at' => now(),
                 'status' => 'completed',
+                ...ServiceRequest::commissionFor((float) $finalCost),
             ]);
         });
 

@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\CoinRedemptionController as AdminCoinRedemptionController;
 use App\Http\Controllers\Admin\CoinRedemptionProductController;
 use App\Http\Controllers\Admin\CoinSettingController;
+use App\Http\Controllers\Admin\CommissionSettingController;
 use App\Http\Controllers\Admin\CleaningAddonController;
 use App\Http\Controllers\Admin\CleaningPricingController;
 use App\Http\Controllers\Admin\DashboardController;
@@ -10,6 +11,7 @@ use App\Http\Controllers\Admin\PaymentMethodController as AdminPaymentMethodCont
 use App\Http\Controllers\Admin\ProductListingController as AdminProductListingController;
 use App\Http\Controllers\Admin\ServiceRequestController as AdminServiceRequestController;
 use App\Http\Controllers\Admin\TopupController as AdminTopupController;
+use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Admin\WorkerController;
 use App\Http\Controllers\Guest\CoinRedemptionController as GuestCoinRedemptionController;
 use App\Http\Controllers\Guest\FeedbackController;
@@ -268,6 +270,23 @@ Route::middleware(['auth', 'role:admin'])
         Route::post('/workers', [WorkerController::class, 'store'])
             ->name('workers.store');
 
+        /*
+        |--------------------------------------------------------------------------
+        | Users (Kelola User: daftar user + buat akun pekerja)
+        |--------------------------------------------------------------------------
+        */
+
+        Route::get('/users', [AdminUserController::class, 'index'])
+            ->name('users.index');
+
+        Route::get('/users/create', [AdminUserController::class, 'create'])
+            ->name('users.create');
+
+        Route::post('/users', [AdminUserController::class, 'store'])
+            ->name('users.store');
+
+        Route::get('/users/{user}', [AdminUserController::class, 'show'])
+            ->name('users.show');
 
         /*
         |--------------------------------------------------------------------------
@@ -424,6 +443,18 @@ Route::middleware(['auth', 'role:admin'])
         Route::resource('coin-settings', \App\Http\Controllers\Admin\CoinSettingController::class)
             ->parameters(['coin-settings' => 'coinSetting'])
             ->except(['show']);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Commission Settings (potongan admin dari pendapatan pekerja)
+        |--------------------------------------------------------------------------
+        */
+
+        Route::get('/commission-settings', [CommissionSettingController::class, 'index'])
+            ->name('commission-settings.index');
+
+        Route::put('/commission-settings', [CommissionSettingController::class, 'update'])
+            ->name('commission-settings.update');
 
         /*
         |--------------------------------------------------------------------------

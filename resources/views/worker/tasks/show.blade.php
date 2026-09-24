@@ -157,6 +157,31 @@
                     </div>
                 @endif
 
+                {{-- Rincian Pendapatan (setelah tugas selesai) --}}
+                @if ($serviceRequest->status === 'completed' && $serviceRequest->hasCommission())
+                    @php
+                        $percentLabel = rtrim(rtrim(number_format($serviceRequest->commission_percent, 2, ',', '.'), '0'), ',');
+                    @endphp
+                    <div class="mb-4 bg-emerald-50 border border-emerald-100 rounded-lg p-4">
+                        <h4 class="font-semibold text-emerald-900 mb-3">Rincian Pendapatan</h4>
+                        <dl class="text-sm space-y-2">
+                            <div class="flex justify-between">
+                                <dt class="text-emerald-700">Total tugas</dt>
+                                <dd class="font-medium text-emerald-900">Rp{{ number_format($serviceRequest->cost ?? 0, 0, ',', '.') }}</dd>
+                            </div>
+                            <div class="flex justify-between">
+                                <dt class="text-emerald-700">Dipotong admin ({{ $percentLabel }}%)</dt>
+                                <dd class="font-medium text-red-600">- Rp{{ number_format($serviceRequest->commission_amount, 0, ',', '.') }}</dd>
+                            </div>
+                            <div class="flex justify-between pt-2 border-t border-emerald-200">
+                                <dt class="font-semibold text-emerald-900">Yang Anda terima</dt>
+                                <dd class="font-bold text-green-700 text-lg">Rp{{ number_format($serviceRequest->worker_earning, 0, ',', '.') }}</dd>
+                            </div>
+                        </dl>
+                        <p class="mt-3 text-xs text-emerald-700">Pendapatan akan ditransfer oleh admin setelah dipotong.</p>
+                    </div>
+                @endif
+
                 @if ($serviceRequest->notes)
                     <div class="mb-4">
                         <dt class="text-gray-500 text-sm">Catatan Guest</dt>

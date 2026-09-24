@@ -13,7 +13,7 @@ class ServiceRequest extends Model
     protected $fillable = [
         'user_id',              // guest pemohon
         'service_id',
-        'worker_id',            // pekerja yang dipilih admin
+        'worker_id',            // pekerja yang mengambil tugas (null selama masih ditawarkan)
         'assigned_by',          // admin yang assign
         'status',                // pending | assigned | in_progress | waiting_approval | completed | rejected
         'notes',
@@ -24,6 +24,10 @@ class ServiceRequest extends Model
         'accepted_at',
         'completed_at',
         'cost',
+        // potongan admin (snapshot saat tugas selesai)
+        'commission_percent',
+        'commission_amount',
+        'worker_earning',
         'daerah',
         'apartment_location_id',
         'apartment_tower_id',
@@ -64,6 +68,9 @@ class ServiceRequest extends Model
             'survey_reported_at' => 'datetime',
             'price_approved_at' => 'datetime',
             'cost' => 'decimal:2',
+            'commission_percent' => 'decimal:2',
+            'commission_amount' => 'decimal:2',
+            'worker_earning' => 'decimal:2',
         ];
     }
 
@@ -80,6 +87,17 @@ class ServiceRequest extends Model
     public function worker(): BelongsTo
     {
         return $this->belongsTo(User::class, 'worker_id');
+    }
+
+    // Pekerja-pekerja yang ditawari tugas ini (multi-assign, siapa cepat ACC dia dapat)
+    public function candidates(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            User::class,
+            'service_request_candidates',
+            'service_request_id',
+            'worker_id'
+        )->withTimestamps();
     }
 
     public function assignedBy(): BelongsTo
@@ -133,6 +151,29 @@ class ServiceRequest extends Model
         return $this->hasOne(ServiceRequestFeedback::class);
     }
 
+    // ==== Potongan admin ====
+
+    /**
+     * Hitung potongan admin dari total tugas memakai persentase yang sedang aktif.
+     * Hasilnya di-snapshot ke kolom request supaya perubahan setting tidak mengubah tugas lama.
+     */
+    public static function commissionFor(float $gross): array
+    {
+        $percent = CommissionSetting::percentage();
+        $amount = round($gross * $percent / 100, 2);
+
+        return [
+            'commission_percent' => $percent,
+            'commission_amount' => $amount,
+            'worker_earning' => round($gross - $amount, 2),
+        ];
+    }
+
+    public function hasCommission(): bool
+    {
+        return $this->commission_percent !== null;
+    }
+
     // ==== Status helper ====
     public function isPending(): bool
     {
@@ -143,6 +184,12 @@ class ServiceRequest extends Model
     public function isWaitingAcceptance(): bool
     {
         return $this->status === 'assigned';
+    }
+
+    // masih ditawarkan ke beberapa pekerja, belum ada yang ambil
+    public function isOpenOffer(): bool
+    {
+        return $this->status === 'assigned' && $this->worker_id === null;
     }
 
     public function isInProgress(): bool

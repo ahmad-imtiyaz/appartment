@@ -25,6 +25,7 @@ class User extends Authenticatable
         'apartment_tower_id',
         'phone',
         'apartment_unit_number',
+        'specialization',          // khusus pekerja: nama jasa, null = semua jasa
         'balance',
         'coin_balance',
     ];
