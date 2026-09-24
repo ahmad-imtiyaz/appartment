@@ -69,8 +69,8 @@
                             <div class="min-w-0">
                                 <p class="font-medium text-gray-900 truncate">{{ $sr->user->name }}</p>
                                 <p class="text-sm text-gray-500 truncate">{{ $sr->user->email }}</p>
-                                @if ($sr->user->apartment_unit_number)
-                                    <p class="text-xs text-gray-400">Unit: {{ $sr->user->apartment_unit_number }}</p>
+                                @if ($sr->user->phone)
+                                    <p class="text-xs text-gray-400">{{ $sr->user->phone }}</p>
                                 @endif
                             </div>
                             <span class="shrink-0 px-2 py-1 text-xs font-medium rounded-full
@@ -83,6 +83,27 @@
                                 @else bg-gray-100 text-gray-800 @endif">
                                 {{ ucfirst(str_replace('_', ' ', $sr->status)) }}
                             </span>
+                        </div>
+
+                        <!-- Info lokasi guest -->
+                        <div class="mb-3 p-2.5 bg-gray-50 rounded-lg">
+                            <p class="text-xs font-medium text-gray-500 mb-1">Lokasi Guest</p>
+                            <dl class="grid grid-cols-2 gap-y-1 text-xs">
+                                <dt class="text-gray-500">Status</dt>
+                                <dd class="text-gray-900 text-right">{{ ucfirst($sr->user->status ?? '-') }}</dd>
+
+                                <dt class="text-gray-500">Daerah</dt>
+                                <dd class="text-gray-900 text-right">{{ $sr->user->daerah ?? '-' }}</dd>
+
+                                <dt class="text-gray-500">Apartemen</dt>
+                                <dd class="text-gray-900 text-right">{{ $sr->user->apartmentLocation->name ?? '-' }}</dd>
+
+                                <dt class="text-gray-500">Tower</dt>
+                                <dd class="text-gray-900 text-right">{{ $sr->user->apartmentTower->name ?? '-' }}</dd>
+
+                                <dt class="text-gray-500">Unit</dt>
+                                <dd class="text-gray-900 text-right">{{ $sr->user->apartment_unit_number ?? '-' }}</dd>
+                            </dl>
                         </div>
 
                         <dl class="grid grid-cols-2 gap-y-1.5 text-sm mb-3">
@@ -123,6 +144,7 @@
                         <thead class="bg-gray-50 border-b border-gray-100">
                             <tr>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Guest</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lokasi</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jasa</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pekerja</th>
@@ -133,7 +155,7 @@
                         <tbody class="divide-y divide-gray-100">
                             @if ($serviceRequests->isEmpty())
                                 <tr>
-                                    <td colspan="6" class="px-6 py-8 text-center text-gray-500">Tidak ada data service request</td>
+                                    <td colspan="7" class="px-6 py-8 text-center text-gray-500">Tidak ada data service request</td>
                                 </tr>
                             @else
                                 @foreach ($serviceRequests as $sr)
@@ -141,9 +163,20 @@
                                         <td class="px-6 py-4">
                                             <div class="font-medium text-gray-900">{{ $sr->user->name }}</div>
                                             <div class="text-sm text-gray-500">{{ $sr->user->email }}</div>
-                                            @if ($sr->user->apartment_unit_number)
-                                                <div class="text-xs text-gray-400">Unit: {{ $sr->user->apartment_unit_number }}</div>
+                                            @if ($sr->user->phone)
+                                                <div class="text-xs text-gray-400">{{ $sr->user->phone }}</div>
                                             @endif
+                                            <div class="text-xs text-gray-400">{{ ucfirst($sr->user->status ?? '-') }}</div>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <div class="text-sm text-gray-900">{{ $sr->user->daerah ?? '-' }}</div>
+                                            <div class="text-sm text-gray-500">{{ $sr->user->apartmentLocation->name ?? '-' }}</div>
+                                            <div class="text-xs text-gray-400">
+                                                Tower {{ $sr->user->apartmentTower->name ?? '-' }}
+                                                @if ($sr->user->apartment_unit_number)
+                                                    &middot; Unit {{ $sr->user->apartment_unit_number }}
+                                                @endif
+                                            </div>
                                         </td>
                                         <td class="px-6 py-4">
                                             <div class="font-medium text-gray-900">{{ $sr->service->name }}</div>
