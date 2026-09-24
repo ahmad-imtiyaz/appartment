@@ -15,4 +15,8 @@ return [
 
     'admin_whatsapp' => env('ADMIN_WHATSAPP'),
 
+    'fcm' => [
+        'credentials' => env('FCM_CREDENTIALS', storage_path('app/firebase-service-account.json')),
+    ],
+
 ];

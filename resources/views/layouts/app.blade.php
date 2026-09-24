@@ -43,5 +43,7 @@
 
             </div>
         </div>
+
+        @include('layouts.partials.push-token')
     </body>
 </html>

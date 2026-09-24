@@ -20,6 +20,7 @@ use App\Http\Controllers\Admin\WithdrawalController as AdminWithdrawalController
 use App\Http\Controllers\Guest\WithdrawalController as GuestWithdrawalController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Worker\TaskController;
+use App\Http\Controllers\Worker\DeviceTokenController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -267,6 +268,7 @@ Route::middleware(['auth', 'role:admin'])
         Route::post('/workers', [WorkerController::class, 'store'])
             ->name('workers.store');
 
+
         /*
         |--------------------------------------------------------------------------
         | Payment Methods
@@ -476,6 +478,9 @@ Route::middleware(['auth', 'role:pekerja'])
     ->prefix('worker')
     ->name('worker.')
     ->group(function () {
+
+        Route::post('/device-tokens', [DeviceTokenController::class, 'store'])
+            ->name('device-tokens.store');
 
         /*
         |--------------------------------------------------------------------------

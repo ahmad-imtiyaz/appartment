@@ -37,7 +37,7 @@ class TaskAssignedNotification extends Notification implements ShouldQueue
             ->line('Unit/Guest: ' . ($sr->user->apartment_unit_number ?? '-') . ' (' . $sr->user->name . ')')
             ->when($sr->notes, fn ($mail) => $mail->line('Catatan Guest: ' . $sr->notes))
             ->line('Mohon konfirmasi (ACC) tugas ini melalui dashboard pekerja.')
-            ->action('Lihat & ACC Tugas', url('/pekerja/tasks/' . $sr->id))
+            ->action('Lihat & ACC Tugas', route('worker.tasks.show', $sr))
             ->line('Terima kasih.');
     }
 

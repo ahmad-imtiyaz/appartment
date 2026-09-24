@@ -145,4 +145,11 @@ class User extends Authenticatable
     {
         return $this->hasMany(CoinMutation::class, 'user_id');
     }
+
+    // ==== Relasi Token ====
+
+    public function deviceTokens(): HasMany
+    {
+        return $this->hasMany(DeviceToken::class);
+    }
 }

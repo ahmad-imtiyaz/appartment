@@ -7,8 +7,10 @@ use App\Models\ServiceRequest;
 use App\Models\User;
 use App\Notifications\PriceSetNotification;
 use App\Notifications\TaskAssignedNotification;
+use App\Services\FcmService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use function Illuminate\Support\defer;
 
 class ServiceRequestController extends Controller
 {
@@ -52,6 +54,14 @@ class ServiceRequestController extends Controller
         $worker->notify(new TaskAssignedNotification($serviceRequest));
         $serviceRequest->update(['notified_at' => now()]);
 
+        $serviceRequest->loadMissing('service');
+        defer(fn () => app(FcmService::class)->sendToUser(
+            $worker,
+            'Tugas Baru: ' . $serviceRequest->service->name,
+            'Kamu mendapat tugas baru. Ketuk untuk melihat detailnya.',
+            ['path' => route('worker.tasks.show', $serviceRequest, false)],
+        ));
+
         return back()->with('success', "Tugas berhasil di-assign ke {$worker->name}.");
     }
 
@@ -65,8 +75,6 @@ class ServiceRequestController extends Controller
             422,
             'Survey dari pekerja belum masuk, harga belum bisa di-set.'
         );
-
-
 
         $validated = $request->validate([
             'price' => ['required', 'numeric', 'min:0'],
