@@ -39,6 +39,12 @@ class TaskController extends Controller
     public function accept(ServiceRequest $serviceRequest): RedirectResponse
     {
         abort_unless($serviceRequest->worker_id === auth()->id(), 403);
+
+        // Sudah di-ACC (mis. tombol terklik dua kali): anggap sukses, jangan error.
+        if ($serviceRequest->status === 'in_progress' && $serviceRequest->accepted_at !== null) {
+            return back()->with('success', 'Tugas sudah diterima sebelumnya.');
+        }
+
         abort_if(!$serviceRequest->isWaitingAcceptance(), 422, 'Tugas ini tidak dalam status menunggu ACC.');
 
         $data = [

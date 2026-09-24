@@ -320,8 +320,9 @@
             <!-- ACC Button (for assigned status) -->
             @if ($serviceRequest->status === 'assigned')
                 <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
-                    <form method="POST" action="{{ route('worker.tasks.accept', $serviceRequest) }}" class="text-center">
-                        @csrf
+                    <form method="POST" action="{{ route('worker.tasks.accept', $serviceRequest) }}" class="text-center"
+                        onsubmit="this.querySelector('button[type=submit]').disabled = true;">
+                    @csrf
                         <p class="text-gray-600 mb-4">Tugas ini menunggu Anda menerima (ACC)</p>
                         <x-primary-button type="submit" class="w-full sm:w-auto">
                             Terima Tugas (ACC)
