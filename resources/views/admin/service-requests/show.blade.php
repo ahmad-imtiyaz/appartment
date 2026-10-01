@@ -50,7 +50,11 @@
                     </div>
                     <div>
                         <dt class="text-gray-500">Telepon</dt>
-                        <dd class="font-medium">{{ $serviceRequest->user->phone ?? '-' }}</dd>
+                        <dd class="font-medium flex items-center gap-2">
+                            <span>{{ $serviceRequest->user->phone ?? '-' }}</span>
+                            <x-wa-link :phone="$serviceRequest->user->phone"
+                                       :message="'Halo ' . $serviceRequest->user->name . ', kami dari admin Oregonet terkait pesanan ' . $serviceRequest->service->name . ' #' . $serviceRequest->id . ' (' . ucfirst(str_replace('_', ' ', $serviceRequest->status)) . '). '" />
+                        </dd>
                     </div>
                     <div>
                         <dt class="text-gray-500">Unit</dt>
@@ -449,7 +453,11 @@
                     <p class="text-gray-600">Menunggu pekerja menerima tugas (ACC).</p>
                     <div class="mt-4 p-3 bg-blue-50 rounded-lg">
                         <p class="font-medium text-blue-800">{{ $serviceRequest->worker->name }}</p>
-                        <p class="text-sm text-blue-600">{{ $serviceRequest->worker->phone }}</p>
+                        <p class="text-sm text-blue-600 flex items-center gap-2">
+                            <span>{{ $serviceRequest->worker->phone }}</span>
+                            <x-wa-link :phone="$serviceRequest->worker->phone"
+                                       :message="'Halo ' . $serviceRequest->worker->name . ', ada tugas ' . $serviceRequest->service->name . ' #' . $serviceRequest->id . ' dari admin Oregonet.'" />
+                        </p>
                         @if ($serviceRequest->notified_at)
                             <p class="text-xs text-blue-500 mt-1">Notifikasi terkirim: {{ $serviceRequest->notified_at->format('d M Y H:i') }}</p>
                         @endif
@@ -465,7 +473,11 @@
                         @foreach ($serviceRequest->candidates as $candidate)
                             <div class="p-3 bg-blue-50 rounded-lg">
                                 <p class="font-medium text-blue-800">{{ $candidate->name }}</p>
-                                <p class="text-sm text-blue-600">{{ $candidate->phone ?? 'no phone' }}</p>
+                                <p class="text-sm text-blue-600 flex items-center gap-2">
+                                    <span>{{ $candidate->phone ?? 'no phone' }}</span>
+                                    <x-wa-link :phone="$candidate->phone"
+                                               :message="'Halo ' . $candidate->name . ', ada tugas ' . $serviceRequest->service->name . ' #' . $serviceRequest->id . ' dari admin Oregonet.'" />
+                                </p>
                             </div>
                         @endforeach
                     </div>

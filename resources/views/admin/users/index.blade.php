@@ -145,8 +145,10 @@
                         <dl class="grid grid-cols-2 gap-y-1.5 text-sm mb-3">
 
                             <dt class="text-gray-500">Telepon</dt>
-                            <dd class="text-gray-900 text-right">
-                                {{ $user->phone ?? '-' }}
+                            <dd class="text-gray-900 text-right flex items-center justify-end gap-2">
+                                <span>{{ $user->phone ?? '-' }}</span>
+                                <x-wa-link :phone="$user->phone"
+                                           :message="'Halo ' . $user->name . ', kami dari admin Oregonet.'" />
                             </dd>
 
                             @if ($user->role === 'guest')
@@ -262,7 +264,11 @@
                                     </td>
 
                                     <td class="px-6 py-4 text-sm text-gray-700">
-                                        {{ $user->phone ?? '-' }}
+                                        <div class="flex items-center gap-2">
+                                            <span>{{ $user->phone ?? '-' }}</span>
+                                            <x-wa-link :phone="$user->phone"
+                                                       :message="'Halo ' . $user->name . ', kami dari admin Oregonet.'" />
+                                        </div>
                                     </td>
 
                                     <td class="px-6 py-4 text-sm text-gray-700">

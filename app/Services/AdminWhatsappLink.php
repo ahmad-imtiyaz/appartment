@@ -9,18 +9,38 @@ class AdminWhatsappLink
     /**
      * Bangun link wa.me ke admin, dengan pesan awal berisi data user
      * yang sudah terdaftar. Return null kalau nomor admin belum diisi.
+     * 
+     * Sekarang pakai nomor telepon admin dari database (bisa diubah lewat /admin/profile)
      */
     public static function for(User $user): ?string
     {
-        $number = preg_replace('/\D+/', '', (string) config('oregonet.admin_whatsapp'));
+        // Ambil admin pertama yang punya nomor telepon
+        $admin = User::where('role', 'admin')
+            ->whereNotNull('phone')
+            ->where('phone', '!=', '')
+            ->first();
 
-        if ($number === '') {
-            return null;
+        if (!$admin) {
+            // Fallback ke env kalau tidak ada admin dengan nomor telepon
+            $number = preg_replace('/\D+/', '', (string) config('oregonet.admin_whatsapp'));
+            
+            if ($number === '') {
+                return null;
+            }
+        } else {
+            $number = preg_replace('/\D+/', '', (string) $admin->phone);
         }
 
-        // 08xxx -> 628xxx (wa.me butuh format internasional tanpa + / 0)
+        // 08xxx -> 628xxx, 8xxx -> 628xxx, 62xxx tetap
         if (str_starts_with($number, '0')) {
             $number = '62' . substr($number, 1);
+        } elseif (str_starts_with($number, '8')) {
+            $number = '62' . $number;
+        }
+
+        // Sanity check
+        if (! str_starts_with($number, '62') || strlen($number) < 10 || strlen($number) > 15) {
+            return null;
         }
 
         $user->loadMissing(['apartmentLocation', 'apartmentTower']);
@@ -49,7 +69,6 @@ class AdminWhatsappLink
             $lines[] = 'Lokasi: ' . $lokasi;
         }
 
-        // Nomor unit opsional (privasi), hanya ikut kalau user mengisinya.
         if ($user->apartment_unit_number) {
             $lines[] = 'Unit: ' . $user->apartment_unit_number;
         }

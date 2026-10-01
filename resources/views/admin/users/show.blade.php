@@ -51,7 +51,11 @@
 
                 <div>
                     <dt class="text-gray-500">Telepon</dt>
-                    <dd class="font-medium">{{ $user->phone ?? '-' }}</dd>
+                    <dd class="font-medium flex items-center gap-2">
+                        <span>{{ $user->phone ?? '-' }}</span>
+                        <x-wa-link :phone="$user->phone"
+                                   :message="'Halo ' . $user->name . ', kami dari admin Oregonet.'" />
+                    </dd>
                 </div>
 
                 @if ($user->role === 'pekerja')
