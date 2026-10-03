@@ -36,19 +36,42 @@
                     </span>
                 </div>
 
+                {{-- Data Guest & Lokasi --}}
+                <div class="mb-4 bg-gray-50 rounded-lg p-4">
+                    <h4 class="font-semibold text-gray-900 mb-3">Data Guest</h4>
+                    <dl class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3 text-sm">
+                        <div>
+                            <dt class="text-gray-500">Nama</dt>
+                            <dd class="font-medium text-gray-900">{{ $serviceRequest->user->name }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-gray-500">Telepon</dt>
+                            <dd class="font-medium text-gray-900">{{ $serviceRequest->user->phone ?? '-' }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-gray-500">Status</dt>
+                            <dd class="font-medium text-gray-900">{{ ucfirst($serviceRequest->user->status ?? '-') }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-gray-500">Daerah</dt>
+                            <dd class="font-medium text-gray-900">{{ $serviceRequest->user->daerah ?? '-' }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-gray-500">Apartemen</dt>
+                            <dd class="font-medium text-gray-900">{{ $serviceRequest->user->apartmentLocation->name ?? '-' }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-gray-500">Tower</dt>
+                            <dd class="font-medium text-gray-900">{{ $serviceRequest->user->apartmentTower->name ?? '-' }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-gray-500">Unit</dt>
+                            <dd class="font-medium text-gray-900">{{ $serviceRequest->user->apartment_unit_number ?? '-' }}</dd>
+                        </div>
+                    </dl>
+                </div>
+
                 <dl class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm mb-4">
-                    <div>
-                        <dt class="text-gray-500">Guest</dt>
-                        <dd class="font-medium">{{ $serviceRequest->user->name }}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-gray-500">Telepon</dt>
-                        <dd class="font-medium">{{ $serviceRequest->user->phone }}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-gray-500">Unit</dt>
-                        <dd class="font-medium">{{ $serviceRequest->user->apartment_unit_number ?? '-' }}</dd>
-                    </div>
                     <div>
                         <dt class="text-gray-500">Diajukan</dt>
                         <dd class="font-medium">{{ $serviceRequest->created_at->format('d M Y H:i') }}</dd>
@@ -347,7 +370,7 @@
                 <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
                     <form method="POST" action="{{ route('worker.tasks.accept', $serviceRequest) }}" class="text-center"
                         onsubmit="this.querySelector('button[type=submit]').disabled = true;">
-                    @csrf
+                        @csrf
                         <p class="text-gray-600 mb-4">Tugas ini menunggu Anda menerima (ACC)</p>
                         <x-primary-button type="submit" class="w-full sm:w-auto">
                             Terima Tugas (ACC)
@@ -357,7 +380,7 @@
             @endif
 
             <!-- Weigh Form (for laundry tasks that haven't been weighed yet) -->
-            @if($serviceRequest->isLaundry() && $serviceRequest->status === 'in_progress' && !$serviceRequest->weighed_at)
+            @if ($serviceRequest->isLaundry() && $serviceRequest->status === 'in_progress' && !$serviceRequest->weighed_at)
                 <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
                     <h3 class="font-semibold text-gray-900 mb-4">Timbang Pakaian</h3>
                     <form method="POST" action="{{ route('worker.tasks.weigh', $serviceRequest) }}" class="space-y-4">

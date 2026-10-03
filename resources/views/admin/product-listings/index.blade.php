@@ -23,13 +23,13 @@
             <!-- Add/Edit Listing Form -->
             <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-8" id="listing-form-container">
                 <h3 class="font-semibold text-gray-900 mb-4" id="form-title">Tambah Listing Baru</h3>
-                <form method="POST" id="listing-form" enctype="multipart/form-data" class="space-y-4">
+                <form method="POST" action="{{ route('admin.product-listings.store') }}" id="listing-form" enctype="multipart/form-data" class="space-y-4">
                     @csrf
                     <input type="hidden" name="listing_id" id="listing_id">
                     <input type="hidden" name="_method" id="form_method" value="POST">
-                    
+
                     <div>
-                        <x-input-label for="title" :value="__('Judul') <span class=\"text-red-500\">*</span>" />
+                        <x-input-label for="title">Judul <span class="text-red-500">*</span></x-input-label>
                         <x-text-input id="title" name="title" required class="mt-1 block w-full" />
                         <x-input-error :messages="$errors->get('title')" class="mt-2" />
                     </div>
@@ -42,19 +42,28 @@
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <x-input-label for="price" :value="__('Harga')" />
-                            <x-text-input id="price" type="number" name="price" min="0" step="1000" class="mt-1 block w-full" placeholder="Kosongkan jika gratis/negotiable" />
+                            <x-input-label for="price" :value="__('Harga / Harga Minimum')" />
+                            <x-text-input id="price" type="number" name="price" min="0" step="1000" class="mt-1 block w-full" placeholder="Contoh: 100000000" />
                             <x-input-error :messages="$errors->get('price')" class="mt-2" />
                         </div>
                         <div>
-                            <x-input-label for="category" :value="__('Kategori')" />
-                            <x-text-input id="category" name="category" class="mt-1 block w-full" placeholder="Contoh: Furniture, Elektronik, Kendaraan" />
-                            <x-input-error :messages="$errors->get('category')" class="mt-2" />
+                            <x-input-label for="price_max" :value="__('Harga Maksimum (opsional)')" />
+                            <x-text-input id="price_max" type="number" name="price_max" min="0" step="1000" class="mt-1 block w-full" placeholder="Contoh: 200000000" />
+                            <x-input-error :messages="$errors->get('price_max')" class="mt-2" />
                         </div>
+                    </div>
+                    <p class="-mt-2 text-xs text-gray-500">
+                        Isi harga minimum saja untuk harga tunggal, isi keduanya untuk harga range (mis. 100.000.000 - 200.000.000). Kosongkan keduanya jika gratis/negotiable.
+                    </p>
+
+                    <div>
+                        <x-input-label for="category" :value="__('Kategori')" />
+                        <x-text-input id="category" name="category" class="mt-1 block w-full" placeholder="Contoh: Furniture, Elektronik, Kendaraan" />
+                        <x-input-error :messages="$errors->get('category')" class="mt-2" />
                     </div>
 
                     <div>
-                        <x-input-label for="contact_info" :value="__('Kontak') <span class=\"text-red-500\">*</span>" />
+                        <x-input-label for="contact_info">Kontak <span class="text-red-500">*</span></x-input-label>
                         <x-text-input id="contact_info" name="contact_info" required class="mt-1 block w-full" placeholder="No. WA/Telepon/Email" />
                         <x-input-error :messages="$errors->get('contact_info')" class="mt-2" />
                     </div>
@@ -136,22 +145,34 @@
                                             @endif
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
-                                            @if ($listing->price)
-                                                <span class="font-medium text-indigo-600">Rp{{ number_format($listing->price, 0, ',', '.') }}</span>
+                                            @if ($listing->price_label)
+                                                <span class="font-medium text-indigo-600">{{ $listing->price_label }}</span>
                                             @else
                                                 <span class="text-gray-400">Gratis/Negotiable</span>
                                             @endif
                                         </td>
                                         <td class="px-6 py-4 text-sm text-gray-600">{{ $listing->contact_info }}</td>
                                         <td class="px-6 py-4 whitespace-nowrap">
-                                            <span class="px-2 py-1 text-xs font-medium rounded-full 
+                                            <span class="px-2 py-1 text-xs font-medium rounded-full
                                                 @if($listing->is_active) bg-green-100 text-green-800
                                                 @else bg-red-100 text-red-800 @endif">
                                                 {{ $listing->is_active ? 'Aktif' : 'Nonaktif' }}
                                             </span>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                                            <button onclick="editListing({{ $listing->id }}, '{{ addslashes($listing->title) }}', '{{ addslashes($listing->description) }}', {{ $listing->price ?? 'null' }}, '{{ addslashes($listing->category ?? '') }}', '{{ addslashes($listing->contact_info) }}', '{{ $listing->image ? Storage::url($listing->image) : '' }}', {{ $listing->is_active ? 'true' : 'false' }})" class="text-indigo-600 hover:text-indigo-900">Edit</button>
+                                            <button type="button"
+                                                onclick="editListing({{ Js::from([
+                                                    'id' => $listing->id,
+                                                    'title' => $listing->title,
+                                                    'description' => $listing->description,
+                                                    'price' => $listing->price ? (int) $listing->price : null,
+                                                    'price_max' => $listing->price_max ? (int) $listing->price_max : null,
+                                                    'category' => $listing->category,
+                                                    'contact_info' => $listing->contact_info,
+                                                    'image' => $listing->image ? Storage::url($listing->image) : '',
+                                                    'is_active' => (bool) $listing->is_active,
+                                                ]) }})"
+                                                class="text-indigo-600 hover:text-indigo-900">Edit</button>
                                             <form method="POST" action="{{ route('admin.product-listings.destroy', $listing) }}" class="inline" onsubmit="return confirm('Yakin ingin menghapus listing ini?')">
                                                 @csrf
                                                 @method('DELETE')
@@ -169,32 +190,32 @@
     </div>
 
     <script>
-        function editListing(id, title, description, price, category, contactInfo, image, isActive) {
-            document.getElementById('listing_id').value = id;
-            document.getElementById('title').value = title;
-            document.getElementById('description').value = description;
-            document.getElementById('price').value = price || '';
-            document.getElementById('category').value = category;
-            document.getElementById('contact_info').value = contactInfo;
-            document.getElementById('is_active').checked = isActive;
+        function editListing(d) {
+            document.getElementById('listing_id').value = d.id;
+            document.getElementById('title').value = d.title ?? '';
+            document.getElementById('description').value = d.description ?? '';
+            document.getElementById('price').value = d.price ?? '';
+            document.getElementById('price_max').value = d.price_max ?? '';
+            document.getElementById('category').value = d.category ?? '';
+            document.getElementById('contact_info').value = d.contact_info ?? '';
+            document.getElementById('is_active').checked = d.is_active;
             document.getElementById('form_method').value = 'PUT';
             document.getElementById('form-title').textContent = 'Edit Listing';
             document.getElementById('submit-btn').textContent = 'Update';
             document.getElementById('cancel-btn').classList.remove('hidden');
-            
+
             const form = document.getElementById('listing-form');
-            form.action = `{{ route('admin.product-listings.update', ':id') }}`.replace(':id', id);
-            
+            form.action = `{{ route('admin.product-listings.update', ':id') }}`.replace(':id', d.id);
+
             const preview = document.getElementById('image-preview');
             const img = document.getElementById('preview-img');
-            if (image) {
-                img.src = image;
+            if (d.image) {
+                img.src = d.image;
                 preview.classList.remove('hidden');
             } else {
                 preview.classList.add('hidden');
             }
-            
-            // Scroll to form
+
             document.getElementById('listing-form-container').scrollIntoView({ behavior: 'smooth' });
         }
 
@@ -210,15 +231,15 @@
         }
 
         // Image preview for create/edit
-        document.getElementById('image').addEventListener('change', function(e) {
+        document.getElementById('image').addEventListener('change', function (e) {
             const file = e.target.files[0];
             const preview = document.getElementById('image-preview');
             const img = document.getElementById('preview-img');
-            
+
             if (file) {
                 const reader = new FileReader();
-                reader.onload = function(e) {
-                    img.src = e.target.result;
+                reader.onload = function (ev) {
+                    img.src = ev.target.result;
                     preview.classList.remove('hidden');
                 };
                 reader.readAsDataURL(file);

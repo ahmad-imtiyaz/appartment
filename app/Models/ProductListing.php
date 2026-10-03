@@ -15,6 +15,7 @@ class ProductListing extends Model
         'title',
         'description',
         'price',
+        'price_max',
         'image',
         'category',
         'contact_info',
@@ -25,6 +26,7 @@ class ProductListing extends Model
     {
         return [
             'price' => 'decimal:2',
+            'price_max' => 'decimal:2',
             'is_active' => 'boolean',
         ];
     }
@@ -32,6 +34,33 @@ class ProductListing extends Model
     public function postedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'posted_by');
+    }
+
+    /**
+     * Label harga siap tampil.
+     * - Kosong semua      => null (Gratis/Negotiable)
+     * - Hanya price       => "Rp100.000.000"
+     * - price + price_max => "Rp100.000.000 - Rp200.000.000"
+     * Pemakaian di Blade: $listing->price_label
+     */
+    protected function priceLabel(): Attribute
+    {
+        return Attribute::get(function () {
+            $min = (float) $this->price;
+            $max = (float) $this->price_max;
+
+            if ($min <= 0 && $max <= 0) {
+                return null;
+            }
+
+            $fmt = fn (float $v) => 'Rp' . number_format($v, 0, ',', '.');
+
+            if ($min > 0 && $max > $min) {
+                return $fmt($min) . ' - ' . $fmt($max);
+            }
+
+            return $fmt($min > 0 ? $min : $max);
+        });
     }
 
     /**
@@ -61,8 +90,8 @@ class ProductListing extends Model
                 '*' . $this->title . '*',
             ];
 
-            if ((float) $this->price > 0) {
-                $lines[] = 'Harga: Rp' . number_format($this->price, 0, ',', '.');
+            if ($this->price_label) {
+                $lines[] = 'Harga: ' . $this->price_label;
             }
 
             if ($this->category) {

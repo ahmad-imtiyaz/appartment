@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Service;
 use App\Models\ServiceRequest;
 use App\Models\User;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -132,6 +133,103 @@ class UserController extends Controller
             ->route('admin.users.index', ['role' => $validated['role']])
             ->with('success', "Akun {$roleLabel} {$user->name} berhasil dibuat.");
     }
+
+    public function edit(User $user)
+    {
+        return view('admin.users.edit', [
+            'user'     => $user,
+            'roles'    => self::ROLES,
+            'services' => $this->serviceNames(),
+        ]);
+    }
+
+    public function update(Request $request, User $user): RedirectResponse
+    {
+        $validated = $request->validate([
+            'name'                  => ['required', 'string', 'max:255'],
+            'email'                 => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
+            'role'                  => ['required', Rule::in(array_keys(self::ROLES))],
+            'phone'                 => ['nullable', 'string', 'max:20'],
+            'apartment_unit_number' => ['nullable', 'string', 'max:50'],
+            'specialization'        => ['nullable', 'string', Rule::in($this->serviceNames()->all())],
+            'password'              => ['nullable', 'confirmed', Password::defaults()],
+        ]);
+
+        // Jaga agar admin tidak kehilangan akses
+        if ($user->role === 'admin' && $validated['role'] !== 'admin') {
+            if ($user->id === auth()->id()) {
+                return back()->withInput()->with('error', 'Anda tidak bisa mengubah role akun Anda sendiri.');
+            }
+
+            if (User::where('role', 'admin')->count() <= 1) {
+                return back()->withInput()->with('error', 'Tidak bisa mengubah role admin terakhir.');
+            }
+        }
+
+        $data = [
+            'name'                  => $validated['name'],
+            'email'                 => $validated['email'],
+            'role'                  => $validated['role'],
+            'phone'                 => $validated['phone'] ?? null,
+            // Unit hanya relevan untuk guest
+            'apartment_unit_number' => $validated['role'] === 'guest'
+                ? ($validated['apartment_unit_number'] ?? null)
+                : null,
+            // Spesialisasi hanya untuk pekerja; kosong = bisa semua jasa
+            'specialization'        => $validated['role'] === 'pekerja'
+                ? ($validated['specialization'] ?: null)
+                : null,
+        ];
+
+        // Password hanya diganti kalau diisi
+        if (!empty($validated['password'])) {
+            $data['password'] = Hash::make($validated['password']);
+        }
+
+        $user->forceFill($data)->save();
+
+        return redirect()
+            ->route('admin.users.index', ['role' => $user->role])
+            ->with('success', "Data user {$user->name} berhasil diperbarui.");
+    }
+
+    public function destroy(User $user): RedirectResponse
+{
+    if ($user->id === auth()->id()) {
+        return back()->with('error', 'Anda tidak bisa menghapus akun Anda sendiri.');
+    }
+
+    if ($user->role === 'admin' && User::where('role', 'admin')->count() <= 1) {
+        return back()->with('error', 'Tidak bisa menghapus admin terakhir.');
+    }
+
+    // Tugas yang masih berjalan harus diselesaikan/dibatalkan dulu
+    $hasActiveRequests = ServiceRequest::where(function ($q) use ($user) {
+            $q->where('user_id', $user->id)
+              ->orWhere('worker_id', $user->id);
+        })
+        ->whereNotIn('status', ['completed', 'rejected'])
+        ->exists();
+
+    if ($hasActiveRequests) {
+        return back()->with('error', "User {$user->name} masih punya service request yang belum selesai. Selesaikan atau tolak dulu sebelum menghapus.");
+    }
+
+    $name = $user->name;
+    $role = $user->role;
+
+    // Ubah email supaya bisa dipakai lagi untuk akun baru (kolom email unik).
+    // Nama tetap disimpan agar riwayat masih terbaca.
+    $user->forceFill([
+        'email' => 'deleted_' . $user->id . '_' . $user->email,
+    ])->save();
+
+    $user->delete(); // soft delete
+
+    return redirect()
+        ->route('admin.users.index', ['role' => $role])
+        ->with('success', "User {$name} berhasil dihapus. Riwayat transaksinya tetap tersimpan.");
+}
 
     /**
      * Nama jasa unik (nama yang sama digabung jadi satu).

@@ -16,16 +16,24 @@ use Illuminate\Support\Facades\DB;
 
 class TaskController extends Controller
 {
+    /**
+     * Relasi yang selalu dibutuhkan untuk menampilkan data guest + lokasinya.
+     */
+    private const GUEST_RELATIONS = [
+        'user.apartmentLocation',
+        'user.apartmentTower',
+    ];
+
     public function index()
     {
         // Tugas milik saya
         $assigned = auth()->user()->assignedTasks()
-            ->with(['service', 'user', 'maintenanceDetail'])
+            ->with(['service', 'maintenanceDetail', ...self::GUEST_RELATIONS])
             ->latest()
             ->get();
 
         // Tawaran multi-assign yang belum diambil siapa pun
-        $offered = ServiceRequest::with(['service', 'user', 'maintenanceDetail'])
+        $offered = ServiceRequest::with(['service', 'maintenanceDetail', ...self::GUEST_RELATIONS])
             ->where('status', 'assigned')
             ->whereNull('worker_id')
             ->whereHas('candidates', fn ($q) => $q->where('users.id', auth()->id()))
@@ -53,7 +61,12 @@ class TaskController extends Controller
             abort_unless($isCandidate, 403);
         }
 
-        $serviceRequest->load(['service', 'user', 'maintenanceDetail', 'photos']);
+        $serviceRequest->load([
+            'service',
+            'maintenanceDetail',
+            'photos',
+            ...self::GUEST_RELATIONS,
+        ]);
 
         return view('worker.tasks.show', compact('serviceRequest'));
     }

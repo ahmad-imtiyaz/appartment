@@ -272,11 +272,14 @@
                                     <span class="product-badge mb-1.5">{{ ucfirst($listing->category) }}</span>
                                 @endif
                                 <h4 class="text-[13px] font-semibold text-gray-900 leading-snug mt-1 line-clamp-2">{{ $listing->title }}</h4>
-                                @if ($listing->price)
-                                    <p class="product-price text-[13px] font-bold mt-1">Rp{{ number_format($listing->price, 0, ',', '.') }}</p>
+
+                                {{-- Harga (tunggal atau range) --}}
+                                @if ($listing->price_label)
+                                    <p class="product-price text-[12px] font-bold mt-1 leading-snug break-words">{{ $listing->price_label }}</p>
                                 @else
                                     <p class="text-[12px] text-gray-500 mt-1">{{ __('guest.market.negotiable') }}</p>
                                 @endif
+
                                 @if ($listing->contact_info)
                                     <p class="text-[10px] text-gray-400 mt-1 truncate">{{ $listing->contact_info }}</p>
                                 @endif
