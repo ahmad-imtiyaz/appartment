@@ -62,7 +62,7 @@ Sistem manajemen layanan apartemen dengan 3 role: **admin**, **pekerja** (worker
 ### Pivot Tables
 | Table | Purpose |
 |-------|---------|
-| `cleaning_addon_service_request` | Many-to-many: ServiceRequest ↔ CleaningAddon (dengan `snapshot_price`) |
+| `cleaning_addon_service_request` | Many-to-many: ServiceRequest ↔ CleaningAddon (dengan `snapshot_price` + `is_done`). `snapshot_price` = harga saat order; `is_done` = apakah addon benar-benar dikerjakan pekerja (default `false`, di-set saat pekerja `complete`). Hanya `is_done = true` yang ditagihkan. |
 | `service_request_candidates` | Many-to-many: ServiceRequest ↔ User (pekerja). Multi-assign: admin offer ke beberapa pekerja, yang ACC dulu dapat tugas |
 
 ---
@@ -139,7 +139,8 @@ $serviceRequest->isWaitingPayment() // status === 'waiting_payment'
 $serviceRequest->isLaundryPaid()    // laundry_paid_at !== null
 $serviceRequest->isOpenOffer()      // status === 'assigned' && worker_id === null (multi-assign waiting)
 $serviceRequest->isWaitingAcceptance() // status === 'assigned'
-$serviceRequest->calculateTotalPrice()  // laundry: weight × rate; cleaning: hours × rate + addons
+$serviceRequest->calculateTotalPrice()  // laundry: weight × rate; cleaning: hours × rate + SEMUA addon (estimasi saat create)
+$serviceRequest->calculateFinalPrice(array $doneAddonIds) // cleaning: hours × rate + HANYA addon yang is_done (dipanggil saat complete)
 $serviceRequest->commissionFor(float $gross) // static: hitung potongan admin dari CommissionSetting::current()
 $serviceRequest->hasCommission()    // commission_percent !== null
 ```
@@ -157,8 +158,12 @@ $serviceRequest->hasCommission()    // commission_percent !== null
 ### Cleaning
 - Guest pilih: `cleaning_duration_hours` (1-12 jam), `cleaning_addon_ids` (opsional)
 - Harga: `snapshot_cleaning_price_per_hour` dari CleaningPricing (single active rate, locked saat create)
-- Total = `cleaning_duration_hours` × `snapshot_cleaning_price_per_hour` + Σ `snapshot_price` addons
-- Guest bayar saat complete (saldo dipotong di `TaskController@complete`, **komisi di-snapshot**)
+- **Estimasi saat order**: Total = `cleaning_duration_hours` × `snapshot_cleaning_price_per_hour` + Σ `snapshot_price` SEMUA addon yang dipilih (disimpan di `total_price`)
+- **Pekerja checklist addon saat complete**: Pekerja mencentang addon yang benar-benar dikerjakan (form `Tandai Selesai` → `cleaning_addon_ids[]`). Pivot `is_done` diupdate. `total_price` dihitung ulang via `calculateFinalPrice($doneAddonIds)` → hanya addon `is_done = true` yang masuk harga final.
+- Guest bayar saat complete = **harga final** (bukan estimasi) — saldo dipotong di `TaskController@complete`, **komisi di-snapshot**
+- **Aturan bisnis**: Addon dipilih guest ≠ otomatis dikerjakan. Addon dichecklist pekerja = ditagihkan. Addon tidak dichecklist = tidak ditagihkan. Guest komplain lewat feedback jika addon yang dichecklist ternyata tidak dikerjakan.
+- **Validasi**: `cleaning_addon_ids` yang dikirim pekerja wajib subset dari addon yang ada di pivot order tersebut (tidak bisa menambah addon baru)
+- Guest view menampilkan transparansi: status per addon (Dikerjakan/Tidak dikerjakan) + rincian harga final untuk order `completed`
 
 ### AC
 - Guest pilih: `ac_type` (ac-cleaning/ac-refill/ac-repair/ac-full-service)
@@ -347,7 +352,7 @@ for(User $user): string
 | `POST /tasks/{sr}/weigh` | @weigh | Input berat laundry (hitung total_price) |
 | `POST /tasks/{sr}/ready-for-payment` | @readyForPayment | **Laundry selesai cuci → status waiting_payment** |
 | `POST /tasks/{sr}/confirm-delivered` | @confirmDelivered | **Konfirmasi laundry sudah diantar → completed + reward koin + snapshot komisi** |
-| `POST /tasks/{sr}/complete` | @complete | Selesai tugas non-laundry (potong saldo guest, reward koin, upload foto after, **snapshot komisi**) |
+| `POST /tasks/{sr}/complete` | @complete | Selesai tugas non-laundry (potong saldo guest, reward koin, upload foto after, **snapshot komisi**). **Cleaning: terima `cleaning_addon_ids[]` (checklist pekerja) → validasi subset → update pivot `is_done` → hitung ulang `total_price` via `calculateFinalPrice()` sebelum potong saldo** |
 
 ---
 
@@ -389,15 +394,19 @@ for(User $user): string
 23. **Topup Pending Banner**: Home & balance page menampilkan banner notif jika ada topup pending (count + amount).
 24. **WhatsApp Contact Admin**: Guest home page menampilkan card "Chat Admin" (WhatsApp link) dengan data user pre-filled (nama, email, phone, status, lokasi, unit). Butuh `ADMIN_WHATSAPP` di `.env`. Service: `AdminWhatsappLink::for($user)`. Partial: `guest.partials.contact-admin`. Disesuaikan untuk Flutter (`target="_blank"` tidak dipakai, link dicegat via `onNavigationRequest`).
 25. **Locale Switching**: Route `/lang/{locale}` untuk ganti bahasa (di luar middleware auth). Lokal: id/en.
+26. **Cleaning Addon Checklist**: Addon dipilih guest saat order = estimasi. Pekerja mencentang addon yang benar-benar dikerjakan saat `complete` (`cleaning_addon_ids[]`) → pivot `is_done` diupdate → `total_price` dihitung ulang via `calculateFinalPrice()` (hanya addon `is_done=true`). Guest hanya ditagih harga final. Validasi: ID yang dikirim pekerja wajib subset addon di pivot order (anti-inject addon baru). Komplain lewat feedback yang sudah ada.
+27. **Balance Check Sebelum Order**: Guest `ServiceRequestController@store` memblokir order cleaning & AC upfront-price (ac-cleaning/ac-refill) kalau saldo < estimasi. Pesan error menampilkan estimasi total + kekurangan (`kurang RpX`).
+28. **Balance Check Saat Complete**: `TaskController@complete` tidak memakai `abort_if` (yang bikin HTTP 422). Memakai flag `$insufficientBalance` → transaksi dibatalkan tanpa memotong saldo / simpan foto → return pesan error yang jelas ke pekerja. Hanya ada satu titik pemotongan saldo (saat complete, berdasarkan harga final).
+29. **CleaningAddon Delete Protection**: Addon yang sudah pernah dipesan (`serviceRequests()->exists()`) tidak boleh dihapus (pivot cascade-delete akan hilangkan riwayat). Admin harus nonaktifkan (`is_active=false`) saja. `is_active` dibaca via `$request->boolean('is_active')` (checkbox tak dicentang = false).
 
 ---
 
 ## Key Files to Understand
 
 ### Controllers (Business Logic)
-- `app/Http/Controllers/Guest/ServiceRequestController.php` — Create request all services, approve/reject price MnR, **payLaundry, cascading dropdown lokasi, cleaning areas/addons**
+- `app/Http/Controllers/Guest/ServiceRequestController.php` — Create request all services, approve/reject price MnR, **payLaundry, cascading dropdown lokasi, cleaning addons, balance check sebelum order (cleaning/AC upfront)**
 - `app/Http/Controllers/Admin/ServiceRequestController.php` — **Assign worker (multi-assign, filter by specialization), setPrice MnR, FCM notify via defer()**
-- `app/Http/Controllers/Worker/TaskController.php` — **Accept (race condition handling, multi-assign), survey, weigh, readyForPayment, confirmDelivered, complete (payment + coin reward + commission snapshot)**
+- `app/Http/Controllers/Worker/TaskController.php` — **Accept (race condition handling, multi-assign), survey, weigh, readyForPayment, confirmDelivered, complete (payment + coin reward + commission snapshot + cleaning addon checklist/subset validation/calculateFinalPrice)**
 - `app/Http/Controllers/Admin/TopupController.php` — Approve/reject topup (saldo mutation)
 - `app/Http/Controllers/Guest/TopupController.php` — Guest topup + balance history
 - `app/Http/Controllers/Auth/RegisteredUserController.php` — **Register dengan cascading dropdown lokasi/tower**
@@ -420,7 +429,7 @@ for(User $user): string
 
 ### Models (Relations & Helpers)
 - `app/Models/User.php` — Role helpers, all relationships, **apartment location/tower relations, specialization, withdrawalRequests(), deviceTokens()**
-- `app/Models/ServiceRequest.php` — Status helpers, service type checks, calculateTotalPrice (laundry + **cleaning**), **lokasi relations, cleaningAddons, candidates(), commissionFor(), hasCommission()**
+- `app/Models/ServiceRequest.php` — Status helpers, service type checks, **`calculateTotalPrice()`** (estimasi: laundry + cleaning SEMUA addon), **`calculateFinalPrice($doneAddonIds)`** (final: cleaning hanya addon `is_done=true`), **lokasi relations, cleaningAddons (pivot snapshot_price + is_done), candidates(), commissionFor(), hasCommission()**
 - `app/Models/RepairPricing.php` — **PHP class (non-Eloquent) dengan constants: `CATEGORIES` & `SEVERITIES` untuk validasi form** — **no database table**
 - `app/Models/CoinSetting.php` — **Setting poin increment-based: `increment_amount`, `points_per_increment`, `is_active`. `current()` ambil/create single active row (pola CommissionSetting/WithdrawalSetting)**
 - `app/Models/ApartmentLocation.php` — **Master lokasi, relasi ke towers & users**
@@ -463,7 +472,7 @@ resources/views/
 │   ├── coin-redemption-products/{index,create,edit}.blade.php
 │   ├── apartment-locations/index.blade.php  # **Kelola lokasi & tower**
 │   ├── cleaning-pricings/edit.blade.php  # **Edit tarif cleaning per jam**
-│   ├── cleaning-addons/{index,create,edit}.blade.php  # **CRUD addon cleaning**
+│   ├── cleaning-addons/{index,create,edit}.blade.php  # **CRUD addon cleaning (index ada flash error, delete diblokir jika sudah pernah dipesan)**
 │   ├── withdrawals/{index,settings}.blade.php  # **List penarikan + approve/reject + settings**
 │   ├── commission-settings/index.blade.php  # **Setting komisi admin**
 │   ├── payment-methods/index.blade.php
@@ -474,7 +483,7 @@ resources/views/
 │   ├── balance.blade.php        # **Dengan banner topup pending + tab riwayat penarikan**
 │   ├── profile.blade.php        # **Profil lengkap dengan cascading dropdown**
 │   ├── topups/{index,create}.blade.php
-│   ├── service-requests/{index,create,show,category,service-detail}.blade.php
+│   ├── service-requests/{index,create,show,category,service-detail}.blade.php  # show: cleaning detail + status addon (Dikerjakan/Tidak) + rincian harga final
 │   ├── coin-redemptions/index.blade.php
 │   ├── product-listings.blade.php
 │   ├── withdrawals/{index,create}.blade.php  # **Form & riwayat penarikan**
@@ -486,7 +495,7 @@ resources/views/
 │       ├── topup-balance.blade.php
 │       └── ui.blade.php
 ├── worker/
-│   └── tasks/{index,show}.blade.php  # **Detail tugas dengan lokasi, readyForPayment, confirmDelivered, multi-assign handling**
+│   └── tasks/{index,show}.blade.php  # **Detail tugas dengan lokasi, readyForPayment, confirmDelivered, multi-assign handling, checklist addon cleaning (checkbox di form Tandai Selesai)**
 ├── profile/
 │   └── partials/{update-profile-information-form,update-password-form,delete-user-form}.blade.php
 ├── auth/
@@ -553,6 +562,9 @@ resources/views/
 28. **Guest Marketplace WhatsApp Link**: `ProductListing::whatsapp_url` generate link wa.me dengan format nomor Indonesia (08xx/8xx → 628xx), pesan berisi judul, harga, kategori, deskripsi, link gambar. Nomor diambil dari `contact_info` input admin.
 
 29. **Worker Task Index**: Tampilkan badge "Tawaran" untuk multi-assign yang belum diambil (worker_id=null). Detail tugas menampilkan lokasi lengkap guest (daerah, lokasi, tower, unit).
+30. **Cleaning Addon Checklist**: Pivot `cleaning_addon_service_request` punya `is_done`. Worker centang addon via `cleaning_addon_ids[]` di form `complete`. Validasi subset wajib (tidak boleh inject ID addon baru). `calculateFinalPrice($doneAddonIds)` dipakai saat complete — hanya addon `is_done=true` yang ditagihkan. Jangan pakai `calculateTotalPrice()` untuk pemotongan saldo cleaning (itu masih menjumlah semua addon). Guest view menampilkan status per addon + rincian harga final. Checkbox worker di `worker/tasks/show.blade.php` ada di dalam form `Tandai Selesai`.
+31. **Balance Error Handling**: `TaskController@complete` pakai flag `$insufficientBalance` (bukan `abort_if`) supaya pekerja dapat pesan jelas, bukan halaman error 422. Guest `store` cek saldo untuk cleaning & AC upfront dan tampilkan kekurangan (`kurang RpX`).
+32. **Cleanup Seeder**: `CleaningDummyDataSeeder.php` dihapus (duplikat `CleaningPricingSeeder`). `CleaningPricingSeeder` & `CoinSettingSeeder` sudah disesuaikan ke schema baru (`price_per_hour` & `increment_amount`/`points_per_increment`).
 
 ---
 
@@ -598,8 +610,7 @@ resources/views/
 | `2026_09_23_072835_create_cleaning_area_service_request_table.php` | Pivot: ServiceRequest ↔ CleaningArea |
 | `2026_09_23_072859_create_cleaning_addons_table.php` | CleaningAddon model (name, price, is_active) |
 | `2026_09_23_072929_create_cleaning_addon_service_request_table.php` | Pivot: ServiceRequest ↔ CleaningAddon (with snapshot_price) |
-| `2026_09_23_073006_update_cleaning_fields_on_service_requests_table.php` | ServiceRequest: drop cleaning_type/snapshot_cleaning_price → add cleaning_duration_hours, snapshot_cleaning_price_per_hour |
-| `2026_09_23_201321_drop_cleaning_areas_tables.php` | Drop cleaning_areas table + cleaning_area_service_request pivot |
+| `2026_09_23_073006_update_cleaning_fields_on_service_requests_table.php` | ServiceRequest: drop cleaning_type/snapshot_cleaning_price → add cleaning_duration_hours, snapshot_cleaning_price_per_hour || `2026_09_23_201321_drop_cleaning_areas_tables.php` | Drop cleaning_areas table + cleaning_area_service_request pivot |
 | `2026_09_23_210300_create_withdrawal_tables.php` | Create withdrawal_settings + withdrawal_requests tables |
 | `2026_09_23_225243_create_device_tokens_table.php` | **Device tokens untuk FCM push notifications** |
 | `2026_09_24_102641_add_specialization_to_users_table.php` | **Add `specialization` ke users (pekerja: nama jasa, null = semua)** |
@@ -607,6 +618,7 @@ resources/views/
 | `2026_09_24_111118_add_commission_to_service_requests.php` | **commission_settings table + commission columns di service_requests** |
 | `2026_09_24_161029_restructure_coin_settings_for_increment_based_rewards.php` | **Restruktur CoinSetting: tier-based (min_amount/coin_reward) → increment-based (increment_amount/points_per_increment), single active row** |
 | `2026_10_03_102252_add_price_max_to_product_listings_table.php` | **Tambah kolom `price_max` (decimal, nullable) ke product_listings untuk mendukung range harga (mis. 100jt - 200jt)** |
+| `2026_10_05_135211_add_is_done_to_cleaning_addon_service_request_table.php` | **Tambah kolom `is_done` (boolean, default false) ke pivot cleaning_addon_service_request — menandai addon yang benar-benar dikerjakan pekerja, hanya yang `is_done=true` ditagihkan** |
 
 ---
 
@@ -622,4 +634,4 @@ resources/views/
 
 ---
 
-*Generated from codebase analysis on 2026-09-19; updated 2026-09-22 with apartment location/tower system, cascading dropdowns, updated auth views, laundry payment flow (waiting_payment status), and marketplace slider on home; updated 2026-09-23 with cleaning pricing per-hour, cleaning areas & addons, admin CRUD for cleaning config; updated 2026-09-23 with AC full-service, AC repair/AC full-service survey pricing flow, ServiceRequest helper methods, and complete migration list; updated 2026-09-24 with RepairPricing removed (now plain PHP class), MnR pricing fully manual, RepairPricingController & views deleted; updated 2026-09-24 with CleaningArea removed, cleaning simplified to duration + addons only; updated 2026-09-24 with Withdrawal system (WithdrawalRequest, WithdrawalSetting, admin approve/reject, fee calculation, balance mutation); updated 2026-09-24 with WhatsApp Contact Admin feature (AdminWhatsappLink service, config/oregonet.php, guest partial, ADMIN_WHATSAPP env); updated 2026-09-24 with Multi-assign workers, worker specialization, commission system, FCM push notifications, admin user management, locale switching; updated 2026-09-25 with Coin system restructured from tier-based (min_amount → coin_reward) to increment-based (increment_amount → points_per_increment), single active row via CoinSetting::current(), admin routes simplified to GET/PUT, UI terminology "Koin" → "Poin"; updated 2026-10-03 with ProductListing price_max (range harga), Admin UserController full CRUD (edit, update, destroy), admin users edit view, guest product-listings using price_label & whatsapp_url accessors, contact-admin partial redesign*
+*Generated from codebase analysis on 2026-09-19; updated 2026-09-22 with apartment location/tower system, cascading dropdowns, updated auth views, laundry payment flow (waiting_payment status), and marketplace slider on home; updated 2026-09-23 with cleaning pricing per-hour, cleaning areas & addons, admin CRUD for cleaning config; updated 2026-09-23 with AC full-service, AC repair/AC full-service survey pricing flow, ServiceRequest helper methods, and complete migration list; updated 2026-09-24 with RepairPricing removed (now plain PHP class), MnR pricing fully manual, RepairPricingController & views deleted; updated 2026-09-24 with CleaningArea removed, cleaning simplified to duration + addons only; updated 2026-09-24 with Withdrawal system (WithdrawalRequest, WithdrawalSetting, admin approve/reject, fee calculation, balance mutation); updated 2026-09-24 with WhatsApp Contact Admin feature (AdminWhatsappLink service, config/oregonet.php, guest partial, ADMIN_WHATSAPP env); updated 2026-09-24 with Multi-assign workers, worker specialization, commission system, FCM push notifications, admin user management, locale switching; updated 2026-09-25 with Coin system restructured from tier-based (min_amount → coin_reward) to increment-based (increment_amount → points_per_increment), single active row via CoinSetting::current(), admin routes simplified to GET/PUT, UI terminology "Koin" → "Poin"; updated 2026-10-03 with ProductListing price_max (range harga), Admin UserController full CRUD (edit, update, destroy), admin users edit view, guest product-listings using price_label & whatsapp_url accessors, contact-admin partial redesign; updated 2026-10-05 with cleaning addon checklist (pivot is_done, calculateFinalPrice, worker checklist subset validation, guest transparency view), balance check sebelum order (cleaning/AC upfront) + saat complete (flag-based error), CleaningAddon delete protection & is_active fix, seeder cleanup (CleaningDummyDataSeeder dihapus, CleaningPricingSeeder & CoinSettingSeeder disesuaikan schema baru)*
