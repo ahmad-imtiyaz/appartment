@@ -153,7 +153,7 @@ class ServiceRequestController extends Controller
     {
         abort_unless($serviceRequest->user_id === auth()->id(), 403);
 
-        $serviceRequest->load(['service', 'worker', 'maintenanceDetail', 'photos', 'feedback']);
+        $serviceRequest->load(['service', 'worker', 'maintenanceDetail', 'photos', 'feedback', 'cleaningAddons']);
 
         return view('guest.service-requests.show', compact('serviceRequest'));
     }
@@ -233,6 +233,19 @@ class ServiceRequestController extends Controller
             abort_if(!$pricing, 422, 'Tarif cleaning belum diatur admin.');
 
             $validated['snapshot_cleaning_price_per_hour'] = $pricing->price_per_hour;
+
+            $addonTotal = empty($validated['cleaning_addon_ids'])
+                ? 0
+                : \App\Models\CleaningAddon::whereIn('id', $validated['cleaning_addon_ids'])->active()->sum('price');
+
+            $estimatedTotal = ($validated['cleaning_duration_hours'] * $pricing->price_per_hour) + $addonTotal;
+
+            if ((float) auth()->user()->balance < $estimatedTotal) {
+                return back()->withInput()->with(
+                    'error',
+                    'Saldo tidak cukup. Estimasi total Rp' . number_format($estimatedTotal, 0, ',', '.') . ', silakan top up dulu.'
+                );
+            }
         }
 
         if ($isAc) {
@@ -246,6 +259,14 @@ class ServiceRequestController extends Controller
                 $request->validate([
                     'snapshot_ac_price' => ['required', 'numeric', 'min:0'],
                 ]);
+
+                $estimatedTotal = (float) $request->snapshot_ac_price;
+                if ((float) auth()->user()->balance < $estimatedTotal) {
+                    return back()->withInput()->with(
+                        'error',
+                        'Saldo tidak cukup. Estimasi total Rp' . number_format($estimatedTotal, 0, ',', '.') . ', silakan top up dulu.'
+                    );
+                }
             } else {
                 // ac-repair & ac-full-service: survey dulu, harga ditentukan belakangan
                 $validated['snapshot_ac_price'] = null;

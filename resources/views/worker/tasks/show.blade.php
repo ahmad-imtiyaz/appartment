@@ -166,9 +166,15 @@
 
                             @if ($serviceRequest->cleaningAddons->isNotEmpty())
                                 <div class="col-span-2">
-                                    <dt class="text-purple-600">Pekerjaan Tambahan</dt>
-                                    <dd class="font-medium text-purple-900">
-                                        {{ $serviceRequest->cleaningAddons->pluck('name')->join(', ') }}
+                                    <dt class="text-purple-600 mb-1">Checklist Pekerjaan Tambahan</dt>
+                                    <dd class="space-y-1">
+                                        @foreach ($serviceRequest->cleaningAddons as $addon)
+                                            <label class="flex items-center gap-2 text-purple-900">
+                                                <input type="checkbox" class="rounded border-purple-300 text-purple-600">
+                                                {{ $addon->name }}
+                                                <span class="text-purple-500 text-xs">(Rp{{ number_format($addon->pivot->snapshot_price, 0, ',', '.') }})</span>
+                                            </label>
+                                        @endforeach
                                     </dd>
                                 </div>
                             @endif

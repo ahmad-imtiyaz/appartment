@@ -273,7 +273,9 @@ class TaskController extends Controller
             'photos.*' => ['image', 'max:2048'],
         ]);
 
-        DB::transaction(function () use ($request, $validated, $serviceRequest, $isSurveyPriced) {
+        $insufficientBalance = false;
+
+        DB::transaction(function () use ($request, $validated, $serviceRequest, $isSurveyPriced, &$insufficientBalance) {
             $serviceRequest->loadMissing('service', 'user');
 
             $cost = match (true) {
@@ -287,7 +289,10 @@ class TaskController extends Controller
             $guest = $serviceRequest->user()->lockForUpdate()->first();
 
             if (!$isSurveyPriced) {
-                abort_if($guest->balance < $cost, 422, 'Saldo guest tidak cukup untuk menyelesaikan tugas ini.');
+                if ((float) $guest->balance < (float) $cost) {
+                    $insufficientBalance = true;
+                    return;
+                }
 
                 $balanceBefore = $guest->balance;
                 $balanceAfter = $balanceBefore - $cost;
@@ -326,6 +331,13 @@ class TaskController extends Controller
                 ...ServiceRequest::commissionFor((float) $finalCost),
             ]);
         });
+
+        if ($insufficientBalance) {
+            return back()->withInput()->with(
+                'error',
+                'Saldo guest belum cukup untuk membayar tugas ini. Minta guest top up dulu, lalu tandai selesai lagi.'
+            );
+        }
 
         return back()->with('success', 'Tugas ditandai selesai.');
     }

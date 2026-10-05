@@ -13,6 +13,12 @@
                 </div>
             @endif
 
+            @if (session('error'))
+                <div class="mb-6 p-3 bg-red-50 text-red-800 rounded-lg">
+                    {{ session('error') }}
+                </div>
+            @endif
+
             <div class="flex items-center justify-between mb-6">
                 <h3 class="font-semibold text-gray-900 text-lg">Daftar Pekerjaan Tambahan</h3>
                 <a href="{{ route('admin.cleaning-addons.create') }}" class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors">

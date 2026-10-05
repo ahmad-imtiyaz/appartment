@@ -32,6 +32,8 @@ class CleaningAddonController extends Controller
             'is_active' => ['boolean'],
         ]);
 
+        $validated['is_active'] = $request->boolean('is_active');
+
         CleaningAddon::create($validated);
 
         return redirect()->route('admin.cleaning-addons.index')
@@ -51,6 +53,8 @@ class CleaningAddonController extends Controller
             'is_active' => ['boolean'],
         ]);
 
+        $validated['is_active'] = $request->boolean('is_active');
+
         $cleaningAddon->update($validated);
 
         return redirect()->route('admin.cleaning-addons.index')
@@ -59,8 +63,12 @@ class CleaningAddonController extends Controller
 
     public function destroy(CleaningAddon $cleaningAddon): RedirectResponse
     {
-        // note: harga add-on yang sudah dipakai order lama tetap aman
-        // karena disnapshot di pivot cleaning_addon_service_request
+        // Pivot cascade-delete akan menghapus riwayat order lama,
+        // jadi addon yang pernah dipakai tidak boleh dihapus.
+        if ($cleaningAddon->serviceRequests()->exists()) {
+            return back()->with('error', 'Pekerjaan ini sudah pernah dipesan. Nonaktifkan saja, jangan dihapus.');
+        }
+
         $cleaningAddon->delete();
 
         return redirect()->route('admin.cleaning-addons.index')

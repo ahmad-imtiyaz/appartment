@@ -163,6 +163,24 @@
 
 
             {{-- Detail maintenance --}}
+            @if ($serviceRequest->isCleaning())
+                <div class="ui-card ui-rise">
+                    <h3 class="ui-heading" style="margin-bottom:6px">Detail Cleaning</h3>
+                    <dl>
+                        <div class="ui-kv-item">
+                            <dt>Durasi</dt>
+                            <dd>{{ $serviceRequest->cleaning_duration_hours }} jam × Rp{{ number_format($serviceRequest->snapshot_cleaning_price_per_hour, 0, ',', '.') }}</dd>
+                        </div>
+                        @foreach ($serviceRequest->cleaningAddons as $addon)
+                            <div class="ui-kv-item">
+                                <dt>{{ $addon->name }}</dt>
+                                <dd>Rp{{ number_format($addon->pivot->snapshot_price, 0, ',', '.') }}</dd>
+                            </div>
+                        @endforeach
+                    </dl>
+                </div>
+            @endif
+
             @if ($serviceRequest->maintenanceDetail)
                 <div class="ui-card ui-rise">
 

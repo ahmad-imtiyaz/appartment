@@ -57,7 +57,7 @@ Sistem manajemen layanan apartemen dengan 3 role: **admin**, **pekerja** (worker
 | **CoinSetting** | `coin_settings` | `increment_amount` (default 50000), `points_per_increment` (default 1), `is_active` | Setting reward poin: setiap kelipatan `increment_amount` dari total belanja memberi `points_per_increment` poin. Hanya 1 baris aktif (pola sama seperti CommissionSetting/WithdrawalSetting) |
 | **CoinRedemptionProduct** | `coin_redemption_products` | Produk tukar koin (name, coin_cost, stock) |
 | **CoinRedemption** | `coin_redemptions` | Request tukar koin guest |
-| **ProductListing** | `product_listings` | Marketplace barang (admin post, guest lihat + WA link) |
+| **ProductListing** | `product_listings` | Marketplace barang (admin post, guest lihat + WA link). **Fields**: `title`, `description`, `price` (min), `price_max` (opsional, untuk range harga), `image`, `category`, `contact_info`, `is_active`, `posted_by`. Accessors: `price_label` (format "RpX - RpY" atau "RpX"), `whatsapp_url` (generate wa.me link dengan data produk). |
 
 ### Pivot Tables
 | Table | Purpose |
@@ -298,6 +298,9 @@ for(User $user): string
 | `GET /users/create` | @create | **Form buat user (role, spesialisasi untuk pekerja)** |
 | `POST /users` | @store | **Simpan user baru** |
 | `GET /users/{user}` | @show | **Detail user + riwayat request/tugas** |
+| `GET /users/{user}/edit` | @edit | **Form edit user (role, spesialisasi, unit, password optional)** |
+| `PUT /users/{user}` | @update | **Update user (validasi: admin terakhir tidak bisa diubah/dihapus, tugas aktif cek)** |
+| `DELETE /users/{user}` | @destroy | **Hapus user (soft delete, email direname, riwayat tetap tersimpan)** |
 | `GET /payment-methods` | PaymentMethodController@index | CRUD metode bayar |
 | `GET /topups` | TopupController@index | List topup pending |
 | `POST /topups/{tr}/approve` | @approve | Approve topup (+ saldo + mutation) |
@@ -404,7 +407,7 @@ for(User $user): string
 - `app/Http/Controllers/Admin/CleaningAddonController.php` — **CRUD addon cleaning**
 - `app/Http/Controllers/Guest/WithdrawalController.php` — **Guest penarikan saldo (create, index, store)**
 - `app/Http/Controllers/Admin/WithdrawalController.php` — **Admin penarikan (index, approve, reject, settings)**
-- `app/Http/Controllers/Admin/UserController.php` — **Admin user management (index, show, create, store dengan role & specialization)**
+- `app/Http/Controllers/Admin/UserController.php` — **Admin user management (index, show, create, store, edit, update, destroy dengan role & specialization)**
 - `app/Http/Controllers/Admin/CommissionSettingController.php` — **Admin setting komisi (percentage)**
 - `app/Http/Controllers/Worker/DeviceTokenController.php` — **Worker register FCM token**
 
@@ -452,7 +455,7 @@ resources/views/
 │   ├── service-requests/{index,show}.blade.php
 │   ├── topups/index.blade.php
 │   ├── workers/index.blade.php
-│   ├── users/{index,create,show}.blade.php  # **Admin user management**
+│   ├── users/{index,create,show,edit}.blade.php  # **Admin user management (CRUD lengkap)**
 │   ├── *pricings*/{index,create,edit}.blade.php
 │   ├── product-listings/index.blade.php
 │   ├── coin-settings/index.blade.php  # **Setting poin (increment_amount, points_per_increment), create/edit dihapus**
@@ -543,7 +546,13 @@ resources/views/
 23. **Commission Snapshot**: Saat `complete`/`confirmDelivered`, `ServiceRequest::commissionFor($gross)` dipanggil → snapshot `commission_percent`, `commission_amount`, `worker_earning` ke request. Setting diubah tak mempengaruhi tugas selesai.
 24. **FCM Push Notifications**: Non-blocking via `defer()`. Error hanya log. Auto-cleanup token `NOT_FOUND`. Config FCM di `config/oregonet.php` → `fcm.credentials`. Channel ID `tugas_baru` harus match Flutter app.
 25. **Locale Switching**: Route `/lang/{locale}` accessible tanpa auth. Session locale digunakan oleh `SetLocale` middleware.
-26. **Coin System Restructured**: CoinSetting now uses increment-based logic (increment_amount → points_per_increment) instead of tier-based (min_amount → coin_reward). Single active row via `CoinSetting::current()`. Reward = floor(amountSpent / increment_amount) × points_per_increment. Admin routes changed from resource to GET/PUT. UI terminology changed from "Koin" to "Poin".
+26. **ProductListing Price Range**: ProductListing sekarang mendukung `price_max` (opsional). Jika hanya `price` diisi → harga tunggal. Jika keduanya → range "RpX - RpY". Jika keduanya kosong → "Gratis/Negotiable". Accessor `price_label` digunakan di view. Validasi: `price_max >= price`, `price` wajib jika `price_max` diisi.
+
+27. **Admin User Management Full CRUD**: Admin sekarang bisa edit user (role, specialization, unit, password opsional), hapus user (soft delete, email direname `deleted_{id}_{email}`). Proteksi: admin tidak bisa hapus/ubah role akun sendiri, tidak bisa hapus admin terakhir, tidak bisa hapus user yang masih punya tugas aktif (status bukan completed/rejected).
+
+28. **Guest Marketplace WhatsApp Link**: `ProductListing::whatsapp_url` generate link wa.me dengan format nomor Indonesia (08xx/8xx → 628xx), pesan berisi judul, harga, kategori, deskripsi, link gambar. Nomor diambil dari `contact_info` input admin.
+
+29. **Worker Task Index**: Tampilkan badge "Tawaran" untuk multi-assign yang belum diambil (worker_id=null). Detail tugas menampilkan lokasi lengkap guest (daerah, lokasi, tower, unit).
 
 ---
 
@@ -597,6 +606,7 @@ resources/views/
 | `2026_09_24_104556_create_service_request_candidates_table.php` | **Pivot: ServiceRequest ↔ User (multi-assign workers)** |
 | `2026_09_24_111118_add_commission_to_service_requests.php` | **commission_settings table + commission columns di service_requests** |
 | `2026_09_24_161029_restructure_coin_settings_for_increment_based_rewards.php` | **Restruktur CoinSetting: tier-based (min_amount/coin_reward) → increment-based (increment_amount/points_per_increment), single active row** |
+| `2026_10_03_102252_add_price_max_to_product_listings_table.php` | **Tambah kolom `price_max` (decimal, nullable) ke product_listings untuk mendukung range harga (mis. 100jt - 200jt)** |
 
 ---
 
@@ -612,4 +622,4 @@ resources/views/
 
 ---
 
-*Generated from codebase analysis on 2026-09-19; updated 2026-09-22 with apartment location/tower system, cascading dropdowns, updated auth views, laundry payment flow (waiting_payment status), and marketplace slider on home; updated 2026-09-23 with cleaning pricing per-hour, cleaning areas & addons, admin CRUD for cleaning config; updated 2026-09-23 with AC full-service, AC repair/AC full-service survey pricing flow, ServiceRequest helper methods, and complete migration list; updated 2026-09-24 with RepairPricing removed (now plain PHP class), MnR pricing fully manual, RepairPricingController & views deleted; updated 2026-09-24 with CleaningArea removed, cleaning simplified to duration + addons only; updated 2026-09-24 with Withdrawal system (WithdrawalRequest, WithdrawalSetting, admin approve/reject, fee calculation, balance mutation); updated 2026-09-24 with WhatsApp Contact Admin feature (AdminWhatsappLink service, config/oregonet.php, guest partial, ADMIN_WHATSAPP env); updated 2026-09-24 with Multi-assign workers, worker specialization, commission system, FCM push notifications, admin user management, locale switching; updated 2026-09-25 with Coin system restructured from tier-based (min_amount → coin_reward) to increment-based (increment_amount → points_per_increment), single active row via CoinSetting::current(), admin routes simplified to GET/PUT, UI terminology "Koin" → "Poin"*
+*Generated from codebase analysis on 2026-09-19; updated 2026-09-22 with apartment location/tower system, cascading dropdowns, updated auth views, laundry payment flow (waiting_payment status), and marketplace slider on home; updated 2026-09-23 with cleaning pricing per-hour, cleaning areas & addons, admin CRUD for cleaning config; updated 2026-09-23 with AC full-service, AC repair/AC full-service survey pricing flow, ServiceRequest helper methods, and complete migration list; updated 2026-09-24 with RepairPricing removed (now plain PHP class), MnR pricing fully manual, RepairPricingController & views deleted; updated 2026-09-24 with CleaningArea removed, cleaning simplified to duration + addons only; updated 2026-09-24 with Withdrawal system (WithdrawalRequest, WithdrawalSetting, admin approve/reject, fee calculation, balance mutation); updated 2026-09-24 with WhatsApp Contact Admin feature (AdminWhatsappLink service, config/oregonet.php, guest partial, ADMIN_WHATSAPP env); updated 2026-09-24 with Multi-assign workers, worker specialization, commission system, FCM push notifications, admin user management, locale switching; updated 2026-09-25 with Coin system restructured from tier-based (min_amount → coin_reward) to increment-based (increment_amount → points_per_increment), single active row via CoinSetting::current(), admin routes simplified to GET/PUT, UI terminology "Koin" → "Poin"; updated 2026-10-03 with ProductListing price_max (range harga), Admin UserController full CRUD (edit, update, destroy), admin users edit view, guest product-listings using price_label & whatsapp_url accessors, contact-admin partial redesign*
