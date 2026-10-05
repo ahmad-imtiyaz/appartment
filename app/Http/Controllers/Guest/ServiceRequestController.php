@@ -239,11 +239,13 @@ class ServiceRequestController extends Controller
                 : \App\Models\CleaningAddon::whereIn('id', $validated['cleaning_addon_ids'])->active()->sum('price');
 
             $estimatedTotal = ($validated['cleaning_duration_hours'] * $pricing->price_per_hour) + $addonTotal;
+            $userBalance = (float) auth()->user()->balance;
 
-            if ((float) auth()->user()->balance < $estimatedTotal) {
+            if ($userBalance < $estimatedTotal) {
+                $shortfall = $estimatedTotal - $userBalance;
                 return back()->withInput()->with(
                     'error',
-                    'Saldo tidak cukup. Estimasi total Rp' . number_format($estimatedTotal, 0, ',', '.') . ', silakan top up dulu.'
+                    'Saldo tidak cukup. Estimasi total Rp' . number_format($estimatedTotal, 0, ',', '.') . ' (kurang Rp' . number_format($shortfall, 0, ',', '.') . '), silakan top up dulu.'
                 );
             }
         }
@@ -261,10 +263,12 @@ class ServiceRequestController extends Controller
                 ]);
 
                 $estimatedTotal = (float) $request->snapshot_ac_price;
-                if ((float) auth()->user()->balance < $estimatedTotal) {
+                $userBalance = (float) auth()->user()->balance;
+                if ($userBalance < $estimatedTotal) {
+                    $shortfall = $estimatedTotal - $userBalance;
                     return back()->withInput()->with(
                         'error',
-                        'Saldo tidak cukup. Estimasi total Rp' . number_format($estimatedTotal, 0, ',', '.') . ', silakan top up dulu.'
+                        'Saldo tidak cukup. Estimasi total Rp' . number_format($estimatedTotal, 0, ',', '.') . ' (kurang Rp' . number_format($shortfall, 0, ',', '.') . '), silakan top up dulu.'
                     );
                 }
             } else {
