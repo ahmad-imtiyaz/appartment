@@ -169,7 +169,7 @@ class ServiceRequest extends Model
             CleaningAddon::class,
             'cleaning_addon_service_request'
         )
-            ->withPivot('snapshot_price')
+            ->withPivot('snapshot_price', 'is_done')
             ->withTimestamps();
     }
 
@@ -455,6 +455,37 @@ class ServiceRequest extends Model
 
             $this->save();
         }
+    }
+
+    /**
+     * Calculate final price based on addons actually done by worker.
+     * Only sums addons where pivot.is_done = true.
+     * Updates total_price to final amount.
+     */
+    public function calculateFinalPrice(array $doneAddonIds = []): void
+    {
+        if (!$this->isCleaning()
+            || !$this->cleaning_duration_hours
+            || !$this->snapshot_cleaning_price_per_hour
+        ) {
+            return;
+        }
+
+        $base =
+            $this->cleaning_duration_hours
+            * $this->snapshot_cleaning_price_per_hour;
+
+        // Only sum snapshot_price for addons marked as done
+        $addonTotal = $this->cleaningAddons()
+            ->whereIn('cleaning_addon_id', $doneAddonIds)
+            ->sum('snapshot_price');
+
+        $this->total_price = round(
+            $base + $addonTotal,
+            2
+        );
+
+        $this->save();
     }
 
     // =========================================================

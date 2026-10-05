@@ -171,13 +171,59 @@
                             <dt>Durasi</dt>
                             <dd>{{ $serviceRequest->cleaning_duration_hours }} jam × Rp{{ number_format($serviceRequest->snapshot_cleaning_price_per_hour, 0, ',', '.') }}</dd>
                         </div>
-                        @foreach ($serviceRequest->cleaningAddons as $addon)
+                        @if ($serviceRequest->cleaningAddons->isNotEmpty())
                             <div class="ui-kv-item">
-                                <dt>{{ $addon->name }}</dt>
-                                <dd>Rp{{ number_format($addon->pivot->snapshot_price, 0, ',', '.') }}</dd>
+                                <dt>Pekerjaan Tambahan (Estimasi)</dt>
+                                <dd>
+                                    <div class="space-y-1">
+                                        @foreach ($serviceRequest->cleaningAddons as $addon)
+                                            <div class="flex items-center gap-2 text-sm">
+                                                <span class="w-5 h-5 rounded border flex items-center justify-center flex-shrink-0"
+                                                      style="border-color: {{ ($addon->pivot->is_done ?? false) ? '#8B5CF6' : '#D1D5DB' }};">
+                                                    @if ($addon->pivot->is_done ?? false)
+                                                        <svg class="w-3 h-3 text-purple-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                                                    @else
+                                                        <svg class="w-3 h-3 text-gray-300" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                                                    @endif
+                                                </span>
+                                                <span>{{ $addon->name }}</span>
+                                                <span class="text-gray-500">Rp{{ number_format($addon->pivot->snapshot_price, 0, ',', '.') }}</span>
+                                                <span class="text-xs px-2 py-0.5 rounded
+                                                    @if ($addon->pivot->is_done ?? false) bg-green-100 text-green-700
+                                                    @else bg-gray-100 text-gray-500 @endif">
+                                                    {{ ($addon->pivot->is_done ?? false) ? 'Dikerjakan' : 'Tidak dikerjakan' }}
+                                                </span>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </dd>
                             </div>
-                        @endforeach
+                        @endif
                     </dl>
+                    {{-- Final Price Breakdown --}}
+                    @if ($serviceRequest->status === 'completed')
+                        <div class="mt-4 pt-4 border-t border-gray-200">
+                            <h4 class="font-semibold text-gray-900 mb-2">Rincian Harga Final</h4>
+                            <dl class="space-y-1 text-sm">
+                                <div class="flex justify-between">
+                                    <dt class="text-gray-600">Cleaning ({{ $serviceRequest->cleaning_duration_hours }} jam)</dt>
+                                    <dd class="font-medium text-gray-900">Rp{{ number_format($serviceRequest->cleaning_duration_hours * $serviceRequest->snapshot_cleaning_price_per_hour, 0, ',', '.') }}</dd>
+                                </div>
+                                @foreach ($serviceRequest->cleaningAddons as $addon)
+                                    @if ($addon->pivot->is_done ?? false)
+                                        <div class="flex justify-between">
+                                            <dt class="text-gray-600">{{ $addon->name }}</dt>
+                                            <dd class="font-medium text-gray-900">Rp{{ number_format($addon->pivot->snapshot_price, 0, ',', '.') }}</dd>
+                                        </div>
+                                    @endif
+                                @endforeach
+                                <div class="flex justify-between pt-2 border-t border-gray-200 font-bold">
+                                    <dt class="text-gray-900">Total Final</dt>
+                                    <dd class="text-indigo-600">Rp{{ number_format($serviceRequest->cost ?? $serviceRequest->total_price ?? 0, 0, ',', '.') }}</dd>
+                                </div>
+                            </dl>
+                        </div>
+                    @endif
                 </div>
             @endif
 

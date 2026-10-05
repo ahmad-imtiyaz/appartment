@@ -267,6 +267,23 @@ class TaskController extends Controller
             abort_if(!$serviceRequest->isPriceApproved(), 422, 'Harga belum disetujui & dibayar guest.');
         }
 
+        // Handle cleaning addon checklist
+        $doneAddonIds = [];
+        if ($serviceRequest->isCleaning()) {
+            $validatedAddons = $request->validate([
+                'cleaning_addon_ids' => ['nullable', 'array'],
+                'cleaning_addon_ids.*' => ['integer', 'exists:cleaning_addons,id'],
+            ]);
+            $doneAddonIds = $validatedAddons['cleaning_addon_ids'] ?? [];
+
+            // Validate: submitted IDs must be subset of originally selected addons
+            $originalAddonIds = $serviceRequest->cleaningAddons()->pluck('cleaning_addon_id')->toArray();
+            $invalidIds = array_diff($doneAddonIds, $originalAddonIds);
+            if (!empty($invalidIds)) {
+                return back()->withInput()->with('error', 'Addon tidak valid: beberapa addon yang dikirim tidak ada dalam pesanan ini.');
+            }
+        }
+
         $validated = $request->validate([
             'worker_notes' => ['nullable', 'string', 'max:1000'],
             'photos' => ['nullable', 'array', 'max:5'],
@@ -275,8 +292,19 @@ class TaskController extends Controller
 
         $insufficientBalance = false;
 
-        DB::transaction(function () use ($request, $validated, $serviceRequest, $isSurveyPriced, &$insufficientBalance) {
-            $serviceRequest->loadMissing('service', 'user');
+        DB::transaction(function () use ($request, $validated, $serviceRequest, $isSurveyPriced, $doneAddonIds, &$insufficientBalance) {
+            $serviceRequest->loadMissing('service', 'user', 'cleaningAddons');
+
+            // For cleaning, recalculate total_price based on done addons BEFORE charging
+            if ($serviceRequest->isCleaning()) {
+                $serviceRequest->calculateFinalPrice($doneAddonIds);
+
+                // Update pivot is_done for each addon
+                foreach ($serviceRequest->cleaningAddons as $addon) {
+                    $isDone = in_array($addon->id, $doneAddonIds);
+                    $serviceRequest->cleaningAddons()->updateExistingPivot($addon->id, ['is_done' => $isDone]);
+                }
+            }
 
             $cost = match (true) {
                 $serviceRequest->service->slug === 'laundry' => $serviceRequest->total_price ?? 0,
