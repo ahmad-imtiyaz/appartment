@@ -303,6 +303,35 @@
     .history-note svg{width:14px;height:14px;flex-shrink:0;margin-top:1px;color:#9CA3AF;}
     .history-note strong{font-weight:600;color:#374151;}
 
+    /* ---------- Info konfirmasi WA (status: sedang proses) ---------- */
+    .history-hint{
+        display:flex;
+        gap:8px;
+        margin:0 14px 12px 18px;
+        padding:9px 11px;
+        background:#FFF7ED;
+        border:1px solid #FFEDD5;
+        border-radius:10px;
+        font-size:11.5px;
+        color:#9A3412;
+        line-height:1.5;
+        word-break:break-word;
+    }
+    .history-hint svg{
+        width:15px;
+        height:15px;
+        flex-shrink:0;
+        margin-top:1px;
+        color:var(--orange);
+    }
+    .history-hint a{
+        font-weight:700;
+        color:var(--red-dark);
+        text-decoration:underline;
+        text-underline-offset:2px;
+        white-space:nowrap;
+    }
+
     /* layar sangat kecil */
     @media (max-width:360px){
         .history-thumb,
@@ -311,7 +340,8 @@
         }
         .history-main{gap:10px;padding:12px 12px 10px 16px;}
         .history-footer{padding:10px 12px 12px 16px;}
-        .history-note{margin:0 12px 12px 16px;}
+        .history-note,
+        .history-hint{margin:0 12px 12px 16px;}
     }
 
     .empty-state{
@@ -491,6 +521,19 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M8 10h8M8 14h5m-9 6l3-3h11a2 2 0 002-2V7a2 2 0 00-2-2H6a2 2 0 00-2 2v13z"/>
                                     </svg>
                                     <span><strong>{{ __('guest.coin.admin_note_label') }}</strong> {{ $redemption->admin_notes }}</span>
+                                </div>
+                            @endif
+
+                            {{-- Info konfirmasi via WhatsApp admin (hanya saat sedang proses) --}}
+                            @if ($redemption->status === 'processing')
+                                <div class="history-hint">
+                                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                    <span>
+                                        {{ __('guest.coin.processing_hint') }}
+                                        <a href="{{ route('guest.home') }}">{{ __('guest.coin.processing_hint_link') }}</a>
+                                    </span>
                                 </div>
                             @endif
 

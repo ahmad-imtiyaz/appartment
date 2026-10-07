@@ -11,6 +11,21 @@
         </div>
     </x-slot>
 
+    @php
+        // Normalisasi nomor untuk link wa.me (08xxx -> 628xxx)
+        $rawPhone = $coinRedemption->user->phone ?? null;
+        $waNumber = null;
+        if ($rawPhone) {
+            $digits = preg_replace('/\D/', '', $rawPhone);
+            if (str_starts_with($digits, '0')) {
+                $digits = '62' . substr($digits, 1);
+            } elseif (str_starts_with($digits, '8')) {
+                $digits = '62' . $digits;
+            }
+            $waNumber = $digits ?: null;
+        }
+    @endphp
+
     <div class="py-8 px-4 sm:px-6 lg:px-8">
         <div class="max-w-3xl mx-auto">
             @if (session('success'))
@@ -37,6 +52,20 @@
                         <div>
                             <dt class="text-gray-500">Email</dt>
                             <dd class="font-medium text-gray-900">{{ $coinRedemption->user->email }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-gray-500">No. WhatsApp</dt>
+                            <dd class="font-medium">
+                                @if ($waNumber)
+                                    <a href="https://wa.me/{{ $waNumber }}" target="_blank" rel="noopener"
+                                       class="inline-flex items-center gap-2 text-green-600 hover:text-green-800">
+                                        {{ $rawPhone }}
+                                        <span class="px-2 py-0.5 text-xs rounded-full bg-green-100 text-green-800">Chat WA</span>
+                                    </a>
+                                @else
+                                    <span class="text-gray-400">-</span>
+                                @endif
+                            </dd>
                         </div>
                         <div>
                             <dt class="text-gray-500">Unit</dt>

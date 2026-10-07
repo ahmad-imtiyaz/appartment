@@ -26,10 +26,15 @@
                     <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
                         <div class="flex items-start justify-between gap-3 mb-3">
                             <div class="min-w-0">
-                                <p class="font-medium text-gray-900 truncate">{{ $topup->user->name }}</p>
-                                <p class="text-sm text-gray-500 truncate">{{ $topup->user->email }}</p>
-                                @if ($topup->user->apartment_unit_number)
-                                    <p class="text-xs text-gray-400">Unit: {{ $topup->user->apartment_unit_number }}</p>
+                                @if ($topup->user)
+                                    <p class="font-medium text-gray-900 truncate">{{ $topup->user->name }}</p>
+                                    <p class="text-sm text-gray-500 truncate">{{ $topup->user->email }}</p>
+                                    @if ($topup->user->apartment_unit_number)
+                                        <p class="text-xs text-gray-400">Unit: {{ $topup->user->apartment_unit_number }}</p>
+                                    @endif
+                                @else
+                                    <p class="font-medium text-gray-400 italic truncate">User tidak ditemukan</p>
+                                    <p class="text-xs text-gray-400">ID User: {{ $topup->user_id }}</p>
                                 @endif
                             </div>
                             <span class="shrink-0 px-2 py-1 text-xs font-medium rounded-full
@@ -47,7 +52,7 @@
                             </a>
                             <dl class="text-sm flex-1">
                                 <dt class="text-gray-500">Metode</dt>
-                                <dd class="text-gray-900 mb-1.5">{{ $topup->paymentMethod->display_name }}</dd>
+                                <dd class="text-gray-900 mb-1.5">{{ $topup->paymentMethod?->display_name ?? '-' }}</dd>
                                 <dt class="text-gray-500">Nominal</dt>
                                 <dd class="font-semibold text-indigo-600">Rp{{ number_format($topup->amount, 0, ',', '.') }}</dd>
                             </dl>
@@ -57,12 +62,14 @@
 
                         @if ($topup->status === 'pending')
                             <div class="flex items-center gap-2">
-                                <form method="POST" action="{{ route('admin.topups.approve', $topup) }}" class="flex-1" onsubmit="return confirm('Yakin approve top up ini?')">
-                                    @csrf
-                                    <button type="submit" class="w-full rounded-md border border-green-200 text-green-700 text-sm font-medium py-2 hover:bg-green-50">
-                                        Approve
-                                    </button>
-                                </form>
+                                @if ($topup->user)
+                                    <form method="POST" action="{{ route('admin.topups.approve', $topup) }}" class="flex-1" onsubmit="return confirm('Yakin approve top up ini?')">
+                                        @csrf
+                                        <button type="submit" class="w-full rounded-md border border-green-200 text-green-700 text-sm font-medium py-2 hover:bg-green-50">
+                                            Approve
+                                        </button>
+                                    </form>
+                                @endif
                                 <button onclick="openRejectModal({{ $topup->id }})" class="flex-1 rounded-md border border-red-200 text-red-700 text-sm font-medium py-2 hover:bg-red-50">
                                     Reject
                                 </button>
@@ -102,13 +109,18 @@
                                 @foreach ($topupRequests as $topup)
                                     <tr class="hover:bg-gray-50">
                                         <td class="px-6 py-4">
-                                            <div class="font-medium text-gray-900">{{ $topup->user->name }}</div>
-                                            <div class="text-sm text-gray-500">{{ $topup->user->email }}</div>
-                                            @if ($topup->user->apartment_unit_number)
-                                                <div class="text-xs text-gray-400">Unit: {{ $topup->user->apartment_unit_number }}</div>
+                                            @if ($topup->user)
+                                                <div class="font-medium text-gray-900">{{ $topup->user->name }}</div>
+                                                <div class="text-sm text-gray-500">{{ $topup->user->email }}</div>
+                                                @if ($topup->user->apartment_unit_number)
+                                                    <div class="text-xs text-gray-400">Unit: {{ $topup->user->apartment_unit_number }}</div>
+                                                @endif
+                                            @else
+                                                <div class="font-medium text-gray-400 italic">User tidak ditemukan</div>
+                                                <div class="text-xs text-gray-400">ID User: {{ $topup->user_id }}</div>
                                             @endif
                                         </td>
-                                        <td class="px-6 py-4">{{ $topup->paymentMethod->display_name }}</td>
+                                        <td class="px-6 py-4">{{ $topup->paymentMethod?->display_name ?? '-' }}</td>
                                         <td class="px-6 py-4 font-semibold text-indigo-600">Rp{{ number_format($topup->amount, 0, ',', '.') }}</td>
                                         <td class="px-6 py-4">
                                             <a href="{{ Storage::url($topup->proof_image) }}" target="_blank" class="inline-block">
@@ -128,10 +140,12 @@
                                         <td class="px-6 py-4">
                                             @if ($topup->status === 'pending')
                                                 <div class="space-x-2">
-                                                    <form method="POST" action="{{ route('admin.topups.approve', $topup) }}" class="inline" onsubmit="return confirm('Yakin approve top up ini?')">
-                                                        @csrf
-                                                        <button type="submit" class="text-green-600 hover:text-green-900 font-medium">Approve</button>
-                                                    </form>
+                                                    @if ($topup->user)
+                                                        <form method="POST" action="{{ route('admin.topups.approve', $topup) }}" class="inline" onsubmit="return confirm('Yakin approve top up ini?')">
+                                                            @csrf
+                                                            <button type="submit" class="text-green-600 hover:text-green-900 font-medium">Approve</button>
+                                                        </form>
+                                                    @endif
                                                     <button onclick="openRejectModal({{ $topup->id }})" class="text-red-600 hover:text-red-900 font-medium">Reject</button>
                                                 </div>
                                             @elseif ($topup->status === 'rejected' && $topup->admin_note)

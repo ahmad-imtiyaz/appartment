@@ -55,11 +55,25 @@
                         <p class="mt-2 text-gray-500">Belum ada permintaan penukaran poin</p>
                     </div>
                 @else
+                    @php
+                        $statusColors = [
+                            'processing' => 'bg-yellow-100 text-yellow-800',
+                            'completed' => 'bg-green-100 text-green-800',
+                            'cancelled' => 'bg-red-100 text-red-800',
+                        ];
+                        $statusLabels = [
+                            'processing' => 'Sedang Proses',
+                            'completed' => 'Berhasil',
+                            'cancelled' => 'Dibatalkan',
+                        ];
+                    @endphp
+
                     <div class="overflow-x-auto">
                         <table class="w-full">
                             <thead class="bg-gray-50 border-b border-gray-100">
                                 <tr>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Guest</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">No. WhatsApp</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Produk</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Harga Poin</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
@@ -69,10 +83,34 @@
                             </thead>
                             <tbody class="divide-y divide-gray-100">
                                 @foreach ($redemptions as $redemption)
+                                    @php
+                                        // Normalisasi nomor untuk link wa.me (08xxx -> 628xxx)
+                                        $rawPhone = $redemption->user->phone ?? null;
+                                        $waNumber = null;
+                                        if ($rawPhone) {
+                                            $digits = preg_replace('/\D/', '', $rawPhone);
+                                            if (str_starts_with($digits, '0')) {
+                                                $digits = '62' . substr($digits, 1);
+                                            } elseif (str_starts_with($digits, '8')) {
+                                                $digits = '62' . $digits;
+                                            }
+                                            $waNumber = $digits ?: null;
+                                        }
+                                    @endphp
                                     <tr class="hover:bg-gray-50">
                                         <td class="px-4 py-3">
                                             <div class="font-medium text-gray-900">{{ $redemption->user->name }}</div>
                                             <div class="text-sm text-gray-500">{{ $redemption->user->email }}</div>
+                                        </td>
+                                        <td class="px-4 py-3 text-sm">
+                                            @if ($waNumber)
+                                                <a href="https://wa.me/{{ $waNumber }}" target="_blank" rel="noopener"
+                                                   class="inline-flex items-center gap-1 text-green-600 hover:text-green-800 font-medium">
+                                                    {{ $rawPhone }}
+                                                </a>
+                                            @else
+                                                <span class="text-gray-400">-</span>
+                                            @endif
                                         </td>
                                         <td class="px-4 py-3">
                                             <div class="font-medium text-gray-900">{{ $redemption->product->name }}</div>
@@ -81,18 +119,6 @@
                                             <span class="font-medium text-indigo-600">{{ number_format($redemption->coin_cost) }} Poin</span>
                                         </td>
                                         <td class="px-4 py-3">
-                                            @php
-                                                $statusColors = [
-                                                    'processing' => 'bg-yellow-100 text-yellow-800',
-                                                    'completed' => 'bg-green-100 text-green-800',
-                                                    'cancelled' => 'bg-red-100 text-red-800',
-                                                ];
-                                                $statusLabels = [
-                                                    'processing' => 'Sedang Proses',
-                                                    'completed' => 'Berhasil',
-                                                    'cancelled' => 'Dibatalkan',
-                                                ];
-                                            @endphp
                                             <span class="px-2 py-1 text-xs font-medium rounded-full {{ $statusColors[$redemption->status] ?? 'bg-gray-100 text-gray-800' }}">
                                                 {{ $statusLabels[$redemption->status] ?? $redemption->status }}
                                             </span>

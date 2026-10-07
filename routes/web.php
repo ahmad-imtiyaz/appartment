@@ -21,6 +21,7 @@ use App\Http\Controllers\Guest\TopupController as GuestTopupController;
 use App\Http\Controllers\Admin\WithdrawalController as AdminWithdrawalController;
 use App\Http\Controllers\Guest\WithdrawalController as GuestWithdrawalController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\Worker\ProfileController as WorkerProfileController;
 use App\Http\Controllers\Worker\TaskController;
 use App\Http\Controllers\Worker\DeviceTokenController;
 use Illuminate\Support\Facades\Route;
@@ -86,6 +87,28 @@ Route::get('/dashboard', function () {
 
     abort(403, 'Role tidak dikenali.');
 })->middleware(['auth', 'verified'])->name('dashboard');
+
+/*
+|--------------------------------------------------------------------------
+| Profile (generik, tanpa prefix)
+|--------------------------------------------------------------------------
+|
+| Dibutuhkan oleh view bawaan Breeze yang memanggil route('profile.edit'),
+| route('profile.update'), dan route('profile.destroy').
+| Pekerja sudah punya route + view sendiri (worker.profile.*).
+|
+*/
+
+Route::middleware('auth')->group(function () {
+    Route::get('/profile', [ProfileController::class, 'edit'])
+        ->name('profile.edit');
+
+    Route::patch('/profile', [ProfileController::class, 'update'])
+        ->name('profile.update');
+
+    Route::delete('/profile', [ProfileController::class, 'destroy'])
+        ->name('profile.destroy');
+});
 
 /*
 |--------------------------------------------------------------------------
@@ -277,25 +300,25 @@ Route::middleware(['auth', 'role:admin'])
         */
 
         Route::get('/users', [AdminUserController::class, 'index'])
-    ->name('users.index');
+            ->name('users.index');
 
-Route::get('/users/create', [AdminUserController::class, 'create'])
-    ->name('users.create');
+        Route::get('/users/create', [AdminUserController::class, 'create'])
+            ->name('users.create');
 
-Route::post('/users', [AdminUserController::class, 'store'])
-    ->name('users.store');
+        Route::post('/users', [AdminUserController::class, 'store'])
+            ->name('users.store');
 
-Route::get('/users/{user}', [AdminUserController::class, 'show'])
-    ->name('users.show');
+        Route::get('/users/{user}', [AdminUserController::class, 'show'])
+            ->name('users.show');
 
-Route::get('/users/{user}/edit', [AdminUserController::class, 'edit'])
-    ->name('users.edit');
+        Route::get('/users/{user}/edit', [AdminUserController::class, 'edit'])
+            ->name('users.edit');
 
-Route::put('/users/{user}', [AdminUserController::class, 'update'])
-    ->name('users.update');
+        Route::put('/users/{user}', [AdminUserController::class, 'update'])
+            ->name('users.update');
 
-Route::delete('/users/{user}', [AdminUserController::class, 'destroy'])
-    ->name('users.destroy');
+        Route::delete('/users/{user}', [AdminUserController::class, 'destroy'])
+            ->name('users.destroy');
 
         /*
         |--------------------------------------------------------------------------
@@ -330,6 +353,11 @@ Route::delete('/users/{user}', [AdminUserController::class, 'destroy'])
         Route::post('/topups/{topupRequest}/reject', [AdminTopupController::class, 'reject'])
             ->name('topups.reject');
 
+        /*
+        |--------------------------------------------------------------------------
+        | Withdrawals
+        |--------------------------------------------------------------------------
+        */
 
         Route::get('/withdrawals', [AdminWithdrawalController::class, 'index'])->name('withdrawals.index');
         Route::post('/withdrawals/{withdrawalRequest}/approve', [AdminWithdrawalController::class, 'approve'])->name('withdrawals.approve');
@@ -369,7 +397,6 @@ Route::delete('/users/{user}', [AdminUserController::class, 'destroy'])
         Route::put('/laundry-pricings/{pricing}', [\App\Http\Controllers\Admin\LaundryPricingController::class, 'update'])
             ->name('laundry-pricings.update');
 
-
         /*
         |--------------------------------------------------------------------------
         | Cleaning Pricing
@@ -405,10 +432,10 @@ Route::delete('/users/{user}', [AdminUserController::class, 'destroy'])
             ->name('ac-pricings.update');
 
         /*
-|--------------------------------------------------------------------------
-| Apartment Locations & Towers
-|--------------------------------------------------------------------------
-*/
+        |--------------------------------------------------------------------------
+        | Apartment Locations & Towers
+        |--------------------------------------------------------------------------
+        */
 
         Route::get('/apartment-locations', [\App\Http\Controllers\Admin\ApartmentLocationController::class, 'index'])
             ->name('apartment-locations.index');
@@ -556,18 +583,18 @@ Route::middleware(['auth', 'role:pekerja'])
 
         /*
         |--------------------------------------------------------------------------
-        | Profile
+        | Profile (view & controller khusus pekerja)
         |--------------------------------------------------------------------------
         */
 
-        Route::get('/profile', [ProfileController::class, 'edit'])
+        Route::get('/profile', [WorkerProfileController::class, 'edit'])
             ->name('profile.edit');
 
-        Route::patch('/profile', [ProfileController::class, 'update'])
+        Route::patch('/profile', [WorkerProfileController::class, 'update'])
             ->name('profile.update');
 
-        Route::delete('/profile', [ProfileController::class, 'destroy'])
-            ->name('profile.destroy');
+        Route::put('/profile/password', [WorkerProfileController::class, 'updatePassword'])
+            ->name('profile.password');
     });
 
 /*

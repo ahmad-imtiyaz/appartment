@@ -79,6 +79,8 @@ return [
         'marketplace_subtitle' => 'Info properti & barang dari penghuni lain',
         'see_all'               => 'Lihat Semua',
 
+
+
         'how_title'          => 'Cara Kerja',
         'step1_title'        => 'Pilih Layanan',
         'step1_desc'         => 'Tentukan jasa yang Anda butuhkan',
@@ -570,6 +572,8 @@ return [
         'admin_note_label'  => 'Catatan:',
         'confirm_cancel'    => 'Yakin ingin membatalkan penukaran ini? Poin akan dikembalikan.',
         'cancel'            => 'Batalkan',
+        'processing_hint'      => 'Ingin konfirmasi lebih cepat? Kamu bisa langsung hubungi admin lewat WhatsApp yang ada di menu utama.',
+        'processing_hint_link' => 'Buka menu utama',
     ],
 
     /*

@@ -478,7 +478,6 @@ return [
         'current_balance' => 'Current Balance',
         'your_coins'      => 'Your Coins',
         'coin_unit'       => 'Coins',
-
         'filter_aria'     => 'Filter transactions',
 
         'tab_all'         => 'All',
@@ -571,6 +570,8 @@ return [
         'admin_note_label'  => 'Note:',
         'confirm_cancel'    => 'Are you sure you want to cancel this redemption? Your coins will be refunded.',
         'cancel'            => 'Cancel',
+        'processing_hint'      => 'Want faster confirmation? You can contact the admin directly via the WhatsApp link on the main menu.',
+        'processing_hint_link' => 'Open main menu',
     ],
 
     /*
