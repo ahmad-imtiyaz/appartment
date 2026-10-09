@@ -1,4 +1,3 @@
-
 @extends('layouts.guest')
 
 @section('title', __('guest.show.title'))
@@ -286,6 +285,51 @@
 
                         </div>
 
+                        {{-- Deskripsi kerusakan --}}
+                        @if ($serviceRequest->maintenanceDetail->description ?? null)
+                            <div class="ui-kv-item">
+                                <dt>Deskripsi</dt>
+                                <dd>{{ $serviceRequest->maintenanceDetail->description }}</dd>
+                            </div>
+                        @endif
+
+                        {{-- Hasil survey pekerja --}}
+                        @if ($serviceRequest->survey_notes || $serviceRequest->survey_reported_at)
+                            <div class="ui-kv-item">
+                                <dt>Survey Pekerja</dt>
+                                <dd style="text-align:right">
+                                    @if ($serviceRequest->survey_reported_at)
+                                        <span class="ui-row-meta" style="display:block;margin-top:0">
+                                            Dilaporkan: {{ $serviceRequest->survey_reported_at->translatedFormat('d M Y H:i') }}
+                                        </span>
+                                    @endif
+                                    @if ($serviceRequest->survey_notes)
+                                        {!! nl2br(e($serviceRequest->survey_notes)) !!}
+                                    @endif
+                                </dd>
+                            </div>
+                        @endif
+
+                        {{-- Harga final dari admin --}}
+                        @if ($serviceRequest->total_price)
+                            <div class="ui-kv-item">
+                                <dt>Harga Final</dt>
+                                <dd class="is-price">
+                                    Rp{{ number_format($serviceRequest->total_price, 0, ',', '.') }}
+                                </dd>
+                            </div>
+                        @endif
+
+                        {{-- Rincian / alasan perubahan harga --}}
+                        @if ($serviceRequest->price_change_note)
+                            <div class="ui-kv-item">
+                                <dt>Alasan Perubahan Harga</dt>
+                                <dd style="text-align:right">
+                                    {!! nl2br(e($serviceRequest->price_change_note)) !!}
+                                </dd>
+                            </div>
+                        @endif
+
                     </dl>
 
                 </div>
@@ -308,6 +352,26 @@
                 <span class="ui-note-title">Catatan Teknisi</span>
                 {{ $serviceRequest->survey_notes }}
             </div>
+        @endif
+
+        @if ($serviceRequest->total_price)
+            <dl style="margin-top:10px">
+                <div class="ui-kv-item">
+                    <dt>Harga Final</dt>
+                    <dd class="is-price">
+                        Rp{{ number_format($serviceRequest->total_price, 0, ',', '.') }}
+                    </dd>
+                </div>
+
+                @if ($serviceRequest->price_change_note)
+                    <div class="ui-kv-item">
+                        <dt>Alasan Perubahan Harga</dt>
+                        <dd style="text-align:right">
+                            {!! nl2br(e($serviceRequest->price_change_note)) !!}
+                        </dd>
+                    </div>
+                @endif
+            </dl>
         @endif
 
     </div>
@@ -365,6 +429,14 @@
                         </p>
 
                     </div>
+
+                    {{-- Rincian harga dari admin --}}
+                    @if ($serviceRequest->price_change_note)
+                        <div class="ui-note" style="margin-top:12px">
+                            <span class="ui-note-title">Rincian Harga</span>
+                            {!! nl2br(e($serviceRequest->price_change_note)) !!}
+                        </div>
+                    @endif
 
                     <div style="display:flex;gap:10px;margin-top:14px">
 
@@ -660,4 +732,3 @@
 </div>
 
 @endsection
-

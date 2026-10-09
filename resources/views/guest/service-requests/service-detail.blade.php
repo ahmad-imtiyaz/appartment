@@ -224,6 +224,7 @@
             ];
             $preselectedAc = old('ac_type') ?: request('type');
             $surveyBasedTypes = ['ac-repair', 'ac-full-service'];
+            $showSurveyNoteTypes = ['ac-cleaning', 'ac-refill', 'ac-repair', 'ac-full-service'];
         @endphp
 
        <div class="ui-opts ui-opts--3">
@@ -238,6 +239,7 @@
                    data-price="{{ $pricing->price }}"
                    data-label="{{ $pricing->typeLabel() }}"
                    data-survey="{{ $isSurveyType ? '1' : '0' }}"
+                   data-note="{{ in_array($pricing->type, $showSurveyNoteTypes) ? '1' : '0' }}"
                    {{ $checked }} id="ac-{{ $pricing->type }}"
                    class="ac-type-radio">
             <div class="ui-opt-box">
@@ -263,7 +265,7 @@
             </div>
         </div>
 
-        {{-- Info khusus untuk tipe AC yang butuh survey dulu --}}
+        {{-- Info survey gratis (tampil untuk semua tipe AC) --}}
         <div id="ac-survey-info" class="ui-alert hidden" style="background:#FFFBEB;color:#92400E;margin-top:10px">
             Survey unit gratis. Setelah teknisi mengecek kondisi AC, kami akan kirim rincian biaya (kalau ada penggantian sparepart) untuk Anda setujui sebelum pengerjaan dilanjutkan.
         </div>
@@ -756,15 +758,14 @@ function updateAcSelection() {
     if (checked && formAcType && formAcPrice) {
         formAcType.value = checked.value;
         const isSurveyType = checked.dataset.survey === '1';
+        const showNote = checked.dataset.note === '1';
 
         if (isSurveyType) {
-            // Tipe yang membutuhkan survey (ac-repair & ac-full-service)
+            // ac-repair & ac-full-service: harga ditentukan setelah survey
             formAcPrice.value = ''; // Kosongkan agar snapshot_ac_price bernilai null di backend
-
             if (acPriceInfo) acPriceInfo.classList.add('hidden');
-            if (acSurveyInfo) acSurveyInfo.classList.remove('hidden');
         } else {
-            // Tipe dengan harga pasti (ac-cleaning & ac-refill)
+            // ac-cleaning & ac-refill: harga pasti tetap ditampilkan
             formAcPrice.value = checked.dataset.price;
 
             if (acPriceInfo && acLabelDisplay && acPriceDisplay) {
@@ -772,7 +773,11 @@ function updateAcSelection() {
                 acLabelDisplay.textContent = checked.dataset.label;
                 acPriceDisplay.textContent = 'Rp ' + Number(checked.dataset.price).toLocaleString('id-ID');
             }
-            if (acSurveyInfo) acSurveyInfo.classList.add('hidden');
+        }
+
+        // Note survey tampil untuk semua tipe AC
+        if (acSurveyInfo) {
+            acSurveyInfo.classList.toggle('hidden', !showNote);
         }
 
         // Tampilkan/sembunyikan catatan khusus Full Service
