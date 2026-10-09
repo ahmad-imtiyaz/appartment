@@ -1,25 +1,76 @@
-<x-guest-layout>
-    <div class="mb-4 text-sm text-gray-600">
-        {{ __('Forgot your password? No problem. Just let us know your email address and we will email you a password reset link that will allow you to choose a new one.') }}
-    </div>
+@extends('layouts.oregonet-auth')
 
-    <!-- Session Status -->
-    <x-auth-session-status class="mb-4" :status="session('status')" />
+@section('title', __('Forgot password'))
 
-    <form method="POST" action="{{ route('password.email') }}">
+@section('content')
+
+    <h1 class="au-title">{{ __('Forgot password') }}</h1>
+    <p class="au-sub">{{ __('Enter your account email and choose a new password.') }}</p>
+
+    <form method="POST" action="{{ route('password.email') }}" class="au-form">
         @csrf
 
         <!-- Email Address -->
         <div>
-            <x-input-label for="email" :value="__('Email')" />
-            <x-text-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email')" required autofocus />
-            <x-input-error :messages="$errors->get('email')" class="mt-2" />
+            <label for="email" class="au-label">{{ __('Email') }}</label>
+            <input id="email" type="email" name="email" value="{{ old('email') }}"
+                   required autofocus autocomplete="username"
+                   class="au-input {{ $errors->has('email') ? 'has-error' : '' }}" />
+            @error('email')
+                <p class="au-error">{{ $message }}</p>
+            @enderror
         </div>
 
-        <div class="flex items-center justify-end mt-4">
-            <x-primary-button>
-                {{ __('Email Password Reset Link') }}
-            </x-primary-button>
+        <!-- New Password -->
+        <div>
+            <label for="password" class="au-label">{{ __('New password') }}</label>
+            <div class="au-pw">
+                <input id="password" type="password" name="password"
+                       required autocomplete="new-password"
+                       class="au-input {{ $errors->has('password') ? 'has-error' : '' }}" />
+                <button type="button" class="au-pw-toggle" data-toggle-pw="password"
+                        aria-label="{{ __('Show password') }}" aria-pressed="false">
+                    <svg class="eye" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.6">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    </svg>
+                    <svg class="eye-off" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.6">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88"/>
+                    </svg>
+                </button>
+            </div>
+            @error('password')
+                <p class="au-error">{{ $message }}</p>
+            @enderror
         </div>
+
+        <!-- Confirm Password -->
+        <div>
+            <label for="password_confirmation" class="au-label">{{ __('Confirm new password') }}</label>
+            <div class="au-pw">
+                <input id="password_confirmation" type="password" name="password_confirmation"
+                       required autocomplete="new-password"
+                       class="au-input" />
+                <button type="button" class="au-pw-toggle" data-toggle-pw="password_confirmation"
+                        aria-label="{{ __('Show password') }}" aria-pressed="false">
+                    <svg class="eye" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.6">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    </svg>
+                    <svg class="eye-off" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.6">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Submit -->
+        <button type="submit" class="au-btn">{{ __('Change password') }}</button>
     </form>
-</x-guest-layout>
+
+    <p class="au-foot">
+        {{ __('Remember your password?') }}
+        <a class="au-link" href="{{ route('login') }}">{{ __('Log in') }}</a>
+    </p>
+
+@endsection
