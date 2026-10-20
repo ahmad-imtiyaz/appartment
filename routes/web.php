@@ -22,6 +22,11 @@ use App\Http\Controllers\Admin\WithdrawalController as AdminWithdrawalController
 use App\Http\Controllers\Guest\WithdrawalController as GuestWithdrawalController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Worker\ProfileController as WorkerProfileController;
+use App\Http\Controllers\Auth\EmailVerificationNotificationController;
+use App\Http\Controllers\Auth\EmailVerificationPromptController;
+use App\Http\Controllers\Auth\PasswordResetLinkController;
+use App\Http\Controllers\Auth\NewPasswordController;
+use App\Http\Controllers\Auth\VerifyEmailController;
 use App\Http\Controllers\Worker\TaskController;
 use App\Http\Controllers\Worker\DeviceTokenController;
 use Illuminate\Support\Facades\Route;
@@ -108,6 +113,16 @@ Route::middleware('auth')->group(function () {
 
     Route::delete('/profile', [ProfileController::class, 'destroy'])
         ->name('profile.destroy');
+    Route::get('verify-email', EmailVerificationPromptController::class)
+        ->name('verification.notice');
+
+    Route::get('verify-email/{id}/{hash}', VerifyEmailController::class)
+        ->middleware(['signed', 'throttle:6,1'])
+        ->name('verification.verify');
+
+    Route::post('email/verification-notification', [EmailVerificationNotificationController::class, 'store'])
+        ->middleware('throttle:6,1')
+        ->name('verification.send');
 });
 
 /*
@@ -116,7 +131,7 @@ Route::middleware('auth')->group(function () {
 |--------------------------------------------------------------------------
 */
 
-Route::middleware(['auth', 'role:guest'])
+Route::middleware(['auth', 'verified', 'role:guest'])
     ->prefix('guest')
     ->name('guest.')
     ->group(function () {

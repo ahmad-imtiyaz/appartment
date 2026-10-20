@@ -1,31 +1,30 @@
-<x-guest-layout>
-    <div class="mb-4 text-sm text-gray-600">
-        {{ __('Thanks for signing up! Before getting started, could you verify your email address by clicking on the link we just emailed to you? If you didn\'t receive the email, we will gladly send you another.') }}
-    </div>
+@extends('layouts.oregonet-auth')
+
+@section('title', __('Verifikasi Email'))
+
+@section('content')
+
+    <h1 class="au-title">{{ __('Verifikasi Email') }}</h1>
+    <p class="au-sub">
+        {{ __('Kami sudah mengirim link verifikasi ke email Anda. Klik link tersebut untuk mengaktifkan akun. Jika belum menerima email, periksa folder spam atau kirim ulang.') }}
+    </p>
 
     @if (session('status') == 'verification-link-sent')
-        <div class="mb-4 font-medium text-sm text-green-600">
-            {{ __('A new verification link has been sent to the email address you provided during registration.') }}
-        </div>
+        <p class="au-sub" style="color:#16a34a;">
+            {{ __('Link verifikasi baru sudah dikirim ke email Anda.') }}
+        </p>
     @endif
 
-    <div class="mt-4 flex items-center justify-between">
-        <form method="POST" action="{{ route('verification.send') }}">
-            @csrf
+    <form method="POST" action="{{ route('verification.send') }}" class="au-form">
+        @csrf
+        <button type="submit" class="au-btn">{{ __('Kirim Ulang Email Verifikasi') }}</button>
+    </form>
 
-            <div>
-                <x-primary-button>
-                    {{ __('Resend Verification Email') }}
-                </x-primary-button>
-            </div>
-        </form>
+    <form method="POST" action="{{ route('logout') }}" class="au-form" style="margin-top:12px;">
+        @csrf
+        <button type="submit" class="au-link" style="background:none;border:0;cursor:pointer;">
+            {{ __('Keluar') }}
+        </button>
+    </form>
 
-        <form method="POST" action="{{ route('logout') }}">
-            @csrf
-
-            <button type="submit" class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                {{ __('Log Out') }}
-            </button>
-        </form>
-    </div>
-</x-guest-layout>
+@endsection

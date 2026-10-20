@@ -1,39 +1,65 @@
-<x-guest-layout>
-    <form method="POST" action="{{ route('password.store') }}">
+@extends('layouts.oregonet-auth')
+
+@section('title', __('Reset password'))
+
+@section('content')
+
+    <h1 class="au-title">{{ __('Reset password') }}</h1>
+    <p class="au-sub">{{ __('Enter the 6-digit code from your email and choose a new password.') }}</p>
+
+    <x-auth-session-status class="mt-4" :status="session('status')" />
+
+    <form method="POST" action="{{ route('password.store') }}" class="au-form">
         @csrf
 
-        <!-- Password Reset Token -->
-        <input type="hidden" name="token" value="{{ $request->route('token') }}">
-
-        <!-- Email Address -->
         <div>
-            <x-input-label for="email" :value="__('Email')" />
-            <x-text-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email', $request->email)" required autofocus autocomplete="username" />
-            <x-input-error :messages="$errors->get('email')" class="mt-2" />
+            <label for="email" class="au-label">{{ __('Email') }}</label>
+            <input id="email" type="email" name="email" value="{{ $email }}"
+                   required autocomplete="username"
+                   class="au-input {{ $errors->has('email') ? 'has-error' : '' }}" />
+            @error('email')
+                <p class="au-error">{{ $message }}</p>
+            @enderror
         </div>
 
-        <!-- Password -->
-        <div class="mt-4">
-            <x-input-label for="password" :value="__('Password')" />
-            <x-text-input id="password" class="block mt-1 w-full" type="password" name="password" required autocomplete="new-password" />
-            <x-input-error :messages="$errors->get('password')" class="mt-2" />
+        <div>
+            <label for="code" class="au-label">{{ __('Verification code') }}</label>
+            <input id="code" type="text" name="code" inputmode="numeric" maxlength="6"
+                   pattern="[0-9]{6}" required autofocus autocomplete="one-time-code"
+                   class="au-input {{ $errors->has('code') ? 'has-error' : '' }}" />
+            @error('code')
+                <p class="au-error">{{ $message }}</p>
+            @enderror
         </div>
 
-        <!-- Confirm Password -->
-        <div class="mt-4">
-            <x-input-label for="password_confirmation" :value="__('Confirm Password')" />
-
-            <x-text-input id="password_confirmation" class="block mt-1 w-full"
-                                type="password"
-                                name="password_confirmation" required autocomplete="new-password" />
-
-            <x-input-error :messages="$errors->get('password_confirmation')" class="mt-2" />
+        <div>
+            <label for="password" class="au-label">{{ __('New password') }}</label>
+            <div class="au-pw">
+                <input id="password" type="password" name="password"
+                       required autocomplete="new-password"
+                       class="au-input {{ $errors->has('password') ? 'has-error' : '' }}" />
+                @include('auth.partials.pw-toggle', ['target' => 'password'])
+            </div>
+            @error('password')
+                <p class="au-error">{{ $message }}</p>
+            @enderror
         </div>
 
-        <div class="flex items-center justify-end mt-4">
-            <x-primary-button>
-                {{ __('Reset Password') }}
-            </x-primary-button>
+        <div>
+            <label for="password_confirmation" class="au-label">{{ __('Confirm new password') }}</label>
+            <div class="au-pw">
+                <input id="password_confirmation" type="password" name="password_confirmation"
+                       required autocomplete="new-password" class="au-input" />
+                @include('auth.partials.pw-toggle', ['target' => 'password_confirmation'])
+            </div>
         </div>
+
+        <button type="submit" class="au-btn">{{ __('Change password') }}</button>
     </form>
-</x-guest-layout>
+
+    <p class="au-foot">
+        {{ __("Didn't receive the code?") }}
+        <a class="au-link" href="{{ route('password.request') }}">{{ __('Send again') }}</a>
+    </p>
+
+@endsection
