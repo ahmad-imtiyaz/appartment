@@ -24,8 +24,9 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Worker\ProfileController as WorkerProfileController;
 use App\Http\Controllers\Auth\EmailVerificationNotificationController;
 use App\Http\Controllers\Auth\EmailVerificationPromptController;
-use App\Http\Controllers\Auth\PasswordResetLinkController;
-use App\Http\Controllers\Auth\NewPasswordController;
+use App\Http\Controllers\Admin\LegalDocumentController as AdminLegalDocumentController;
+use App\Http\Controllers\Auth\ConsentController;
+use App\Http\Controllers\LegalController;
 use App\Http\Controllers\Auth\VerifyEmailController;
 use App\Http\Controllers\Worker\TaskController;
 use App\Http\Controllers\Worker\DeviceTokenController;
@@ -62,6 +63,30 @@ Route::get('/lang/{locale}', [\App\Http\Controllers\LocaleController::class, 'sw
 
 Route::get('/product-listings', [AdminProductListingController::class, 'publicIndex'])
     ->name('product-listings.index');
+
+
+
+    /*
+|--------------------------------------------------------------------------
+| Syarat & Ketentuan, Kebijakan Privasi, dan Persetujuan Pendaftaran
+|--------------------------------------------------------------------------
+*/
+
+Route::get('/syarat-dan-ketentuan', [LegalController::class, 'show'])
+    ->defaults('type', 'terms')
+    ->name('legal.terms');
+
+Route::get('/kebijakan-privasi', [LegalController::class, 'show'])
+    ->defaults('type', 'privacy')
+    ->name('legal.privacy');
+
+Route::middleware('guest')->group(function () {
+    Route::get('/register/consent', [ConsentController::class, 'show'])
+        ->name('register.consent');
+
+    Route::post('/register/consent', [ConsentController::class, 'store'])
+        ->name('register.consent.store');
+});
 
 /*
 |--------------------------------------------------------------------------
@@ -550,7 +575,21 @@ Route::middleware(['auth', 'role:admin'])
 
         Route::post('/coin-redemptions/{coinRedemption}/reject', [AdminCoinRedemptionController::class, 'reject'])
             ->name('coin-redemptions.reject');
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Dokumen Legal (Syarat & Ketentuan, Kebijakan Privasi)
+        |--------------------------------------------------------------------------
+        */
+
+        Route::resource('legal-documents', AdminLegalDocumentController::class)
+            ->only(['index', 'edit', 'update'])
+            ->parameters(['legal-documents' => 'legalDocument']);
     });
+
+
+
 
 /*
 |--------------------------------------------------------------------------

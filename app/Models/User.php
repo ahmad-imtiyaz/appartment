@@ -28,6 +28,9 @@ class User extends Authenticatable implements MustVerifyEmail
         'specialization',          // khusus pekerja: nama jasa, null = semua jasa
         'balance',
         'coin_balance',
+        'terms_version',
+    'privacy_version',
+    'consented_at',
     ];
 
     protected $hidden = [
@@ -41,6 +44,7 @@ class User extends Authenticatable implements MustVerifyEmail
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'balance' => 'decimal:2',
+            'consented_at' => 'datetime',
         ];
     }
 

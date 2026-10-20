@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\ApartmentLocation;
 use App\Models\ApartmentTower;
+use App\Models\LegalDocument;
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
@@ -16,10 +17,15 @@ use Illuminate\View\View;
 class RegisteredUserController extends Controller
 {
     /**
-     * Tampilkan halaman register.
+     * Tampilkan formulir pendaftaran.
+     * Jika belum menyetujui dokumen legal, arahkan ke halaman persetujuan.
      */
-    public function create(): View
+    public function create(): View|RedirectResponse
     {
+        if (! $this->hasValidConsent()) {
+            return redirect()->route('register.consent');
+        }
+
         $locations = ApartmentLocation::with('towers')
             ->orderBy('name')
             ->get();
@@ -34,6 +40,17 @@ class RegisteredUserController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
+        // Persetujuan wajib valid (juga mencegah POST langsung tanpa persetujuan)
+        if (! $this->hasValidConsent()) {
+            session()->forget('register_consent');
+
+            return redirect()
+                ->route('register.consent')
+                ->with('status', 'Mohon setujui Syarat dan Ketentuan serta Kebijakan Privasi terlebih dahulu.');
+        }
+
+        $consent = session('register_consent');
+
         $request->merge([
             'email' => strtolower(trim((string) $request->input('email'))),
         ]);
@@ -58,10 +75,14 @@ class RegisteredUserController extends Controller
             'apartment_unit_number' => ['nullable', 'string', 'max:50'],
             'phone'                 => ['nullable', 'string', 'max:20'],
         ], [
+            'name.required'  => 'Nama wajib diisi.',
             'email.required' => 'Email wajib diisi.',
             'email.email'    => 'Gunakan alamat email asli yang valid.',
             'email.regex'    => 'Email harus menggunakan alamat @gmail.com.',
             'email.unique'   => 'Email ini sudah terdaftar.',
+            'password.required'  => 'Kata sandi wajib diisi.',
+            'password.confirmed' => 'Konfirmasi kata sandi tidak cocok.',
+            'apartment_location_id.required' => 'Lokasi unit wajib dipilih.',
         ]);
 
         $user = User::create([
@@ -75,12 +96,33 @@ class RegisteredUserController extends Controller
             'apartment_tower_id'    => $validated['apartment_tower_id'] ?? null,
             'apartment_unit_number' => $validated['apartment_unit_number'] ?? null,
             'phone'                 => $validated['phone'] ?? null,
+            'terms_version'         => $consent['terms_version'],
+            'privacy_version'       => $consent['privacy_version'],
+            'consented_at'          => now(),
         ]);
+
+        session()->forget('register_consent');
 
         event(new Registered($user)); // mengirim email verifikasi
 
         Auth::login($user);
 
         return redirect()->route('verification.notice');
+    }
+
+    /**
+     * Persetujuan dianggap valid bila ada di session dan versi dokumen
+     * masih sama dengan versi terbaru di database.
+     */
+    private function hasValidConsent(): bool
+    {
+        $consent = session('register_consent');
+
+        if (! $consent) {
+            return false;
+        }
+
+        return ($consent['terms_version'] ?? null) === LegalDocument::terms()->version
+            && ($consent['privacy_version'] ?? null) === LegalDocument::privacy()->version;
     }
 }

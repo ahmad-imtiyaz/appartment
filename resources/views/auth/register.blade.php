@@ -1,18 +1,18 @@
 @extends('layouts.oregonet-auth')
 
-@section('title', __('Register'))
+@section('title', 'Daftar')
 
 @section('content')
 
-    <h1 class="au-title">{{ __('Register') }}</h1>
-    <p class="au-sub">{{ __('Create an account to order apartment services.') }}</p>
+    <h1 class="au-title">Daftar</h1>
+    <p class="au-sub">Buat akun untuk memesan layanan apartemen.</p>
 
     <form method="POST" action="{{ route('register') }}" class="au-form">
         @csrf
 
-        <!-- Name -->
+        <!-- Nama -->
         <div>
-            <label for="name" class="au-label">{{ __('Name') }}</label>
+            <label for="name" class="au-label">Nama</label>
             <input
                 id="name"
                 type="text"
@@ -28,9 +28,9 @@
             @enderror
         </div>
 
-        <!-- Email Address -->
+        <!-- Email -->
         <div>
-            <label for="email" class="au-label">{{ __('Email') }}</label>
+            <label for="email" class="au-label">Email</label>
             <input
                 id="email"
                 type="email"
@@ -45,9 +45,9 @@
             @enderror
         </div>
 
-        <!-- Phone -->
+        <!-- Nomor Telepon -->
         <div>
-            <label for="phone" class="au-label">{{ __('Phone Number') }}</label>
+            <label for="phone" class="au-label">Nomor Telepon</label>
             <input
                 id="phone"
                 type="tel"
@@ -63,7 +63,7 @@
 
         <!-- Status -->
         <div>
-            <label for="status" class="au-label">{{ __('Status') }}</label>
+            <label for="status" class="au-label">Status</label>
 
             <select
                 id="status"
@@ -71,21 +71,10 @@
                 required
                 class="au-input {{ $errors->has('status') ? 'has-error' : '' }}"
             >
-                <option value="" disabled {{ old('status') ? '' : 'selected' }}>
-                    {{ __('Pilih status') }}
-                </option>
-
-                <option value="penyewa" @selected(old('status') === 'penyewa')>
-                    {{ __('Penyewa') }}
-                </option>
-
-                <option value="pemilik" @selected(old('status') === 'pemilik')>
-                    {{ __('Pemilik') }}
-                </option>
-
-                <option value="agent" @selected(old('status') === 'agent')>
-                    {{ __('Agent') }}
-                </option>
+                <option value="" disabled {{ old('status') ? '' : 'selected' }}>Pilih status</option>
+                <option value="penyewa" @selected(old('status') === 'penyewa')>Penyewa</option>
+                <option value="pemilik" @selected(old('status') === 'pemilik')>Pemilik</option>
+                <option value="agent" @selected(old('status') === 'agent')>Agent</option>
             </select>
 
             @error('status')
@@ -95,7 +84,7 @@
 
         <!-- Daerah -->
         <div>
-            <label for="daerah" class="au-label">{{ __('Daerah') }}</label>
+            <label for="daerah" class="au-label">Daerah</label>
 
             <select
                 id="daerah"
@@ -103,18 +92,11 @@
                 required
                 class="au-input {{ $errors->has('daerah') ? 'has-error' : '' }}"
             >
-                <option value="" disabled {{ old('daerah') ? '' : 'selected' }}>
-                    {{ __('Pilih daerah') }}
-                </option>
-
-                <option value="Jakarta" @selected(old('daerah') === 'Jakarta')>
-                    Jakarta
-                </option>
+                <option value="" disabled {{ old('daerah') ? '' : 'selected' }}>Pilih daerah</option>
+                <option value="Jakarta" @selected(old('daerah') === 'Jakarta')>Jakarta</option>
             </select>
 
-            <p class="au-help">
-                {{ __('Saat ini layanan baru tersedia untuk area Jakarta.') }}
-            </p>
+            <p class="au-help">Saat ini layanan baru tersedia untuk area Jakarta.</p>
 
             @error('daerah')
                 <p class="au-error">{{ $message }}</p>
@@ -123,9 +105,7 @@
 
         <!-- Lokasi Unit -->
         <div>
-            <label for="apartment_location_id" class="au-label">
-                {{ __('Lokasi Unit') }}
-            </label>
+            <label for="apartment_location_id" class="au-label">Lokasi Unit</label>
 
             <select
                 id="apartment_location_id"
@@ -134,7 +114,7 @@
                 class="au-input {{ $errors->has('apartment_location_id') ? 'has-error' : '' }}"
             >
                 <option value="" disabled {{ old('apartment_location_id') ? '' : 'selected' }}>
-                    {{ __('Pilih lokasi unit') }}
+                    Pilih lokasi unit
                 </option>
 
                 @foreach ($locations as $location)
@@ -154,9 +134,7 @@
 
         <!-- Tower -->
         <div>
-            <label for="apartment_tower_id" class="au-label">
-                {{ __('Tower') }}
-            </label>
+            <label for="apartment_tower_id" class="au-label">Tower</label>
 
             <select
                 id="apartment_tower_id"
@@ -164,9 +142,7 @@
                 required
                 class="au-input {{ $errors->has('apartment_tower_id') ? 'has-error' : '' }}"
             >
-                <option value="">
-                    {{ __('Pilih lokasi unit dahulu') }}
-                </option>
+                <option value="">Pilih lokasi unit dahulu</option>
             </select>
 
             @error('apartment_tower_id')
@@ -174,13 +150,11 @@
             @enderror
         </div>
 
-        <!-- Apartment Unit Number -->
+        <!-- Nomor Unit -->
         <div>
             <label for="apartment_unit_number" class="au-label">
-                {{ __('Unit Number') }}
-                <span style="font-weight: 400; opacity: 0.6;">
-                    ({{ __('Optional') }})
-                </span>
+                Nomor Unit
+                <span style="font-weight: 400; opacity: 0.6;">(Opsional)</span>
             </label>
 
             <input
@@ -189,22 +163,20 @@
                 name="apartment_unit_number"
                 value="{{ old('apartment_unit_number') }}"
                 autocomplete="off"
-                placeholder="e.g., A-1203"
+                placeholder="contoh: A-1203"
                 class="au-input {{ $errors->has('apartment_unit_number') ? 'has-error' : '' }}"
             />
 
-            <p class="au-help">
-                {{ __('Kosongkan jika Anda ingin menjaga privasi nomor unit.') }}
-            </p>
+            <p class="au-help">Kosongkan jika Anda ingin menjaga privasi nomor unit.</p>
 
             @error('apartment_unit_number')
                 <p class="au-error">{{ $message }}</p>
             @enderror
         </div>
 
-        <!-- Password -->
+        <!-- Kata Sandi -->
         <div>
-            <label for="password" class="au-label">{{ __('Password') }}</label>
+            <label for="password" class="au-label">Kata Sandi</label>
 
             <div class="au-pw">
                 <input
@@ -220,7 +192,7 @@
                     type="button"
                     class="au-pw-toggle"
                     data-toggle-pw="password"
-                    aria-label="{{ __('Show password') }}"
+                    aria-label="Tampilkan kata sandi"
                     aria-pressed="false"
                 >
                     <svg class="eye" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.6">
@@ -239,11 +211,9 @@
             @enderror
         </div>
 
-        <!-- Confirm Password -->
+        <!-- Konfirmasi Kata Sandi -->
         <div>
-            <label for="password_confirmation" class="au-label">
-                {{ __('Confirm Password') }}
-            </label>
+            <label for="password_confirmation" class="au-label">Konfirmasi Kata Sandi</label>
 
             <div class="au-pw">
                 <input
@@ -259,7 +229,7 @@
                     type="button"
                     class="au-pw-toggle"
                     data-toggle-pw="password_confirmation"
-                    aria-label="{{ __('Show password') }}"
+                    aria-label="Tampilkan kata sandi"
                     aria-pressed="false"
                 >
                     <svg class="eye" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.6">
@@ -278,16 +248,12 @@
             @enderror
         </div>
 
-        <!-- Submit -->
-        <button type="submit" class="au-btn">
-            {{ __('Register') }}
-        </button>
+        <!-- Kirim -->
+        <button type="submit" class="au-btn">Daftar</button>
     </form>
 
     <p class="au-foot">
-        <a class="au-link" href="{{ route('login') }}">
-            {{ __('Already registered?') }}
-        </a>
+        <a class="au-link" href="{{ route('login') }}">Sudah punya akun?</a>
     </p>
 
     @php
@@ -316,13 +282,11 @@
             const towers = towersByLocation[locationId] ?? [];
 
             if (towers.length === 0) {
-                towerSelect.innerHTML =
-                    '<option value="">Pilih lokasi unit dahulu</option>';
+                towerSelect.innerHTML = '<option value="">Pilih lokasi unit dahulu</option>';
                 return;
             }
 
-            towerSelect.innerHTML =
-                '<option value="" disabled selected>Pilih tower</option>';
+            towerSelect.innerHTML = '<option value="" disabled selected>Pilih tower</option>';
 
             towers.forEach((tower) => {
                 const opt = document.createElement('option');
