@@ -42,6 +42,26 @@ class ProfileController extends Controller
             ->with('success', 'Profil berhasil diperbarui.');
     }
 
+    /**
+     * Rekening tujuan pencairan pendapatan.
+     */
+    public function updateBank(Request $request): RedirectResponse
+    {
+        $validated = $request->validateWithBag('updateBank', [
+            'bank_name' => ['required', 'string', 'max:100'],
+            'bank_account_number' => ['required', 'string', 'max:50', 'regex:/^[0-9\- ]+$/'],
+            'bank_account_holder' => ['required', 'string', 'max:255'],
+        ], [
+            'bank_account_number.regex' => 'Nomor rekening hanya boleh berisi angka.',
+        ]);
+
+        $request->user()->update($validated);
+
+        return redirect()
+            ->route('worker.profile.edit')
+            ->with('success', 'Data rekening berhasil disimpan.');
+    }
+
     public function updatePassword(Request $request): RedirectResponse
     {
         $validated = $request->validateWithBag('updatePassword', [

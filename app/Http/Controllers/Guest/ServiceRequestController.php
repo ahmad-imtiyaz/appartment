@@ -93,7 +93,7 @@ class ServiceRequestController extends Controller
             ->whereHas('service', function ($q) use ($category) {
                 $q->where('services.slug', $category);
             })
-            ->whereNotIn('status', ['completed', 'rejected'])
+            ->whereNotIn('status', ['completed', 'rejected', 'cancelled'])
             ->latest()
             ->get();
 
@@ -339,17 +339,42 @@ class ServiceRequestController extends Controller
             ->with('success', 'Permintaan jasa "' . $service->name . '" berhasil diajukan, menunggu diproses admin.');
     }
 
-    public function destroy(ServiceRequest $serviceRequest): RedirectResponse
+    public function cancel(Request $request, ServiceRequest $serviceRequest): RedirectResponse
     {
         abort_unless($serviceRequest->user_id === auth()->id(), 403);
-        abort_unless(in_array($serviceRequest->status, ['pending', 'assigned']), 422, 'Hanya pesanan pending atau assigned yang bisa dibatalkan.');
 
-        $serviceName = $serviceRequest->service->name;
-        $serviceRequest->delete();
+        $validated = $request->validate([
+            'cancel_reason' => ['required', Rule::in(ServiceRequest::GUEST_CANCEL_REASONS)],
+            'cancel_note' => ['nullable', 'required_if:cancel_reason,other', 'string', 'max:255'],
+        ], [
+            'cancel_reason.required' => __('guest.cancel.reason_required'),
+            'cancel_note.required_if' => __('guest.cancel.note_required'),
+        ]);
 
-        return redirect()
-            ->back()
-            ->with('success', 'Pesanan "' . $serviceName . '" berhasil dibatalkan.');
+        // Kunci baris: cegah balapan dengan admin yang sedang assign pekerja
+        $cancelled = DB::transaction(function () use ($serviceRequest, $validated) {
+            $locked = ServiceRequest::lockForUpdate()->findOrFail($serviceRequest->id);
+
+            if (!$locked->canBeCancelledByGuest()) {
+                return false;
+            }
+
+            $locked->update([
+                'status' => 'cancelled',
+                'cancel_reason' => $validated['cancel_reason'],
+                'cancel_note' => $validated['cancel_note'] ?? null,
+                'cancelled_by' => auth()->id(),
+                'cancelled_at' => now(),
+            ]);
+
+            return true;
+        });
+
+        if (!$cancelled) {
+            return back()->with('error', __('guest.flash.cancel_not_allowed'));
+        }
+
+        return back()->with('success', __('guest.flash.request_cancelled', ['service' => $serviceRequest->service->name]));
     }
 
     public function approvePrice(ServiceRequest $serviceRequest, RepairPaymentService $paymentService): RedirectResponse

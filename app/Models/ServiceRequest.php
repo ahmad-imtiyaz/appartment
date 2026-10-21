@@ -10,12 +10,36 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class ServiceRequest extends Model
 {
+    /**
+     * Alasan guest membatalkan pesanan (key => lang guest.cancel_reasons.*).
+     * 'other' wajib disertai cancel_note.
+     */
+    public const GUEST_CANCEL_REASONS = [
+        'wrong_service',
+        'schedule_changed',
+        'change_details',
+        'no_longer_needed',
+        'other',
+    ];
+
+    /**
+     * Alasan admin menolak request (key => lang guest.cancel_reasons.*).
+     */
+    public const ADMIN_REJECT_REASONS = [
+        'worker_busy',
+        'location_too_far',
+    ];
+
     protected $fillable = [
         'user_id',
         'service_id',
         'worker_id',
         'assigned_by',
         'status',
+        'cancel_reason',
+        'cancel_note',
+        'cancelled_by',
+        'cancelled_at',
         'notes',
         'worker_notes',
         'scheduled_at',
@@ -73,6 +97,7 @@ class ServiceRequest extends Model
             'laundry_paid_at' => 'datetime',
             'survey_reported_at' => 'datetime',
             'price_approved_at' => 'datetime',
+            'cancelled_at' => 'datetime',
 
             'cost' => 'decimal:2',
             'commission_percent' => 'decimal:2',
@@ -145,6 +170,14 @@ class ServiceRequest extends Model
         return $this->belongsTo(User::class, 'assigned_by')->withTrashed();
     }
 
+    /**
+     * User (guest/admin) yang membatalkan atau menolak request.
+     */
+    public function cancelledBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'cancelled_by')->withTrashed();
+    }
+
     // =========================================================
     // RELASI APARTEMEN
     // =========================================================
@@ -211,6 +244,27 @@ class ServiceRequest extends Model
     public function feedback(): HasOne
     {
         return $this->hasOne(ServiceRequestFeedback::class);
+    }
+
+    // =========================================================
+    // PENCAIRAN PENDAPATAN PEKERJA
+    // =========================================================
+
+    public function payout(): HasOne
+    {
+        return $this->hasOne(WorkerPayout::class);
+    }
+
+    /**
+     * Pendapatan tugas ini bisa diajukan pencairan oleh pekerja:
+     * tugas selesai, ada pendapatan, dan belum pernah diajukan.
+     */
+    public function canRequestPayout(): bool
+    {
+        return $this->status === 'completed'
+            && $this->worker_id !== null
+            && (float) $this->worker_earning > 0
+            && !$this->payout()->exists();
     }
 
     // =========================================================
@@ -308,6 +362,87 @@ class ServiceRequest extends Model
         return $this->status === 'completed';
     }
 
+    /**
+     * Guest hanya bisa membatalkan selama masih diproses admin
+     * (belum ada pekerja yang ditugaskan).
+     */
+    public function canBeCancelledByGuest(): bool
+    {
+        return $this->status === 'pending';
+    }
+
+    /**
+     * Admin hanya bisa menolak sebelum menugaskan pekerja.
+     */
+    public function canBeRejectedByAdmin(): bool
+    {
+        return $this->status === 'pending';
+    }
+
+    public function isCancelled(): bool
+    {
+        return $this->status === 'cancelled';
+    }
+
+    /**
+     * Pemberitahuan untuk guest sesuai layanan & tahapan proses.
+     *
+     * null = tahapan ini sudah punya pemberitahuan sendiri di halaman detail
+     * (survey AC belum masuk, persetujuan harga, pembayaran laundry) atau
+     * dibatalkan/ditolak.
+     */
+    public function progressNote(): ?string
+    {
+        $slug = $this->service->slug;
+
+        switch ($this->status) {
+            case 'pending':
+                return __('guest.progress.pending');
+
+            case 'assigned':
+                return __('guest.progress.assigned');
+
+            case 'in_progress':
+                if ($this->isLaundry()) {
+                    return $this->weighed_at
+                        ? __('guest.progress.laundry.washing', ['weight' => $this->billableWeightLabel()])
+                        : __('guest.progress.laundry.pickup');
+                }
+
+                if ($this->requiresSurveyPricing()) {
+                    if (!$this->survey_reported_at) {
+                        // AC repair/full service sudah punya pesan survey sendiri
+                        return $this->isAc() ? null : __('guest.progress.maintenance-repair.survey');
+                    }
+
+                    return $this->isPriceApproved()
+                        ? __('guest.progress.' . $slug . '.working')
+                        : __('guest.progress.pricing');
+                }
+
+                if ($this->isAc()) {
+                    return __('guest.progress.ac.' . ($this->ac_type === 'ac-refill' ? 'refill' : 'cleaning'));
+                }
+
+                return __('guest.progress.cleaning.working');
+
+            case 'completed':
+                return __('guest.progress.' . $slug . '.completed');
+
+            default:
+                return null;
+        }
+    }
+
+    public function cancelReasonLabel(): ?string
+    {
+        if (!$this->cancel_reason) {
+            return null;
+        }
+
+        return __('guest.cancel_reasons.' . $this->cancel_reason);
+    }
+
     public function statusLabel(): string
     {
         return match ($this->status) {
@@ -326,6 +461,8 @@ class ServiceRequest extends Model
             'completed' => 'Selesai',
 
             'rejected' => 'Ditolak',
+
+            'cancelled' => 'Dibatalkan',
 
             default => ucfirst(
                 str_replace('_', ' ', $this->status)

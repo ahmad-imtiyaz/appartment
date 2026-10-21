@@ -87,6 +87,42 @@
                 </form>
             </div>
 
+            <!-- Rekening Pencairan -->
+            <div id="rekening" class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 sm:p-6">
+                <h3 class="font-semibold text-lg text-gray-900">Rekening Pencairan</h3>
+                <p class="mt-1 text-sm text-gray-500">Pendapatan tugas akan ditransfer admin ke rekening ini.</p>
+
+                <form method="POST" action="{{ route('worker.profile.bank') }}" class="mt-6 space-y-4">
+                    @csrf
+                    @method('PUT')
+
+                    <div>
+                        <x-input-label for="bank_name" :value="__('Nama Bank / E-Wallet')" />
+                        <x-text-input id="bank_name" name="bank_name" type="text" class="mt-1 block w-full"
+                            :value="old('bank_name', $user->bank_name)" required placeholder="Contoh: BCA" />
+                        <x-input-error class="mt-2" :messages="$errors->updateBank->get('bank_name')" />
+                    </div>
+
+                    <div>
+                        <x-input-label for="bank_account_number" :value="__('Nomor Rekening')" />
+                        <x-text-input id="bank_account_number" name="bank_account_number" type="text" inputmode="numeric" class="mt-1 block w-full"
+                            :value="old('bank_account_number', $user->bank_account_number)" required />
+                        <x-input-error class="mt-2" :messages="$errors->updateBank->get('bank_account_number')" />
+                    </div>
+
+                    <div>
+                        <x-input-label for="bank_account_holder" :value="__('Nama Pemilik Rekening')" />
+                        <x-text-input id="bank_account_holder" name="bank_account_holder" type="text" class="mt-1 block w-full"
+                            :value="old('bank_account_holder', $user->bank_account_holder)" required />
+                        <x-input-error class="mt-2" :messages="$errors->updateBank->get('bank_account_holder')" />
+                    </div>
+
+                    <div class="flex justify-end pt-2">
+                        <x-primary-button>{{ __('Simpan Rekening') }}</x-primary-button>
+                    </div>
+                </form>
+            </div>
+
             <!-- Ubah Password -->
             <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 sm:p-6">
                 <h3 class="font-semibold text-lg text-gray-900">Ubah Password</h3>

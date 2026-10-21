@@ -146,19 +146,50 @@
 
             </div>
 
-            {{-- Status masih menunggu diproses admin --}}
-            @if ($serviceRequest->status === 'pending')
-                <div class="ui-alert" style="background:#FFFBEB;color:#92400E">
-                    {{ __('guest.show.pending_note') }}
+            {{-- Error umum (alur harga & laundry menampilkan error di section-nya sendiri) --}}
+            @if (session('error') && !in_array($serviceRequest->status, ['waiting_approval', 'waiting_payment']))
+                <div class="ui-alert ui-alert--error">
+                    {{ session('error') }}
                 </div>
             @endif
 
-            {{-- Status sedang diproses --}}
-            @if ($serviceRequest->status === 'in_progress')
-                <div class="ui-alert" style="background:#EFF6FF;color:#1E40AF">
-                    {{ __('guest.show.in_progress_note') }}
+            {{-- Pemberitahuan sesuai layanan & tahapan proses --}}
+            @if ($progressNote = $serviceRequest->progressNote())
+                <div class="ui-alert" style="{{ match ($serviceRequest->status) {
+                    'pending'   => 'background:#FFFBEB;color:#92400E',
+                    'completed' => 'background:#F0FDF4;color:#166534',
+                    default     => 'background:#EFF6FF;color:#1E40AF',
+                } }}">
+                    {{ $progressNote }}
                 </div>
             @endif
+
+            {{-- Batal pesanan: hanya selama belum ada pekerja ditugaskan --}}
+            @if ($serviceRequest->canBeCancelledByGuest())
+                <div class="ui-card ui-rise">
+                    <p class="ui-sub" style="margin:0 0 12px">{{ __('guest.cancel.only_pending') }}</p>
+                    @include('guest.partials.cancel-order', ['serviceRequest' => $serviceRequest, 'block' => true])
+                </div>
+            @endif
+
+            {{-- Alasan batal (guest) / tolak (admin) --}}
+            @if (in_array($serviceRequest->status, ['cancelled', 'rejected']) && $serviceRequest->cancel_reason)
+                <div class="ui-alert ui-alert--error">
+                    <strong>
+                        {{ $serviceRequest->isCancelled() ? __('guest.cancel.cancelled_title') : __('guest.cancel.rejected_title') }}
+                    </strong>
+                    <div style="margin-top:4px">
+                        {{ __('guest.cancel.reason') }}: {{ $serviceRequest->cancelReasonLabel() }}
+                        @if ($serviceRequest->cancel_note)
+                            — {{ $serviceRequest->cancel_note }}
+                        @endif
+                    </div>
+                    @if ($serviceRequest->cancelled_at)
+                        <div style="margin-top:2px;opacity:.8">{{ $serviceRequest->cancelled_at->translatedFormat('d M Y H:i') }}</div>
+                    @endif
+                </div>
+            @endif
+
 
 
             {{-- Detail maintenance --}}

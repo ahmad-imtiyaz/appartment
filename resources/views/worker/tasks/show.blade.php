@@ -213,7 +213,53 @@
                                 <dd class="font-bold text-green-700 text-lg">Rp{{ number_format($serviceRequest->worker_earning, 0, ',', '.') }}</dd>
                             </div>
                         </dl>
-                        <p class="mt-3 text-xs text-emerald-700">Pendapatan akan ditransfer oleh admin setelah dipotong.</p>
+                        @php $payout = $serviceRequest->payout; @endphp
+
+                        @if (!$payout)
+                            <p class="mt-3 text-xs text-emerald-700">Pendapatan akan ditransfer oleh admin setelah dipotong.</p>
+
+                            @if ((float) $serviceRequest->worker_earning > 0)
+                                @if (auth()->user()->hasBankAccount())
+                                    <form method="POST" action="{{ route('worker.payouts.store', $serviceRequest) }}" class="mt-3"
+                                          onsubmit="return confirm('Ajukan pencairan Rp{{ number_format($serviceRequest->worker_earning, 0, ',', '.') }} ke {{ auth()->user()->bank_name }} {{ auth()->user()->bank_account_number }}?')">
+                                        @csrf
+                                        <button type="submit" class="w-full px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-lg">
+                                            Ajukan Pencairan
+                                        </button>
+                                    </form>
+                                    <p class="mt-2 text-xs text-emerald-700">
+                                        Ditransfer ke {{ auth()->user()->bank_name }} {{ auth()->user()->bank_account_number }} a.n. {{ auth()->user()->bank_account_holder }}
+                                    </p>
+                                @else
+                                    <a href="{{ route('worker.profile.edit') }}#rekening"
+                                       class="mt-3 block w-full text-center px-4 py-2.5 bg-white border border-emerald-300 text-emerald-700 text-sm font-semibold rounded-lg hover:bg-emerald-100">
+                                        Isi Rekening untuk Ajukan Pencairan
+                                    </a>
+                                @endif
+                            @endif
+
+                        @elseif ($payout->isPending())
+                            <div class="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-800">
+                                <p class="font-semibold">Pencairan diajukan</p>
+                                <p class="text-xs mt-0.5">Diajukan {{ $payout->created_at->format('d M Y H:i') }}, menunggu diproses admin.</p>
+                            </div>
+
+                        @else
+                            <div class="mt-3 p-3 bg-green-100 border border-green-200 rounded-lg text-sm text-green-900">
+                                <p class="font-semibold">Pembayaran Selesai</p>
+                                <p class="mt-0.5">Telah dibayarkan sejumlah <strong>Rp{{ number_format($payout->amount, 0, ',', '.') }}</strong></p>
+                                <p class="text-xs mt-0.5">{{ $payout->paid_at->format('d M Y H:i') }} · {{ $payout->bank_name }} {{ $payout->account_number }}</p>
+                                @if ($payout->admin_note)
+                                    <p class="text-xs mt-1">Catatan admin: {{ $payout->admin_note }}</p>
+                                @endif
+                                @if ($payout->proofUrl())
+                                    <a href="{{ $payout->proofUrl() }}" target="_blank" class="mt-2 block">
+                                        <img src="{{ $payout->proofUrl() }}" alt="Bukti transfer" class="w-full max-h-64 object-contain rounded-md border border-green-200 bg-white">
+                                        <span class="text-xs underline">Lihat bukti transfer</span>
+                                    </a>
+                                @endif
+                            </div>
+                        @endif
                     </div>
                 @endif
 

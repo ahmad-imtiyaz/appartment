@@ -79,6 +79,7 @@
                         ['route' => 'admin.users.index', 'label' => 'Kelola User', 'icon' => 'users'],
                         ['route' => 'admin.topups.index', 'label' => 'Top Up', 'icon' => 'banknotes'],
                         ['route' => 'admin.withdrawals.index', 'label' => 'Penarikan Saldo', 'icon' => 'banknotes'],
+                        ['route' => 'admin.worker-payouts.index', 'label' => 'Pencairan Pekerja', 'icon' => 'banknotes'],
                         ['route' => 'admin.apartment-locations.index', 'label' => 'Lokasi & Tower', 'icon' => 'building'],
                     ],
                     'Harga layanan' => [
@@ -96,11 +97,13 @@
                         ['route' => 'admin.commission-settings.index', 'label' => 'Setting Potongan', 'icon' => 'percent'],
                         ['route' => 'admin.payment-methods.index', 'label' => 'Payment Method', 'icon' => 'card'],
                         ['route' => 'admin.product-listings.index', 'label' => 'Jual-Beli', 'icon' => 'shop'],
+                        ['route' => 'admin.promo-banners.index', 'label' => 'Banner Promosi', 'icon' => 'tag'],
                         ['route' => 'admin.withdrawal-settings.index', 'label' => 'Setting Penarikan', 'icon' => 'card'],
                     ],
                 ] : [
                     'Utama' => [
                         ['route' => 'worker.tasks.index', 'label' => 'Tugas Saya', 'icon' => 'check'],
+                        ['route' => 'worker.payouts.index', 'label' => 'Pendapatan', 'icon' => 'banknotes'],
                     ],
                 ];
             @endphp

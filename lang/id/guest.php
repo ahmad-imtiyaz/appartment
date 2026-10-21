@@ -124,6 +124,186 @@ return [
         'cancelled'        => 'Dibatalkan',
     ],
 
+    'service_info' => [
+        'view_detail' => 'Lihat Detail',
+        'view_process'=> 'Lihat Proses',
+        'close'       => 'Tutup',
+        'got_it'      => 'Mengerti',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Info Laundry (popup Lihat Detail / Lihat Proses)
+    |--------------------------------------------------------------------------
+    */
+
+    'laundry_info' => [
+        'process_title'    => 'Cara Kerja Laundry',
+        'process_subtitle' => 'Kami jemput, cuci, lalu antar!',
+        'steps' => [
+            'pickup'  => ['title' => 'Jemput Laundry',    'desc' => 'Kami ambil cucian di apartemenmu.'],
+            'wash'    => ['title' => 'Proses Pencucian',  'desc' => 'Cucian diproses sesuai layanan pilihanmu.'],
+            'done'    => ['title' => 'Cucian Selesai',    'desc' => 'Kami informasikan saat cucian siap.'],
+            'pay'     => ['title' => 'Bayar di Aplikasi', 'desc' => 'Bayar setelah cucian selesai.'],
+            'deliver' => ['title' => 'Laundry Diantar',   'desc' => 'Cucian bersih diantar ke apartemenmu.'],
+        ],
+
+        'detail_title'     => 'Detail Layanan Laundry',
+        'detail_subtitle'  => 'Informasi penting sebelum memesan.',
+        'points' => [
+            'min_order'   => ['title' => 'Minimal Pesanan', 'desc' => 'Minimal 2 kg per pesanan.'],
+            'final_price' => ['title' => 'Harga Akhir',     'desc' => 'Harga akhir ditampilkan di aplikasi setelah laundry ditimbang.'],
+            'duration'    => ['title' => 'Pilihan Durasi',  'desc' => 'Reguler 3 hari atau Express 1 hari.'],
+            'payment'     => ['title' => 'Pembayaran',      'desc' => 'Bayar melalui aplikasi setelah cucian selesai.'],
+            'notes'       => ['title' => 'Catatan Pakaian', 'desc' => 'Tambahkan catatan khusus saat memesan.'],
+        ],
+    ],
+
+    'repair_info' => [
+        'process_title'    => 'Detail Perbaikan & Perawatan',
+        'process_subtitle' => 'Perbaikan apartemen dengan biaya transparan.',
+        'steps' => [
+            'order'    => ['title' => 'Buat Pesanan',      'desc' => 'Pilih jenis kerusakan dan jadwal kunjungan.'],
+            'survey'   => ['title' => 'Survey Gratis',     'desc' => 'Petugas datang untuk mengecek kerusakan tanpa biaya.'],
+            'estimate' => ['title' => 'Rincian Biaya',     'desc' => 'Anda menerima rincian biaya perbaikan sebelum memutuskan.'],
+            'pay'      => ['title' => 'Setuju & Bayar',    'desc' => 'Setujui tagihan dan bayar melalui aplikasi, atau tolak tanpa biaya perbaikan.'],
+            'repair'   => ['title' => 'Perbaikan Dimulai', 'desc' => 'Petugas mulai bekerja setelah pembayaran terkonfirmasi.'],
+        ],
+
+        'detail_title'     => 'Detail Perbaikan & Perawatan',
+        'detail_subtitle'  => 'Pilih kategori kerusakan dan tingkat urgensi sesuai kondisi unit apartemen Anda.',
+        'grid_title'       => 'Kategori Kerusakan',
+        'grid' => [
+            'cat_luntur'    => ['title' => 'Cat Luntur',    'desc' => 'Cat mengelupas atau rusak.'],
+            'kebocoran'     => ['title' => 'Kebocoran',     'desc' => 'Pipa, keran, atau rembesan air.'],
+            'listrik'       => ['title' => 'Listrik',       'desc' => 'Lampu, sakelar, atau stopkontak.'],
+            'ac'            => ['title' => 'AC',            'desc' => 'AC kotor, tidak dingin, atau bermasalah.'],
+            'pintu_jendela' => ['title' => 'Pintu/Jendela', 'desc' => 'Engsel, kunci, atau sulit dibuka.'],
+            'furniture'     => ['title' => 'Furnitur',      'desc' => 'Lemari, meja, kursi, dan lainnya.'],
+            'lainnya'       => ['title' => 'Lainnya',       'desc' => 'Kerusakan lain di dalam unit apartemen.'],
+        ],
+    ],
+
+    'ac_info' => [
+        'process_title'    => 'Proses Layanan AC',
+        'process_subtitle' => 'AC dingin lagi, tanpa repot!',
+        'steps' => [
+            'order'    => ['title' => 'Buat Pesanan',      'desc' => 'Pilih jenis layanan AC, jadwal, dan lokasi.'],
+            'check'    => ['title' => 'Teknisi Datang',    'desc' => 'Teknisi datang sesuai jadwal dan mengecek kondisi AC tanpa biaya.'],
+            'estimate' => ['title' => 'Rincian Biaya',     'desc' => 'Khusus Perbaikan & Full Service: Anda menerima rincian biaya untuk disetujui sebelum dikerjakan.'],
+            'work'     => ['title' => 'Pengerjaan AC',     'desc' => 'Teknisi mengerjakan AC sesuai layanan yang dipilih.'],
+            'pay'      => ['title' => 'Pembayaran',        'desc' => 'Cuci AC & Isi Freon otomatis terpotong dari saldo setelah selesai. Perbaikan & Full Service dibayar saat menyetujui rincian biaya.'],
+        ],
+        'process_note' => [
+            'title' => 'Pastikan Saldo Cukup',
+            'desc'  => 'Pastikan saldo aplikasi mencukupi untuk pembayaran layanan.',
+        ],
+
+        'detail_title'     => 'Detail Layanan AC',
+        'detail_subtitle'  => 'Pilih jenis layanan sesuai kondisi AC di unit apartemen Anda.',
+        'grid_title'       => 'Jenis Layanan',
+        'grid' => [
+            'ac-cleaning'     => ['title' => 'Cuci AC',      'desc' => 'Membersihkan filter, evaporator, dan unit outdoor. Harga tetap.'],
+            'ac-refill'       => ['title' => 'Isi Freon',    'desc' => 'Menambah freon untuk AC yang kurang dingin. Harga tetap.'],
+            'ac-repair'       => ['title' => 'Perbaikan AC', 'desc' => 'AC mati, bocor, atau error. Survey gratis, biaya setelah dicek.'],
+            'ac-full-service' => ['title' => 'Full Service', 'desc' => 'Cuci, cek freon, kelistrikan & komponen. Survey gratis, biaya setelah dicek.'],
+        ],
+    ],
+
+    'cleaning_info' => [
+        'process_title'    => 'Proses Layanan Cleaning',
+        'process_subtitle' => 'Apartemen bersih, tanpa repot!',
+        'steps' => [
+            'order'   => ['title' => 'Buat Pesanan',        'desc' => 'Pilih durasi, pekerjaan tambahan, jadwal, dan lokasi.'],
+            'arrive'  => ['title' => 'Petugas Datang',      'desc' => 'Petugas datang sesuai jadwal pesanan.'],
+            'clean'   => ['title' => 'Proses Cleaning',     'desc' => 'Pembersihan dilakukan sesuai layanan yang dipilih.'],
+            'confirm' => ['title' => 'Konfirmasi Selesai',  'desc' => 'Petugas mengonfirmasi pekerjaan telah selesai.'],
+            'pay'     => ['title' => 'Pembayaran Otomatis', 'desc' => 'Biaya layanan otomatis terpotong dari saldo aplikasi setelah petugas mengonfirmasi pekerjaan selesai.'],
+        ],
+        'process_note' => [
+            'title' => 'Pastikan Saldo Cukup',
+            'desc'  => 'Pastikan saldo aplikasi mencukupi untuk pembayaran layanan.',
+        ],
+
+        'detail_title'     => 'Detail Pekerjaan Cleaning',
+        'detail_subtitle'  => 'Layanan bersih-bersih unit apartemen sesuai durasi pilihanmu.',
+        'areas_title'      => 'Area yang Dibersihkan',
+        'areas' => [
+            'living'   => ['title' => 'Ruang Tamu & Ruang Keluarga', 'desc' => 'Mengelap debu furnitur dan meja, menyapu serta mengepel lantai.'],
+            'bedroom'  => ['title' => 'Kamar Tidur',                 'desc' => 'Merapikan tempat tidur, mengelap furnitur, menyapu dan mengepel lantai.'],
+            'bathroom' => ['title' => 'Kamar Mandi',                 'desc' => 'Membersihkan kloset, wastafel, cermin, area shower, dan lantai.'],
+            'kitchen'  => ['title' => 'Area Dapur',                  'desc' => 'Mengelap meja dapur, permukaan luar kabinet, dan area luar kompor.'],
+            'balcony'  => ['title' => 'Balkon',                      'desc' => 'Menyapu dan mengepel lantai serta mengelap permukaan yang mudah dijangkau.'],
+            'common'   => ['title' => 'Area Umum',                   'desc' => 'Membersihkan debu pada permukaan yang mudah dijangkau dan membuang sampah ringan.'],
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Pemberitahuan tahapan proses (detail pesanan)
+    |--------------------------------------------------------------------------
+    */
+
+    'progress' => [
+        'pending'  => 'Pesanan Anda sudah diterima dan sedang diperiksa admin. Kami akan segera menugaskan pekerja.',
+        'assigned' => 'Pekerja sudah ditugaskan untuk pesanan Anda. Menunggu konfirmasi dari pekerja.',
+        'pricing'  => 'Survey sudah selesai. Admin sedang menghitung harga final, mohon tunggu persetujuan harga.',
+
+        'laundry' => [
+            'pickup'    => 'Pekerja sedang menuju ke lokasi Anda untuk mengambil cucian.',
+            'washing'   => 'Cucian Anda sudah ditimbang (:weight) dan sedang dalam proses pencucian.',
+            'completed' => 'Laundry sudah diantar ke unit Anda. Pesanan selesai, terima kasih!',
+        ],
+        'cleaning' => [
+            'working'   => 'Pekerja sedang menuju ke lokasi Anda untuk membersihkan unit.',
+            'completed' => 'Pembersihan unit sudah selesai. Pesanan selesai, terima kasih!',
+        ],
+        'ac' => [
+            'cleaning'  => 'Teknisi sedang menuju ke lokasi Anda untuk mencuci AC.',
+            'refill'    => 'Teknisi sedang menuju ke lokasi Anda untuk mengisi freon AC.',
+            'working'   => 'Harga sudah disetujui. Teknisi sedang mengerjakan servis AC Anda.',
+            'completed' => 'Servis AC sudah selesai. Pesanan selesai, terima kasih!',
+        ],
+        'maintenance-repair' => [
+            'survey'    => 'Pekerja sedang menuju ke lokasi Anda untuk mengecek kerusakan.',
+            'working'   => 'Harga sudah disetujui. Pekerja sedang mengerjakan perbaikan.',
+            'completed' => 'Perbaikan sudah selesai. Pesanan selesai, terima kasih!',
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Batal / Tolak Pesanan
+    |--------------------------------------------------------------------------
+    */
+
+    'cancel' => [
+        'title'            => 'Batalkan Pesanan',
+        'subtitle'         => 'Pilih alasan pembatalan pesanan #:id',
+        'note_label'       => 'Tulis alasan lainnya',
+        'note_placeholder' => 'Contoh: saya akan pergi ke luar kota',
+        'confirm'          => 'Ya, Batalkan Pesanan',
+        'back'             => 'Kembali',
+        'only_pending'     => 'Pesanan hanya bisa dibatalkan selama masih diproses admin. Setelah pekerja ditugaskan, pesanan tidak bisa dibatalkan.',
+        'reason_required'  => 'Pilih alasan pembatalan.',
+        'note_required'    => 'Tulis alasan pembatalan.',
+        'cancelled_title'  => 'Pesanan Dibatalkan',
+        'rejected_title'   => 'Pesanan Ditolak Admin',
+        'reason'           => 'Alasan',
+    ],
+
+    'cancel_reasons' => [
+        // guest
+        'wrong_service'    => 'Salah memilih layanan',
+        'schedule_changed' => 'Jadwal saya berubah',
+        'change_details'   => 'Ingin mengubah detail pesanan',
+        'no_longer_needed' => 'Sudah tidak membutuhkan layanan',
+        'other'            => 'Lainnya',
+        // admin
+        'worker_busy'      => 'Pekerja sedang sibuk',
+        'location_too_far' => 'Lokasi anda terlalu jauh',
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Flash Messages
@@ -133,7 +313,7 @@ return [
     'flash' => [
         'request_created'          => 'Permintaan jasa ":service" berhasil diajukan, menunggu diproses admin.',
         'request_cancelled'        => 'Pesanan ":service" berhasil dibatalkan.',
-        'cancel_not_allowed'       => 'Hanya pesanan pending atau assigned yang bisa dibatalkan.',
+        'cancel_not_allowed'       => 'Pesanan tidak bisa dibatalkan karena admin sudah menugaskan pekerja.',
         'no_price_waiting'         => 'Tidak ada harga yang menunggu persetujuan.',
         'insufficient_balance'     => 'Saldo tidak cukup. Silakan top up terlebih dahulu.',
         'price_approved'           => 'Harga disetujui, saldo telah dipotong. Pekerjaan akan dilanjutkan.',
@@ -328,6 +508,8 @@ return [
     */
 
     'form' => [
+        'urgency_title'      => 'Tingkat Urgensi',
+        'order_data_title'   => 'Data Pesanan',
         'schedule_optional'           => 'Jadwal (Opsional)',
         'schedule_hint'               => 'Kosongkan untuk segera diproses',
         'notes'                       => 'Catatan',

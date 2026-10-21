@@ -28,6 +28,7 @@
                     'waiting_approval' => 'bg-orange-100 text-orange-800',
                     'completed' => 'bg-green-100 text-green-800',
                     'rejected' => 'bg-red-100 text-red-800',
+                    'cancelled' => 'bg-gray-200 text-gray-700',
                     default => 'bg-gray-100 text-gray-800',
                 };
             @endphp
@@ -92,6 +93,25 @@
                         <div>
                             <dt class="text-gray-500">Selesai</dt>
                             <dd class="font-medium">{{ $serviceRequest->completed_at->format('d M Y H:i') }}</dd>
+                        </div>
+                    @endif
+                    @if ($serviceRequest->cancel_reason)
+                        <div class="md:col-span-2 p-3 rounded-lg {{ $serviceRequest->isCancelled() ? 'bg-gray-50' : 'bg-red-50' }}">
+                            <dt class="text-gray-500">
+                                {{ $serviceRequest->isCancelled() ? 'Dibatalkan guest' : 'Ditolak admin' }}
+                                @if ($serviceRequest->cancelledBy && !$serviceRequest->isCancelled())
+                                    ({{ $serviceRequest->cancelledBy->name }})
+                                @endif
+                                @if ($serviceRequest->cancelled_at)
+                                    · {{ $serviceRequest->cancelled_at->format('d M Y H:i') }}
+                                @endif
+                            </dt>
+                            <dd class="font-medium">
+                                {{ $serviceRequest->cancelReasonLabel() }}
+                                @if ($serviceRequest->cancel_note)
+                                    — {{ $serviceRequest->cancel_note }}
+                                @endif
+                            </dd>
                         </div>
                     @endif
                     @if ($serviceRequest->cost)
@@ -410,6 +430,33 @@
                                 <span x-text="selected.length"></span> pekerja dipilih — siapa cepat ACC dia yang dapat
                             </span>
                         </div>
+                    </form>
+                </div>
+
+                <!-- Tolak Request (hanya sebelum pekerja ditugaskan) -->
+                <div class="bg-white rounded-xl shadow-sm border border-red-100 p-6 mt-6" x-data="{ reason: {{ Js::from(old('cancel_reason', '')) }} }">
+                    <h3 class="font-semibold text-gray-900 mb-1">Tolak Request</h3>
+                    <p class="text-sm text-gray-500 mb-4">Pilih alasan penolakan. Alasan akan ditampilkan ke guest.</p>
+
+                    <form method="POST" action="{{ route('admin.service-requests.reject', $serviceRequest) }}" class="space-y-4"
+                          onsubmit="return confirm('Tolak request #{{ $serviceRequest->id }}?')">
+                        @csrf
+
+                        <div class="space-y-2">
+                            @foreach (\App\Models\ServiceRequest::ADMIN_REJECT_REASONS as $key)
+                                <label class="flex items-center gap-3 px-3 py-2 border rounded-md cursor-pointer hover:bg-gray-50"
+                                       :class="reason === '{{ $key }}' ? 'border-red-400 bg-red-50' : 'border-gray-200'">
+                                    <input type="radio" name="cancel_reason" value="{{ $key }}" x-model="reason"
+                                           class="border-gray-300 text-red-600 focus:ring-red-500">
+                                    <span class="text-sm text-gray-900">{{ __('guest.cancel_reasons.' . $key, [], 'id') }}</span>
+                                </label>
+                            @endforeach
+                            <x-input-error :messages="$errors->get('cancel_reason')" class="mt-2" />
+                        </div>
+
+                        <x-danger-button x-bind:disabled="!reason">
+                            Tolak Request
+                        </x-danger-button>
                     </form>
                 </div>
 

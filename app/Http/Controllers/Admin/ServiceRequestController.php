@@ -7,11 +7,13 @@ use App\Models\Service;
 use App\Models\ServiceRequest;
 use App\Models\User;
 use App\Notifications\PriceSetNotification;
+use App\Notifications\ServiceRequestRejectedNotification;
 use App\Notifications\TaskAssignedNotification;
 use App\Services\FcmService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use function Illuminate\Support\defer;
 
 class ServiceRequestController extends Controller
@@ -108,6 +110,50 @@ class ServiceRequestController extends Controller
             : "Tugas ditawarkan ke {$workers->count()} pekerja. Yang pertama ACC akan mendapat tugas ini.";
 
         return back()->with('success', $message);
+    }
+
+    /**
+     * Tolak request guest sebelum pekerja ditugaskan.
+     */
+    public function reject(Request $request, ServiceRequest $serviceRequest): RedirectResponse
+    {
+        $validated = $request->validate([
+            'cancel_reason' => ['required', Rule::in(ServiceRequest::ADMIN_REJECT_REASONS)],
+        ], [
+            'cancel_reason.required' => 'Pilih alasan penolakan.',
+        ]);
+
+        $rejected = DB::transaction(function () use ($serviceRequest, $validated) {
+            $locked = ServiceRequest::lockForUpdate()->findOrFail($serviceRequest->id);
+
+            if (!$locked->canBeRejectedByAdmin()) {
+                return false;
+            }
+
+            $locked->update([
+                'status' => 'rejected',
+                'cancel_reason' => $validated['cancel_reason'],
+                'cancelled_by' => auth()->id(),
+                'cancelled_at' => now(),
+            ]);
+
+            return true;
+        });
+
+        if (!$rejected) {
+            return back()->with('error', 'Request ini tidak bisa ditolak karena sudah diproses atau dibatalkan guest.');
+        }
+
+        $serviceRequest->refresh();
+
+        // Penolakan sudah tersimpan; kalau SMTP gagal cukup dicatat di log, jangan gagalkan aksi admin
+        try {
+            $serviceRequest->user->notify(new ServiceRequestRejectedNotification($serviceRequest));
+        } catch (\Throwable $e) {
+            report($e);
+        }
+
+        return back()->with('success', 'Request berhasil ditolak.');
     }
 
     public function setPrice(Request $request, ServiceRequest $serviceRequest): RedirectResponse

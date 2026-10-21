@@ -155,6 +155,62 @@
     .hm-cta-btn:active{transform:scale(.97);}
     .hm-cta-btn svg{width:16px;height:16px;}
 
+/* ============ BANNER PROMOSI ============ */
+
+.hm-banners{
+    display:flex;
+    gap:10px;
+    overflow-x:auto;
+    scroll-snap-type:x mandatory;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:none;
+}
+
+.hm-banners::-webkit-scrollbar{
+    display:none;
+}
+
+.hm-banner{
+    flex:0 0 100%;
+    scroll-snap-align:start;
+    aspect-ratio:3 / 1;
+    border-radius:18px;
+    overflow:hidden;
+    background:#F3F4F6;
+    display:block;
+}
+
+.hm-banners--multi .hm-banner{
+    flex-basis:92%;
+}
+
+.hm-banner img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    display:block;
+}
+
+.hm-banner-dots{
+    display:flex;
+    justify-content:center;
+    gap:6px;
+    margin-top:10px;
+}
+
+.hm-banner-dots span{
+    width:6px;
+    height:6px;
+    border-radius:9999px;
+    background:#E5E7EB;
+    transition:width .2s ease,background .2s ease;
+}
+
+.hm-banner-dots span.is-active{
+    width:16px;
+    background:#DC2626;
+}
+
 /* ============ MARKETPLACE SLIDER ============ */
 
 .hm-slider{
@@ -638,6 +694,36 @@
 
     </section>
 @endif
+
+
+        {{-- Banner Promosi (diatur admin, setelah Jual & Beli) --}}
+        @if ($banners->isNotEmpty())
+            <section class="hm-section hm-rise" style="animation-delay:.15s"
+                     x-data="{ active: 0 }">
+                <div class="hm-banners {{ $banners->count() > 1 ? 'hm-banners--multi' : '' }}"
+                     @scroll.debounce.50ms="active = Math.round($el.scrollLeft / ($el.firstElementChild.offsetWidth + 10))">
+                    @foreach ($banners as $banner)
+                        @if ($banner->link_url)
+                            <a href="{{ $banner->link_url }}" target="_blank" rel="noopener" class="hm-banner">
+                                <img src="{{ Storage::url($banner->image) }}" alt="{{ $banner->title }}" loading="lazy">
+                            </a>
+                        @else
+                            <div class="hm-banner">
+                                <img src="{{ Storage::url($banner->image) }}" alt="{{ $banner->title }}" loading="lazy">
+                            </div>
+                        @endif
+                    @endforeach
+                </div>
+
+                @if ($banners->count() > 1)
+                    <div class="hm-banner-dots" aria-hidden="true">
+                        @foreach ($banners as $banner)
+                            <span :class="active === {{ $loop->index }} && 'is-active'"></span>
+                        @endforeach
+                    </div>
+                @endif
+            </section>
+        @endif
 
 
         {{-- Cara Kerja --}}

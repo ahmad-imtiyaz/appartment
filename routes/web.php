@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\CleaningPricingController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\PaymentMethodController as AdminPaymentMethodController;
 use App\Http\Controllers\Admin\ProductListingController as AdminProductListingController;
+use App\Http\Controllers\Admin\PromoBannerController as AdminPromoBannerController;
 use App\Http\Controllers\Admin\ServiceRequestController as AdminServiceRequestController;
 use App\Http\Controllers\Admin\TopupController as AdminTopupController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
@@ -19,6 +20,7 @@ use App\Http\Controllers\Guest\ProfileController as GuestProfileController;
 use App\Http\Controllers\Guest\ServiceRequestController as GuestServiceRequestController;
 use App\Http\Controllers\Guest\TopupController as GuestTopupController;
 use App\Http\Controllers\Admin\WithdrawalController as AdminWithdrawalController;
+use App\Http\Controllers\Admin\WorkerPayoutController as AdminWorkerPayoutController;
 use App\Http\Controllers\Guest\WithdrawalController as GuestWithdrawalController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Worker\ProfileController as WorkerProfileController;
@@ -29,6 +31,7 @@ use App\Http\Controllers\Auth\ConsentController;
 use App\Http\Controllers\LegalController;
 use App\Http\Controllers\Auth\VerifyEmailController;
 use App\Http\Controllers\Worker\TaskController;
+use App\Http\Controllers\Worker\PayoutController as WorkerPayoutRequestController;
 use App\Http\Controllers\Worker\DeviceTokenController;
 use Illuminate\Support\Facades\Route;
 
@@ -173,7 +176,9 @@ Route::middleware(['auth', 'verified', 'role:guest'])
                 ->take(3)
                 ->get();
 
-            return view('guest.home', compact('listings'));
+            $banners = \App\Models\PromoBanner::shown()->get();
+
+            return view('guest.home', compact('listings', 'banners'));
         })->name('home');
 
         /*
@@ -197,8 +202,8 @@ Route::middleware(['auth', 'verified', 'role:guest'])
         Route::get('/service-requests/{serviceRequest}', [GuestServiceRequestController::class, 'show'])
             ->name('service-requests.show');
 
-        Route::delete('/service-requests/{serviceRequest}', [GuestServiceRequestController::class, 'destroy'])
-            ->name('service-requests.destroy');
+        Route::post('/service-requests/{serviceRequest}/cancel', [GuestServiceRequestController::class, 'cancel'])
+            ->name('service-requests.cancel');
 
         Route::post('/service-requests/{serviceRequest}/approve-price', [GuestServiceRequestController::class, 'approvePrice'])
             ->name('service-requests.approve-price');
@@ -403,6 +408,10 @@ Route::middleware(['auth', 'role:admin'])
         Route::post('/withdrawals/{withdrawalRequest}/approve', [AdminWithdrawalController::class, 'approve'])->name('withdrawals.approve');
         Route::post('/withdrawals/{withdrawalRequest}/reject', [AdminWithdrawalController::class, 'reject'])->name('withdrawals.reject');
 
+        // Pencairan pendapatan pekerja
+        Route::get('/worker-payouts', [AdminWorkerPayoutController::class, 'index'])->name('worker-payouts.index');
+        Route::post('/worker-payouts/{workerPayout}/pay', [AdminWorkerPayoutController::class, 'pay'])->name('worker-payouts.pay');
+
         Route::get('/withdrawal-settings', [AdminWithdrawalController::class, 'settings'])->name('withdrawal-settings.index');
         Route::put('/withdrawal-settings', [AdminWithdrawalController::class, 'updateSettings'])->name('withdrawal-settings.update');
 
@@ -420,6 +429,9 @@ Route::middleware(['auth', 'role:admin'])
 
         Route::post('/service-requests/{serviceRequest}/assign', [AdminServiceRequestController::class, 'assign'])
             ->name('service-requests.assign');
+
+        Route::post('/service-requests/{serviceRequest}/reject', [AdminServiceRequestController::class, 'reject'])
+            ->name('service-requests.reject');
 
         Route::post('/service-requests/{serviceRequest}/set-price', [AdminServiceRequestController::class, 'setPrice'])
             ->name('service-requests.set-price');
@@ -509,6 +521,19 @@ Route::middleware(['auth', 'role:admin'])
 
         Route::delete('/product-listings/{productListing}', [AdminProductListingController::class, 'destroy'])
             ->name('product-listings.destroy');
+
+        // Banner promosi di beranda guest
+        Route::get('/promo-banners', [AdminPromoBannerController::class, 'index'])
+            ->name('promo-banners.index');
+
+        Route::post('/promo-banners', [AdminPromoBannerController::class, 'store'])
+            ->name('promo-banners.store');
+
+        Route::put('/promo-banners/{promoBanner}', [AdminPromoBannerController::class, 'update'])
+            ->name('promo-banners.update');
+
+        Route::delete('/promo-banners/{promoBanner}', [AdminPromoBannerController::class, 'destroy'])
+            ->name('promo-banners.destroy');
 
         /*
         |--------------------------------------------------------------------------
@@ -637,6 +662,18 @@ Route::middleware(['auth', 'role:pekerja'])
 
         /*
         |--------------------------------------------------------------------------
+        | Pencairan Pendapatan
+        |--------------------------------------------------------------------------
+        */
+
+        Route::get('/payouts', [WorkerPayoutRequestController::class, 'index'])
+            ->name('payouts.index');
+
+        Route::post('/tasks/{serviceRequest}/payout', [WorkerPayoutRequestController::class, 'store'])
+            ->name('payouts.store');
+
+        /*
+        |--------------------------------------------------------------------------
         | Profile (view & controller khusus pekerja)
         |--------------------------------------------------------------------------
         */
@@ -649,6 +686,9 @@ Route::middleware(['auth', 'role:pekerja'])
 
         Route::put('/profile/password', [WorkerProfileController::class, 'updatePassword'])
             ->name('profile.password');
+
+        Route::put('/profile/bank', [WorkerProfileController::class, 'updateBank'])
+            ->name('profile.bank');
     });
 
 /*

@@ -53,6 +53,7 @@
                         <option value="waiting_approval" {{ request()->status === 'waiting_approval' ? 'selected' : '' }}>Waiting Approval</option>
                         <option value="completed" {{ request()->status === 'completed' ? 'selected' : '' }}>Completed</option>
                         <option value="rejected" {{ request()->status === 'rejected' ? 'selected' : '' }}>Rejected</option>
+                        <option value="cancelled" {{ request()->status === 'cancelled' ? 'selected' : '' }}>Cancelled</option>
                     </select>
                     <div class="flex items-center gap-4">
                         <x-primary-button type="submit">Filter</x-primary-button>

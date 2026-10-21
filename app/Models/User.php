@@ -26,6 +26,9 @@ class User extends Authenticatable implements MustVerifyEmail
         'phone',
         'apartment_unit_number',
         'specialization',          // khusus pekerja: nama jasa, null = semua jasa
+        'bank_name',               // khusus pekerja: rekening pencairan pendapatan
+        'bank_account_number',
+        'bank_account_holder',
         'balance',
         'coin_balance',
         'terms_version',
@@ -156,5 +159,22 @@ class User extends Authenticatable implements MustVerifyEmail
     public function deviceTokens(): HasMany
     {
         return $this->hasMany(DeviceToken::class);
+    }
+
+    // ==== Relasi Pencairan Pendapatan (pekerja) ====
+
+    public function workerPayouts(): HasMany
+    {
+        return $this->hasMany(WorkerPayout::class, 'worker_id');
+    }
+
+    /**
+     * Pekerja sudah mengisi rekening untuk pencairan.
+     */
+    public function hasBankAccount(): bool
+    {
+        return filled($this->bank_name)
+            && filled($this->bank_account_number)
+            && filled($this->bank_account_holder);
     }
 }

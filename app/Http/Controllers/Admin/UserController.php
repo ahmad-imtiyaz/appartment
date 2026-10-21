@@ -208,7 +208,7 @@ class UserController extends Controller
             $q->where('user_id', $user->id)
               ->orWhere('worker_id', $user->id);
         })
-        ->whereNotIn('status', ['completed', 'rejected'])
+        ->whereNotIn('status', ['completed', 'rejected', 'cancelled'])
         ->exists();
 
     if ($hasActiveRequests) {

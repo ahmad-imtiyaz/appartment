@@ -26,6 +26,48 @@
 
 
             {{-- ================= LAUNDRY ================= --}}
+            @if ($service->slug === 'laundry')
+                @include('guest.partials.service-info', [
+                    'lang'      => 'guest.laundry_info',
+                    'steps'     => config('guest-icons.laundry_steps'),
+                    'iconBg'    => '#FCE7F3',
+                    'iconColor' => '#DB2777',
+                    'points'    => ['min_order', 'final_price', 'duration', 'payment', 'notes'],
+                ])
+            @endif
+
+            @if ($service->slug === 'cleaning')
+                @include('guest.partials.service-info', [
+                    'lang'        => 'guest.cleaning_info',
+                    'steps'       => config('guest-icons.cleaning_steps'),
+                    'iconBg'      => '#FCE7F3',
+                    'iconColor'   => '#DC2626',
+                    'processNote' => true,
+                    'areas'       => config('guest-icons.cleaning_areas'),
+                ])
+            @endif
+
+            @if ($service->slug === 'ac')
+                @include('guest.partials.service-info', [
+                    'lang'        => 'guest.ac_info',
+                    'steps'       => config('guest-icons.ac_steps'),
+                    'iconBg'      => '#FCE7F3',
+                    'iconColor'   => '#DC2626',
+                    'processNote' => true,
+                    'grid'        => config('guest-icons.ac_types'),
+                ])
+            @endif
+
+            @if ($service->slug === 'maintenance-repair')
+                @include('guest.partials.service-info', [
+                    'lang'      => 'guest.repair_info',
+                    'steps'     => config('guest-icons.repair_steps'),
+                    'iconBg'    => '#FEE2E2',
+                    'iconColor' => '#DC2626',
+                    'grid'      => config('guest-icons.damage_categories'),
+                ])
+            @endif
+
             @if ($service->slug === 'laundry' && $laundryPricings->isNotEmpty())
                 <div class="ui-card ui-rise">
 
@@ -318,18 +360,117 @@
                         <input type="hidden" name="snapshot_ac_price" id="form-ac-price" value="{{ old('snapshot_ac_price') }}">
                     @endif
 
-                    <div>
-                        <label for="scheduled_at" class="ui-label">{{ __('guest.form.schedule_optional') }}</label>
-                        <input id="scheduled_at" type="datetime-local" name="scheduled_at"
-                               value="{{ old('scheduled_at') }}" class="ui-input">
-                        <p class="ui-hint">{{ __('guest.form.schedule_hint') }}</p>
-                    </div>
 
-                    <div>
-                        <label for="notes" class="ui-label">{{ __('guest.form.notes') }}</label>
-                        <textarea name="notes" id="notes" rows="2" class="ui-input"
-                                  placeholder="{{ __('guest.form.notes_placeholder') }}">{{ old('notes') }}</textarea>
-                        <x-input-error :messages="$errors->get('notes')" class="mt-2" />
+                    {{-- Perbaikan & Perawatan: 1. detail kerusakan, 2. urgensi, lalu data pesanan --}}
+                    @if ($service->slug === 'maintenance-repair')
+
+                        <div class="ui-form">
+                            <h3 class="ui-heading">{{ __('guest.form.maintenance_details') }}</h3>
+
+                            <input type="hidden" name="damage_category" id="form-damage-category" value="{{ old('damage_category') }}">
+
+                            <div>
+                                <span class="ui-label">{{ __('guest.form.damage_category') }} <span class="text-red-500">*</span></span>
+
+                                @php
+                                    $categoryTones = [
+                                        'cat_luntur'    => 'orange',
+                                        'kebocoran'     => 'blue',
+                                        'listrik'       => 'amber',
+                                        'ac'            => 'cyan',
+                                        'pintu_jendela' => 'indigo',
+                                        'furniture'     => 'purple',
+                                        'lainnya'       => 'sky',
+                                    ];
+                                    $categoryIcons = config('guest-icons.damage_categories');
+                                    $categoryKeys = array_keys(\App\Models\RepairPricing::CATEGORIES + ['lainnya' => 'Lainnya']);
+                                    $selectedCategory = old('damage_category');
+                                @endphp
+
+                                <div class="ui-opts ui-opts--3" style="margin-top:8px">
+                                    @foreach ($categoryKeys as $value)
+                                        @php
+                                            $checked = $selectedCategory === $value ? 'checked' : '';
+                                        @endphp
+                                        <label class="ui-opt" for="damage-category-{{ $value }}">
+                                            <input type="radio" name="damage_category_display" value="{{ $value }}" {{ $checked }}
+                                                   id="damage-category-{{ $value }}" class="damage-category-radio">
+                                            <div class="ui-opt-box">
+                                                <span class="ui-ico tone-{{ $categoryTones[$value] ?? 'sky' }}"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">{!! $categoryIcons[$value] ?? $categoryIcons['lainnya'] !!}</svg></span>
+                                                <span class="ui-opt-name" style="font-size:11px">{{ __('guest.damage_categories.' . $value) }}</span>
+                                            </div>
+                                        </label>
+                                    @endforeach
+                                </div>
+
+                                <x-input-error :messages="$errors->get('damage_category')" class="mt-2" />
+                            </div>
+
+                            <div>
+                                <label for="location" class="ui-label">{{ __('guest.form.damage_location') }}</label>
+                                <input id="location" name="location" value="{{ old('location') }}" class="ui-input"
+                                       placeholder="{{ __('guest.form.damage_location_placeholder') }}">
+                                <x-input-error :messages="$errors->get('location')" class="mt-2" />
+                            </div>
+                        </div>
+
+                        <div class="ui-divider ui-form">
+                            <h3 class="ui-heading">{{ __('guest.form.urgency_title') }}</h3>
+
+                            <input type="hidden" name="urgency" id="form-urgency" value="{{ old('urgency', 'medium') }}">
+
+                            <div>
+                                @php
+                                    $urgencyConfig = [
+                                        'low'    => ['tone' => 'emerald', 'icon' => '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path stroke-linecap="round" d="M12 7v5l3 2"/></svg>'],
+                                        'medium' => ['tone' => 'amber',   'icon' => '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 3h.01M10.3 4.4L2.5 18a1 1 0 00.9 1.5h17.2a1 1 0 00.9-1.5L13.7 4.4a1 1 0 00-1.4 0z"/></svg>'],
+                                        'high'   => ['tone' => 'red',     'icon' => '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>'],
+                                    ];
+                                    $selectedUrgency = old('urgency', 'medium');
+                                @endphp
+
+                                <div class="ui-opts ui-opts--3" style="margin-top:8px">
+                                    @foreach ($urgencyConfig as $value => $cfg)
+                                        @php $checked = $selectedUrgency === $value ? 'checked' : ''; @endphp
+                                        <label class="ui-opt" for="urgency-{{ $value }}">
+                                            <input type="radio" name="urgency_display" value="{{ $value }}" {{ $checked }}
+                                                   id="urgency-{{ $value }}" class="urgency-radio">
+                                            <div class="ui-opt-box">
+                                                <span class="ui-ico tone-{{ $cfg['tone'] }}">{!! $cfg['icon'] !!}</span>
+                                                <div>
+                                                    <p class="ui-opt-name">{{ __('guest.urgency.' . $value . '.label') }}</p>
+                                                    <p class="ui-opt-desc">{{ __('guest.urgency.' . $value . '.desc') }}</p>
+                                                </div>
+                                            </div>
+                                        </label>
+                                    @endforeach
+                                </div>
+
+                                <x-input-error :messages="$errors->get('urgency')" class="mt-2" />
+                            </div>
+                        </div>
+
+                    @endif
+
+                    {{-- Data pesanan (jadwal & catatan) --}}
+                    <div class="{{ $service->slug === 'maintenance-repair' ? 'ui-divider ui-form' : 'ui-form' }}">
+                        @if ($service->slug === 'maintenance-repair')
+                            <h3 class="ui-heading">{{ __('guest.form.order_data_title') }}</h3>
+                        @endif
+
+                        <div>
+                            <label for="scheduled_at" class="ui-label">{{ __('guest.form.schedule_optional') }}</label>
+                            <input id="scheduled_at" type="datetime-local" name="scheduled_at"
+                                   value="{{ old('scheduled_at') }}" class="ui-input">
+                            <p class="ui-hint">{{ __('guest.form.schedule_hint') }}</p>
+                        </div>
+
+                        <div>
+                            <label for="notes" class="ui-label">{{ __('guest.form.notes') }}</label>
+                            <textarea name="notes" id="notes" rows="2" class="ui-input"
+                                      placeholder="{{ __('guest.form.notes_placeholder') }}">{{ old('notes') }}</textarea>
+                            <x-input-error :messages="$errors->get('notes')" class="mt-2" />
+                        </div>
                     </div>
 
                     {{-- Lokasi — wajib untuk semua jasa --}}
@@ -375,95 +516,12 @@
                         </div>
                     </div>
 
-                    {{-- Maintenance & Repair --}}
+
+                    {{-- Foto kerusakan (Perbaikan & Perawatan) --}}
                     @if ($service->slug === 'maintenance-repair')
-
                         <div class="ui-divider ui-form">
-
-                            <h3 class="ui-heading">{{ __('guest.form.maintenance_details') }}</h3>
-
-                            <input type="hidden" name="damage_category" id="form-damage-category" value="{{ old('damage_category') }}">
-
                             <div>
-                                <span class="ui-label">{{ __('guest.form.damage_category') }} <span class="text-red-500">*</span></span>
-
-                                @php
-                                    $categoryIconConfig = [
-                                        'cat_luntur'    => ['icon' => '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 3h6l1.2 4.5H7.8L9 3zM6.5 7.5h11l-1 5.2a5 5 0 01-9 0l-1-5.2zM10 15v5m4-5v5"/></svg>', 'tone' => 'orange'],
-                                        'kebocoran'     => ['icon' => '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3s6 6.7 6 11a6 6 0 01-12 0c0-4.3 6-11 6-11z"/></svg>', 'tone' => 'blue'],
-                                        'listrik'       => ['icon' => '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M13 3L4 14h7v7l9-11h-7z"/></svg>', 'tone' => 'amber'],
-                                        'ac'            => ['icon' => '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><rect x="3" y="6" width="18" height="7" rx="2"/><path stroke-linecap="round" d="M7 13v2M11 13v2.5M15 13v2M18 13v1.5"/></svg>', 'tone' => 'cyan'],
-                                        'pintu_jendela' => ['icon' => '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><rect x="5" y="3" width="14" height="18" rx="1"/><circle cx="15" cy="12" r="0.8" fill="currentColor" stroke="none"/></svg>', 'tone' => 'indigo'],
-                                        'furniture'     => ['icon' => '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v16M20 4v16M4 4h16"/></svg>', 'tone' => 'purple'],
-                                        'lainnya'       => ['icon' => '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path stroke-linecap="round" d="M12 16h.01M12 8a2 2 0 011.5 3.3c-.5.5-1.5 1-1.5 2"/></svg>', 'tone' => 'sky'],
-                                    ];
-                                    $categoryKeys = array_keys(\App\Models\RepairPricing::CATEGORIES + ['lainnya' => 'Lainnya']);
-                                    $selectedCategory = old('damage_category');
-                                @endphp
-
-                                <div class="ui-opts ui-opts--3" style="margin-top:8px">
-                                    @foreach ($categoryKeys as $value)
-                                        @php
-                                            $cfg = $categoryIconConfig[$value] ?? $categoryIconConfig['lainnya'];
-                                            $checked = $selectedCategory === $value ? 'checked' : '';
-                                        @endphp
-                                        <label class="ui-opt" for="damage-category-{{ $value }}">
-                                            <input type="radio" name="damage_category_display" value="{{ $value }}" {{ $checked }}
-                                                   id="damage-category-{{ $value }}" class="damage-category-radio">
-                                            <div class="ui-opt-box">
-                                                <span class="ui-ico tone-{{ $cfg['tone'] }}">{!! $cfg['icon'] !!}</span>
-                                                <span class="ui-opt-name" style="font-size:11px">{{ __('guest.damage_categories.' . $value) }}</span>
-                                            </div>
-                                        </label>
-                                    @endforeach
-                                </div>
-
-                                <x-input-error :messages="$errors->get('damage_category')" class="mt-2" />
-                            </div>
-
-                            <div>
-                                <label for="location" class="ui-label">{{ __('guest.form.damage_location') }}</label>
-                                <input id="location" name="location" value="{{ old('location') }}" class="ui-input"
-                                       placeholder="{{ __('guest.form.damage_location_placeholder') }}">
-                                <x-input-error :messages="$errors->get('location')" class="mt-2" />
-                            </div>
-
-                            <input type="hidden" name="urgency" id="form-urgency" value="{{ old('urgency', 'medium') }}">
-
-                            <div>
-                                <span class="ui-label">{{ __('guest.form.urgency') }}</span>
-
-                                @php
-                                    $urgencyConfig = [
-                                        'low'    => ['tone' => 'emerald', 'icon' => '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path stroke-linecap="round" d="M12 7v5l3 2"/></svg>'],
-                                        'medium' => ['tone' => 'amber',   'icon' => '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 3h.01M10.3 4.4L2.5 18a1 1 0 00.9 1.5h17.2a1 1 0 00.9-1.5L13.7 4.4a1 1 0 00-1.4 0z"/></svg>'],
-                                        'high'   => ['tone' => 'red',     'icon' => '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>'],
-                                    ];
-                                    $selectedUrgency = old('urgency', 'medium');
-                                @endphp
-
-                                <div class="ui-opts ui-opts--3" style="margin-top:8px">
-                                    @foreach ($urgencyConfig as $value => $cfg)
-                                        @php $checked = $selectedUrgency === $value ? 'checked' : ''; @endphp
-                                        <label class="ui-opt" for="urgency-{{ $value }}">
-                                            <input type="radio" name="urgency_display" value="{{ $value }}" {{ $checked }}
-                                                   id="urgency-{{ $value }}" class="urgency-radio">
-                                            <div class="ui-opt-box">
-                                                <span class="ui-ico tone-{{ $cfg['tone'] }}">{!! $cfg['icon'] !!}</span>
-                                                <div>
-                                                    <p class="ui-opt-name">{{ __('guest.urgency.' . $value . '.label') }}</p>
-                                                    <p class="ui-opt-desc">{{ __('guest.urgency.' . $value . '.desc') }}</p>
-                                                </div>
-                                            </div>
-                                        </label>
-                                    @endforeach
-                                </div>
-
-                                <x-input-error :messages="$errors->get('urgency')" class="mt-2" />
-                            </div>
-
-                            <div>
-                                <span class="ui-label">{{ __('guest.form.photos_title') }}</span>
+                                <h3 class="ui-heading" style="margin-bottom:8px">{{ __('guest.form.photos_title') }}</h3>
                                 <div class="ui-upload">
                                     <input type="file" name="photos[]" id="photos" accept="image/*" multiple
                                            class="block w-full text-xs text-gray-500
@@ -476,9 +534,7 @@
                                 <x-input-error :messages="$errors->get('photos')" class="mt-2" />
                                 <p class="ui-hint">{{ __('guest.form.photos_hint') }}</p>
                             </div>
-
                         </div>
-
                     @endif
 
                     @if ($service->slug === 'laundry')
@@ -543,17 +599,16 @@
                                             {{ __('guest.status.' . $request->status) }}
                                         </span>
 
+                                        @if ($request->cancel_reason)
+                                            <p class="ui-row-meta">
+                                                {{ __('guest.cancel.reason') }}: {{ $request->cancelReasonLabel() }}@if ($request->cancel_note) — {{ $request->cancel_note }}@endif
+                                            </p>
+                                        @endif
+
                                     </div>
 
-                                    @if (in_array($request->status, ['pending', 'assigned']))
-                                        <form action="{{ route('guest.service-requests.destroy', $request) }}" method="POST" class="shrink-0"
-                                              onsubmit="return confirm('{{ __('guest.detail.confirm_cancel', ['id' => $request->id]) }}')">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="ui-btn ui-btn--soft ui-btn--sm">
-                                                {{ __('guest.detail.cancel') }}
-                                            </button>
-                                        </form>
+                                    @if ($request->canBeCancelledByGuest())
+                                        @include('guest.partials.cancel-order', ['serviceRequest' => $request])
                                     @endif
 
                                 </div>

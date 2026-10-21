@@ -329,6 +329,8 @@
     .ui-pill--waiting_approval{background:#FFEDD5;color:#9A3412;}
     .ui-pill--completed{background:#DCFCE7;color:#166534;}
     .ui-pill--rejected{background:#FEE2E2;color:#991B1B;}
+    .ui-pill--cancelled{background:#F3F4F6;color:#4B5563;}
+    [x-cloak]{display:none !important;}
 
     .ui-row{
         display:block;
