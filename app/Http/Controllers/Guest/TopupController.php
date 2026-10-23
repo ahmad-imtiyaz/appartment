@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Guest;
 
 use App\Http\Controllers\Controller;
+use App\Services\FcmService;
 use App\Models\BalanceMutation;
 use App\Models\PaymentMethod;
 use App\Models\TopupRequest;
@@ -76,7 +77,12 @@ class TopupController extends Controller
         $validated['user_id'] = auth()->id();
         $validated['status'] = 'pending';
 
-        TopupRequest::create($validated);
+        $topupRequest = TopupRequest::create($validated);
+
+        // Kirim notifikasi ke admin tentang request top up baru
+        FcmService::pushAdmins('Request Top Up Baru',
+            auth()->user()->name . ' mengajukan top up Rp' . number_format($topupRequest->amount, 0, ',', '.') . '.',
+            route('admin.topups.index', [], false));
 
         return redirect()
             ->route('guest.topups.index')

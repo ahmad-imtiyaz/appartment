@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Worker;
 
 use App\Http\Controllers\Controller;
+use App\Services\FcmService;
 use App\Models\ServiceRequest;
 use App\Models\WorkerPayout;
 use Illuminate\Http\RedirectResponse;
@@ -77,6 +78,11 @@ class PayoutController extends Controller
         if (!$created) {
             return back()->with('error', 'Pendapatan tugas ini tidak bisa diajukan atau sudah pernah diajukan.');
         }
+
+        // Kirim notifikasi ke admin tentang pengajuan pencairan baru
+        FcmService::pushAdmins('Pengajuan Pencairan Baru',
+            $worker->name . ' mengajukan pencairan Rp' . number_format($serviceRequest->worker_earning, 0, ',', '.') . '.',
+            route('admin.worker-payouts.index', [], false));
 
         return back()->with('success', 'Pencairan Rp' . number_format($serviceRequest->worker_earning, 0, ',', '.') . ' berhasil diajukan, menunggu diproses admin.');
     }

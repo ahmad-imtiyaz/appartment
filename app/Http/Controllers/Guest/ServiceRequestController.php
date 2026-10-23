@@ -11,6 +11,7 @@ use App\Models\Service;
 use App\Models\ServiceRequest;
 use App\Models\ServiceRequestPhoto;
 use App\Services\RepairPaymentService;
+use App\Services\FcmService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -79,8 +80,6 @@ class ServiceRequestController extends Controller
 
         abort_unless(isset($categories[$category]), 404);
 
-        // Semua kategori (termasuk repair/MnR) diarahkan ke halaman service-detail
-        // yang sama, dengan card-based selector.
         if (in_array($category, ['laundry', 'cleaning', 'ac', 'repair'])) {
             $slug = $category === 'repair' ? 'maintenance-repair' : $category;
             return redirect()->route('guest.services.show', $slug);
@@ -165,7 +164,6 @@ class ServiceRequestController extends Controller
             'notes' => ['nullable', 'string', 'max:1000'],
             'scheduled_at' => ['nullable', 'date', 'after:now'],
 
-            // lokasi — wajib untuk semua jasa
             'daerah' => ['required', 'in:Jakarta'],
             'apartment_location_id' => ['required', 'exists:apartment_locations,id'],
             'apartment_tower_id' => [
@@ -173,28 +171,23 @@ class ServiceRequestController extends Controller
                 Rule::exists('apartment_towers', 'id')->where('apartment_location_id', $request->apartment_location_id),
             ],
 
-            // laundry-specific fields
             'laundry_type' => ['nullable', 'in:cuci,cuci_setrika,setrika'],
             'laundry_duration' => ['nullable', 'in:reguler,express'],
             'snapshot_price_per_kg' => ['nullable', 'numeric', 'min:0'],
 
-            // cleaning-specific fields
             'cleaning_duration_hours' => ['nullable', 'integer', 'min:1', 'max:12'],
             'cleaning_addon_ids' => ['nullable', 'array'],
             'cleaning_addon_ids.*' => ['exists:cleaning_addons,id'],
 
-            // ac-specific fields
             'ac_type' => ['nullable', 'in:ac-cleaning,ac-refill,ac-repair,ac-full-service'],
             'snapshot_ac_price' => ['nullable', 'numeric', 'min:0'],
 
-            // maintenance fields
             'damage_category' => ['nullable', 'string', 'max:100'],
             'location' => ['nullable', 'string', 'max:100'],
             'urgency' => ['nullable', 'in:low,medium,high'],
             'photos' => ['nullable', 'array', 'max:5'],
             'photos.*' => ['image', 'max:2048'],
         ], [
-            // pesan error custom
             'apartment_tower_id.exists' => 'Tower yang dipilih tidak sesuai dengan lokasi.',
         ]);
 
@@ -272,7 +265,6 @@ class ServiceRequestController extends Controller
                     );
                 }
             } else {
-                // ac-repair & ac-full-service: survey dulu, harga ditentukan belakangan
                 $validated['snapshot_ac_price'] = null;
             }
         }
@@ -297,7 +289,6 @@ class ServiceRequestController extends Controller
             ]);
 
             if ($isCleaning) {
-
                 if (!empty($validated['cleaning_addon_ids'])) {
                     $addons = \App\Models\CleaningAddon::whereIn('id', $validated['cleaning_addon_ids'])
                         ->active()
@@ -334,6 +325,13 @@ class ServiceRequestController extends Controller
             return $serviceRequest;
         });
 
+        // Kirim notifikasi ke admin tentang request baru
+        FcmService::pushAdmins(
+            'Request Jasa Baru',
+            auth()->user()->name . ' mengajukan ' . $service->name . '.',
+            route('admin.service-requests.show', $serviceRequest, false)
+        );
+
         return redirect()
             ->route('guest.service-requests.index')
             ->with('success', 'Permintaan jasa "' . $service->name . '" berhasil diajukan, menunggu diproses admin.');
@@ -351,7 +349,6 @@ class ServiceRequestController extends Controller
             'cancel_note.required_if' => __('guest.cancel.note_required'),
         ]);
 
-        // Kunci baris: cegah balapan dengan admin yang sedang assign pekerja
         $cancelled = DB::transaction(function () use ($serviceRequest, $validated) {
             $locked = ServiceRequest::lockForUpdate()->findOrFail($serviceRequest->id);
 
@@ -374,6 +371,12 @@ class ServiceRequestController extends Controller
             return back()->with('error', __('guest.flash.cancel_not_allowed'));
         }
 
+        FcmService::pushAdmins(
+            'Request Dibatalkan',
+            auth()->user()->name . ' membatalkan request ' . $serviceRequest->service->name . '.',
+            route('admin.service-requests.show', $serviceRequest, false)
+        );
+
         return back()->with('success', __('guest.flash.request_cancelled', ['service' => $serviceRequest->service->name]));
     }
 
@@ -388,6 +391,19 @@ class ServiceRequestController extends Controller
             return back()->with('error', 'Saldo tidak cukup. Silakan top up terlebih dahulu.');
         }
 
+        FcmService::pushAdmins(
+            'Harga Disetujui',
+            auth()->user()->name . ' menyetujui harga. Pekerjaan bisa dilanjutkan.',
+            route('admin.service-requests.show', $serviceRequest, false)
+        );
+
+        FcmService::pushUser(
+            $serviceRequest->worker,
+            'Harga Disetujui',
+            'Guest menyetujui harga. Silakan lanjutkan pekerjaan.',
+            route('worker.tasks.show', $serviceRequest, false)
+        );
+
         return back()->with('success', 'Harga disetujui, saldo telah dipotong. Pekerjaan akan dilanjutkan.');
     }
 
@@ -397,6 +413,19 @@ class ServiceRequestController extends Controller
         abort_if($serviceRequest->status !== 'waiting_approval', 422, 'Tidak ada harga yang menunggu persetujuan.');
 
         $serviceRequest->update(['status' => 'rejected']);
+
+        FcmService::pushAdmins(
+            'Harga Ditolak',
+            auth()->user()->name . ' menolak harga yang ditetapkan.',
+            route('admin.service-requests.show', $serviceRequest, false)
+        );
+
+        FcmService::pushUser(
+            $serviceRequest->worker,
+            'Harga Ditolak',
+            'Guest menolak harga, tugas dibatalkan.',
+            route('worker.tasks.show', $serviceRequest, false)
+        );
 
         return redirect()
             ->route('guest.service-requests.index')
@@ -415,6 +444,13 @@ class ServiceRequestController extends Controller
         if (!$paid) {
             return back()->with('error', 'Saldo tidak cukup. Silakan top up terlebih dahulu.');
         }
+
+        FcmService::pushUser(
+            $serviceRequest->worker,
+            'Laundry Sudah Dibayar',
+            'Guest sudah membayar. Silakan antar laundry.',
+            route('worker.tasks.show', $serviceRequest, false)
+        );
 
         return back()->with('success', 'Pembayaran berhasil. Laundry akan segera diantar.');
     }

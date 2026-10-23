@@ -9,10 +9,12 @@ use App\Models\ServiceRequest;
 use App\Models\User;
 use App\Notifications\SurveyReportedNotification;
 use App\Services\CoinRewardService;
+use App\Services\FcmService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
+use function Illuminate\Support\defer;
 
 class TaskController extends Controller
 {
@@ -132,6 +134,14 @@ class TaskController extends Controller
             return back()->with('success', 'Tugas sudah diterima sebelumnya.');
         }
 
+        // Kirim notifikasi ke guest user bahwa tugas diterima
+        defer(fn () => app(FcmService::class)->pushUser(
+            $serviceRequest->user,
+            'Pesanan Sedang Dikerjakan',
+            'Pekerja sudah menerima pesananmu dan mulai mengerjakannya.',
+            route('guest.service-requests.show', $serviceRequest, false),
+        ));
+
         return back()->with('success', 'Tugas diterima, status diubah jadi sedang dikerjakan.');
     }
 
@@ -181,6 +191,13 @@ class TaskController extends Controller
         $admin = $serviceRequest->assignedBy ?? User::where('role', 'admin')->first();
         $admin?->notify(new SurveyReportedNotification($serviceRequest));
 
+        // Kirim notifikasi ke admin tentang survey hasil
+        defer(fn () => app(FcmService::class)->pushAdmins(
+            'Hasil Survey Masuk',
+            'Pekerja sudah mengirim survey. Silakan set harga.',
+            route('admin.service-requests.show', $serviceRequest, false),
+        ));
+
         return back()->with('success', 'Hasil survey berhasil dikirim, menunggu admin menetapkan harga.');
     }
 
@@ -215,6 +232,14 @@ class TaskController extends Controller
         abort_if($serviceRequest->weighed_at === null, 422, 'Berat belum diinput, tidak bisa lanjut ke pembayaran.');
 
         $serviceRequest->update(['status' => 'waiting_payment']);
+
+        // Kirim notifikasi ke guest user bahwa laundry selesai
+        defer(fn () => app(FcmService::class)->pushUser(
+            $serviceRequest->user,
+            'Laundry Selesai Dicuci',
+            'Laundry kamu sudah selesai. Silakan bayar agar bisa diantar.',
+            route('guest.service-requests.show', $serviceRequest, false),
+        ));
 
         return back()->with('success', 'Laundry selesai dicuci. Menunggu guest melakukan pembayaran.');
     }
@@ -251,6 +276,14 @@ class TaskController extends Controller
 
         (new CoinRewardService())
             ->awardForServiceRequest($serviceRequest, $serviceRequest->user, $serviceRequest->total_price ?? 0);
+
+        // Kirim notifikasi ke guest user bahwa pesanan selesai
+        defer(fn () => app(FcmService::class)->pushUser(
+            $serviceRequest->user,
+            'Pesanan Selesai',
+            'Pesananmu sudah selesai. Jangan lupa beri penilaian!',
+            route('guest.service-requests.show', $serviceRequest, false),
+        ));
 
         return back()->with('success', 'Laundry ditandai selesai & sudah diterima guest.');
     }
@@ -366,6 +399,14 @@ class TaskController extends Controller
                 'Saldo guest belum cukup untuk membayar tugas ini. Minta guest top up dulu, lalu tandai selesai lagi.'
             );
         }
+
+        // Kirim notifikasi ke guest user bahwa pesanan selesai
+        defer(fn () => app(FcmService::class)->pushUser(
+            $serviceRequest->user,
+            'Pesanan Selesai',
+            'Pesananmu sudah selesai. Jangan lupa beri penilaian!',
+            route('guest.service-requests.show', $serviceRequest, false),
+        ));
 
         return back()->with('success', 'Tugas ditandai selesai.');
     }

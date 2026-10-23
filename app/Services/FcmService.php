@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\DeviceToken;
 use App\Models\User;
+use function Illuminate\Support\defer;
 use Google\Auth\Credentials\ServiceAccountCredentials;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
@@ -71,6 +72,32 @@ class FcmService
         } catch (Throwable $e) {
             Log::error('FCM error: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Kirim ke semua user dengan role admin di belakang layar (tidak memperlambat response).
+     */
+    public function sendToAdmins(string $title, string $body, array $data = []): void
+    {
+        User::where('role', 'admin')->get()
+            ->each(fn (User $admin) => $this->sendToUser($admin, $title, $body, $data));
+    }
+
+    /**
+     * Kirim ke satu user di belakang layar (tidak memperlambat response).
+     */
+    public static function pushUser(?User $user, string $title, string $body, string $path): void
+    {
+        if (!$user) return;
+        defer(fn () => app(self::class)->sendToUser($user, $title, $body, ['path' => $path]));
+    }
+
+    /**
+     * Kirim ke semua admin di belakang layar.
+     */
+    public static function pushAdmins(string $title, string $body, string $path): void
+    {
+        defer(fn () => app(self::class)->sendToAdmins($title, $body, ['path' => $path]));
     }
 
     /**

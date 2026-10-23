@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Services\FcmService;
 use App\Models\BalanceMutation;
 use App\Models\TopupRequest;
 use Illuminate\Http\RedirectResponse;
@@ -48,6 +49,14 @@ class TopupController extends Controller
                 'approved_by' => auth()->id(),
                 'approved_at' => now(),
             ]);
+
+            // Kirim notifikasi push ke guest user
+            defer(fn () => app(FcmService::class)->pushUser(
+                $topupRequest->user,
+                'Top Up Berhasil',
+                'Saldo kamu sudah bertambah Rp' . number_format($topupRequest->amount, 0, ',', '.') . '.',
+                route('guest.balance', [], false),
+            ));
         });
 
         return back()->with('success', 'Top up disetujui, saldo user sudah bertambah.');
@@ -67,6 +76,14 @@ class TopupController extends Controller
             'approved_at' => now(),
             'admin_note' => $validated['admin_note'],
         ]);
+
+        // Kirim notifikasi push ke guest user
+        defer(fn () => app(FcmService::class)->pushUser(
+            $topupRequest->user,
+            'Top Up Ditolak',
+            'Top up kamu ditolak. Ketuk untuk melihat alasannya.',
+            route('guest.topups.index', [], false),
+        ));
 
         return back()->with('success', 'Top up ditolak.');
     }

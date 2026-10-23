@@ -1,5 +1,14 @@
 <?php
 
+use App\Http\Controllers\Admin\WithdrawalController as AdminWithdrawalController;
+use App\Http\Controllers\Admin\WorkerPayoutController as AdminWorkerPayoutController;
+use App\Http\Controllers\Auth\ConsentController;
+use App\Http\Controllers\Guest\CoinRedemptionController as GuestCoinRedemptionController;
+use App\Http\Controllers\Guest\FeedbackController;
+use App\Http\Controllers\Guest\ProfileController as GuestProfileController;
+use App\Http\Controllers\Guest\ServiceRequestController as GuestServiceRequestController;
+use App\Http\Controllers\Guest\TopupController as GuestTopupController;
+use App\Http\Controllers\Guest\WithdrawalController as GuestWithdrawalController;
 use App\Http\Controllers\Admin\CoinRedemptionController as AdminCoinRedemptionController;
 use App\Http\Controllers\Admin\CoinRedemptionProductController;
 use App\Http\Controllers\Admin\CoinSettingController;
@@ -14,25 +23,16 @@ use App\Http\Controllers\Admin\ServiceRequestController as AdminServiceRequestCo
 use App\Http\Controllers\Admin\TopupController as AdminTopupController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Admin\WorkerController;
-use App\Http\Controllers\Guest\CoinRedemptionController as GuestCoinRedemptionController;
-use App\Http\Controllers\Guest\FeedbackController;
-use App\Http\Controllers\Guest\ProfileController as GuestProfileController;
-use App\Http\Controllers\Guest\ServiceRequestController as GuestServiceRequestController;
-use App\Http\Controllers\Guest\TopupController as GuestTopupController;
-use App\Http\Controllers\Admin\WithdrawalController as AdminWithdrawalController;
-use App\Http\Controllers\Admin\WorkerPayoutController as AdminWorkerPayoutController;
-use App\Http\Controllers\Guest\WithdrawalController as GuestWithdrawalController;
-use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\Worker\ProfileController as WorkerProfileController;
+use App\Http\Controllers\Admin\LegalDocumentController as AdminLegalDocumentController;
 use App\Http\Controllers\Auth\EmailVerificationNotificationController;
 use App\Http\Controllers\Auth\EmailVerificationPromptController;
-use App\Http\Controllers\Admin\LegalDocumentController as AdminLegalDocumentController;
-use App\Http\Controllers\Auth\ConsentController;
 use App\Http\Controllers\LegalController;
 use App\Http\Controllers\Auth\VerifyEmailController;
 use App\Http\Controllers\Worker\TaskController;
 use App\Http\Controllers\Worker\PayoutController as WorkerPayoutRequestController;
 use App\Http\Controllers\Worker\DeviceTokenController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\Worker\ProfileController as WorkerProfileController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -40,7 +40,6 @@ use Illuminate\Support\Facades\Route;
 | Default
 |--------------------------------------------------------------------------
 */
-
 Route::get('/', function () {
     return redirect()->route('login');
 });
@@ -52,9 +51,7 @@ Route::get('/', function () {
 |
 | Route ini berada di luar middleware auth agar halaman login,
 | register, dan halaman publik lainnya juga dapat mengganti bahasa.
-|
 */
-
 Route::get('/lang/{locale}', [\App\Http\Controllers\LocaleController::class, 'switch'])
     ->name('lang.switch');
 
@@ -63,17 +60,9 @@ Route::get('/lang/{locale}', [\App\Http\Controllers\LocaleController::class, 'sw
 | Public Product Listings
 |--------------------------------------------------------------------------
 */
-
 Route::get('/product-listings', [AdminProductListingController::class, 'publicIndex'])
     ->name('product-listings.index');
 
-
-
-    /*
-|--------------------------------------------------------------------------
-| Syarat & Ketentuan, Kebijakan Privasi, dan Persetujuan Pendaftaran
-|--------------------------------------------------------------------------
-*/
 
 Route::get('/syarat-dan-ketentuan', [LegalController::class, 'show'])
     ->defaults('type', 'terms')
@@ -102,7 +91,6 @@ Route::middleware('guest')->group(function () {
 | guest    -> Guest Home
 |
 */
-
 Route::get('/dashboard', function () {
     $user = auth()->user();
 
@@ -129,7 +117,6 @@ Route::get('/dashboard', function () {
 | Dibutuhkan oleh view bawaan Breeze yang memanggil route('profile.edit'),
 | route('profile.update'), dan route('profile.destroy').
 | Pekerja sudah punya route + view sendiri (worker.profile.*).
-|
 */
 
 Route::middleware('auth')->group(function () {
@@ -158,7 +145,6 @@ Route::middleware('auth')->group(function () {
 | Guest (role: guest) — Penyewa Apartemen
 |--------------------------------------------------------------------------
 */
-
 Route::middleware(['auth', 'verified', 'role:guest'])
     ->prefix('guest')
     ->name('guest.')
@@ -169,7 +155,6 @@ Route::middleware(['auth', 'verified', 'role:guest'])
         | Guest Home
         |--------------------------------------------------------------------------
         */
-
         Route::get('/home', function () {
             $listings = \App\Models\ProductListing::where('is_active', true)
                 ->latest()
@@ -186,7 +171,6 @@ Route::middleware(['auth', 'verified', 'role:guest'])
         | Service Requests
         |--------------------------------------------------------------------------
         */
-
         Route::get('/service-requests', [GuestServiceRequestController::class, 'index'])
             ->name('service-requests.index');
 
@@ -219,7 +203,6 @@ Route::middleware(['auth', 'verified', 'role:guest'])
         | Service Detail (per service type)
         |--------------------------------------------------------------------------
         */
-
         Route::get('/services/{slug}', [GuestServiceRequestController::class, 'serviceDetail'])
             ->name('services.show');
 
@@ -228,7 +211,6 @@ Route::middleware(['auth', 'verified', 'role:guest'])
         | Feedback
         |--------------------------------------------------------------------------
         */
-
         Route::post('/service-requests/{serviceRequest}/feedback', [FeedbackController::class, 'store'])
             ->name('service-requests.feedback');
 
@@ -237,7 +219,6 @@ Route::middleware(['auth', 'verified', 'role:guest'])
         | Top Up
         |--------------------------------------------------------------------------
         */
-
         Route::get('/topups', [GuestTopupController::class, 'index'])
             ->name('topups.index');
 
@@ -256,7 +237,6 @@ Route::middleware(['auth', 'verified', 'role:guest'])
         | Balance
         |--------------------------------------------------------------------------
         */
-
         Route::get('/balance', [GuestTopupController::class, 'balance'])
             ->name('balance');
 
@@ -265,7 +245,6 @@ Route::middleware(['auth', 'verified', 'role:guest'])
         | Profile
         |--------------------------------------------------------------------------
         */
-
         Route::get('/profile', [GuestProfileController::class, 'edit'])
             ->name('profile.edit');
 
@@ -280,7 +259,6 @@ Route::middleware(['auth', 'verified', 'role:guest'])
         | Coin Redemptions
         |--------------------------------------------------------------------------
         */
-
         Route::get('/coin-redemptions', [GuestCoinRedemptionController::class, 'index'])
             ->name('coin-redemptions.index');
 
@@ -296,7 +274,6 @@ Route::middleware(['auth', 'verified', 'role:guest'])
 | Admin (role: admin)
 |--------------------------------------------------------------------------
 */
-
 Route::middleware(['auth', 'role:admin'])
     ->prefix('admin')
     ->name('admin.')
@@ -307,7 +284,6 @@ Route::middleware(['auth', 'role:admin'])
         | Admin Dashboard
         |--------------------------------------------------------------------------
         */
-
         Route::get('/', [DashboardController::class, 'index'])
             ->name('dashboard');
 
@@ -316,7 +292,6 @@ Route::middleware(['auth', 'role:admin'])
         | Profile
         |--------------------------------------------------------------------------
         */
-
         Route::get('/profile', [ProfileController::class, 'edit'])
             ->name('profile.edit');
 
@@ -331,7 +306,6 @@ Route::middleware(['auth', 'role:admin'])
         | Workers
         |--------------------------------------------------------------------------
         */
-
         Route::get('/workers', [WorkerController::class, 'index'])
             ->name('workers.index');
 
@@ -343,7 +317,6 @@ Route::middleware(['auth', 'role:admin'])
         | Users (Kelola User: daftar user + buat akun pekerja)
         |--------------------------------------------------------------------------
         */
-
         Route::get('/users', [AdminUserController::class, 'index'])
             ->name('users.index');
 
@@ -370,7 +343,6 @@ Route::middleware(['auth', 'role:admin'])
         | Payment Methods
         |--------------------------------------------------------------------------
         */
-
         Route::get('/payment-methods', [AdminPaymentMethodController::class, 'index'])
             ->name('payment-methods.index');
 
@@ -388,7 +360,6 @@ Route::middleware(['auth', 'role:admin'])
         | Top Ups
         |--------------------------------------------------------------------------
         */
-
         Route::get('/topups', [AdminTopupController::class, 'index'])
             ->name('topups.index');
 
@@ -403,7 +374,6 @@ Route::middleware(['auth', 'role:admin'])
         | Withdrawals
         |--------------------------------------------------------------------------
         */
-
         Route::get('/withdrawals', [AdminWithdrawalController::class, 'index'])->name('withdrawals.index');
         Route::post('/withdrawals/{withdrawalRequest}/approve', [AdminWithdrawalController::class, 'approve'])->name('withdrawals.approve');
         Route::post('/withdrawals/{withdrawalRequest}/reject', [AdminWithdrawalController::class, 'reject'])->name('withdrawals.reject');
@@ -420,7 +390,6 @@ Route::middleware(['auth', 'role:admin'])
         | Service Requests
         |--------------------------------------------------------------------------
         */
-
         Route::get('/service-requests', [AdminServiceRequestController::class, 'index'])
             ->name('service-requests.index');
 
@@ -441,7 +410,6 @@ Route::middleware(['auth', 'role:admin'])
         | Laundry Pricing
         |--------------------------------------------------------------------------
         */
-
         Route::resource('laundry-pricings', \App\Http\Controllers\Admin\LaundryPricingController::class)
             ->parameters(['laundry-pricings' => 'pricing'])
             ->except(['show', 'update']);
@@ -454,7 +422,6 @@ Route::middleware(['auth', 'role:admin'])
         | Cleaning Pricing
         |--------------------------------------------------------------------------
         */
-
         Route::get('/cleaning-pricings', [CleaningPricingController::class, 'edit'])
             ->name('cleaning-pricings.index');
 
@@ -466,7 +433,6 @@ Route::middleware(['auth', 'role:admin'])
         | Cleaning Addons
         |--------------------------------------------------------------------------
         */
-
         Route::resource('cleaning-addons', CleaningAddonController::class)
             ->except(['show']);
 
@@ -475,7 +441,6 @@ Route::middleware(['auth', 'role:admin'])
         | AC Pricing
         |--------------------------------------------------------------------------
         */
-
         Route::resource('ac-pricings', \App\Http\Controllers\Admin\AcPricingController::class)
             ->parameters(['ac-pricings' => 'pricing'])
             ->except(['show', 'update']);
@@ -488,7 +453,6 @@ Route::middleware(['auth', 'role:admin'])
         | Apartment Locations & Towers
         |--------------------------------------------------------------------------
         */
-
         Route::get('/apartment-locations', [\App\Http\Controllers\Admin\ApartmentLocationController::class, 'index'])
             ->name('apartment-locations.index');
 
@@ -509,7 +473,6 @@ Route::middleware(['auth', 'role:admin'])
         | Product Listings
         |--------------------------------------------------------------------------
         */
-
         Route::get('/product-listings', [AdminProductListingController::class, 'index'])
             ->name('product-listings.index');
 
@@ -540,7 +503,6 @@ Route::middleware(['auth', 'role:admin'])
         | Coin Settings
         |--------------------------------------------------------------------------
         */
-
         Route::get('/coin-settings', [CoinSettingController::class, 'index'])
             ->name('coin-settings.index');
 
@@ -552,7 +514,6 @@ Route::middleware(['auth', 'role:admin'])
         | Commission Settings (potongan admin dari pendapatan pekerja)
         |--------------------------------------------------------------------------
         */
-
         Route::get('/commission-settings', [CommissionSettingController::class, 'index'])
             ->name('commission-settings.index');
 
@@ -564,7 +525,6 @@ Route::middleware(['auth', 'role:admin'])
         | Coin Redemption Products
         |--------------------------------------------------------------------------
         */
-
         Route::get('/coin-redemption-products', [CoinRedemptionProductController::class, 'index'])
             ->name('coin-redemption-products.index');
 
@@ -588,7 +548,6 @@ Route::middleware(['auth', 'role:admin'])
         | Coin Redemptions (Guest Requests)
         |--------------------------------------------------------------------------
         */
-
         Route::get('/coin-redemptions', [AdminCoinRedemptionController::class, 'index'])
             ->name('coin-redemptions.index');
 
@@ -607,34 +566,33 @@ Route::middleware(['auth', 'role:admin'])
         | Dokumen Legal (Syarat & Ketentuan, Kebijakan Privasi)
         |--------------------------------------------------------------------------
         */
-
         Route::resource('legal-documents', AdminLegalDocumentController::class)
             ->only(['index', 'edit', 'update'])
             ->parameters(['legal-documents' => 'legalDocument']);
     });
 
+/*
+|--------------------------------------------------------------------------
+| Device Token FCM (semua role yang login)
+|--------------------------------------------------------------------------
+*/
+Route::middleware('auth')->group(function () {
+    Route::post('/device-tokens', [DeviceTokenController::class, 'store'])
+        ->name('device-tokens.store');
 
-
+    Route::delete('/device-tokens', [DeviceTokenController::class, 'destroy'])
+        ->name('device-tokens.destroy');
+});
 
 /*
 |--------------------------------------------------------------------------
 | Worker / Pekerja (role: pekerja)
 |--------------------------------------------------------------------------
 */
-
 Route::middleware(['auth', 'role:pekerja'])
     ->prefix('worker')
     ->name('worker.')
     ->group(function () {
-
-        Route::post('/device-tokens', [DeviceTokenController::class, 'store'])
-            ->name('device-tokens.store');
-
-        /*
-        |--------------------------------------------------------------------------
-        | Worker Tasks
-        |--------------------------------------------------------------------------
-        */
 
         Route::get('/tasks', [TaskController::class, 'index'])
             ->name('tasks.index');
@@ -660,23 +618,11 @@ Route::middleware(['auth', 'role:pekerja'])
         Route::post('/tasks/{serviceRequest}/survey', [TaskController::class, 'survey'])
             ->name('tasks.survey');
 
-        /*
-        |--------------------------------------------------------------------------
-        | Pencairan Pendapatan
-        |--------------------------------------------------------------------------
-        */
-
         Route::get('/payouts', [WorkerPayoutRequestController::class, 'index'])
             ->name('payouts.index');
 
         Route::post('/tasks/{serviceRequest}/payout', [WorkerPayoutRequestController::class, 'store'])
             ->name('payouts.store');
-
-        /*
-        |--------------------------------------------------------------------------
-        | Profile (view & controller khusus pekerja)
-        |--------------------------------------------------------------------------
-        */
 
         Route::get('/profile', [WorkerProfileController::class, 'edit'])
             ->name('profile.edit');
@@ -696,5 +642,4 @@ Route::middleware(['auth', 'role:pekerja'])
 | Authentication Routes
 |--------------------------------------------------------------------------
 */
-
 require __DIR__ . '/auth.php';

@@ -32,4 +32,15 @@ class DeviceTokenController extends Controller
 
         return response()->json(['ok' => true]);
     }
+
+    public function destroy(Request $request): JsonResponse
+    {
+        $validated = $request->validate(['token' => ['required', 'string', 'max:255']]);
+
+        DeviceToken::where('token', $validated['token'])
+            ->where('user_id', $request->user()->id)
+            ->delete();
+
+        return response()->json(['ok' => true]);
+    }
 }

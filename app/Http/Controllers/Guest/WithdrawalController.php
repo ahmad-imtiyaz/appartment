@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Guest;
 
 use App\Http\Controllers\Controller;
+use App\Services\FcmService;
 use App\Models\BalanceMutation;
 use App\Models\User;
 use App\Models\WithdrawalRequest;
@@ -88,6 +89,11 @@ class WithdrawalController extends Controller
         if (!$ok) {
             return back()->withInput()->withErrors(['amount' => 'Saldo tidak cukup.']);
         }
+
+        // Kirim notifikasi ke admin tentang request penarikan baru
+        FcmService::pushAdmins('Request Penarikan Baru',
+            auth()->user()->name . ' mengajukan penarikan Rp' . number_format($amount, 0, ',', '.') . '.',
+            route('admin.withdrawals.index', [], false));
 
         return redirect()
             ->route('guest.withdrawals.index')

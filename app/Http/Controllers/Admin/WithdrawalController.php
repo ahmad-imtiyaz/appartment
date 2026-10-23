@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Services\FcmService;
 use App\Models\BalanceMutation;
 use App\Models\User;
 use App\Models\WithdrawalRequest;
@@ -30,6 +31,11 @@ class WithdrawalController extends Controller
             'processed_by' => auth()->id(),
             'processed_at' => now(),
         ]);
+
+        // Kirim notifikasi ke user tentang penarikan berhasil
+        FcmService::pushUser($withdrawalRequest->user, 'Penarikan Berhasil',
+            'Penarikan Rp' . number_format($withdrawalRequest->net_amount, 0, ',', '.') . ' sudah ditransfer.',
+            route('guest.withdrawals.index', [], false));
 
         return back()->with('success', 'Penarikan ditandai selesai (sudah ditransfer).');
     }
@@ -67,6 +73,11 @@ class WithdrawalController extends Controller
                 'processed_at' => now(),
             ]);
         });
+
+        // Kirim notifikasi ke user tentang penarikan ditolak
+        FcmService::pushUser($withdrawalRequest->user, 'Penarikan Ditolak',
+            'Penarikan ditolak, saldo sudah dikembalikan.',
+            route('guest.withdrawals.index', [], false));
 
         return back()->with('success', 'Penarikan ditolak, saldo dikembalikan ke user.');
     }

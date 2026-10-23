@@ -11,15 +11,19 @@ Sistem manajemen layanan apartemen dengan 3 role: **admin**, **pekerja** (worker
 
 | Model | Table | Key Fields | Purpose |
 |-------|-------|------------|---------|
-| **User** | `users` | `role` (admin/pekerja/guest), `status` (penyewa/pemilik/agent), `daerah`, `apartment_location_id`, `apartment_tower_id`, `specialization`, `balance`, `coin_balance`, `apartment_unit_number`, `phone` | Semua user (3 role) + profil apartemen. `specialization` untuk pekerja: nama jasa yg ditangani (null = semua) |
+| **User** | `users` | `role` (admin/pekerja/guest), `status` (penyewa/pemilik/agent), `daerah`, `apartment_location_id`, `apartment_tower_id`, `specialization`, `balance`, `coin_balance`, `apartment_unit_number`, `phone`, `bank_name`, `bank_account_number`, `bank_account_holder`, `terms_version`, `privacy_version`, `consented_at` | Semua user (3 role) + profil apartemen. `specialization` untuk pekerja: nama jasa yg ditangani (null = semua) |
 | **Service** | `services` | `slug` (laundry/cleaning/ac/maintenance-repair), `base_price`, `is_active` | Master jenis jasa |
-| **ServiceRequest** | `service_requests` | `user_id`, `service_id`, `worker_id`, `assigned_by`, `status`, `cost`, `total_price`, `daerah`, `apartment_location_id`, `apartment_tower_id`, `commission_percent`, `commission_amount`, `worker_earning`, service-specific fields | Transaksi utama + lokasi layanan + potongan admin (snapshot) |
+| **ServiceRequest** | `service_requests` | `user_id`, `service_id`, `worker_id`, `assigned_by`, `status`, `cost`, `total_price`, `daerah`, `apartment_location_id`, `apartment_tower_id`, `commission_percent`, `commission_amount`, `worker_earning`, `cancel_reason`, `cancel_note`, `cancelled_by`, `cancelled_at`, service-specific fields | Transaksi utama + lokasi layanan + potongan admin (snapshot) |
 | **TopupRequest** | `topup_requests` | `user_id`, `payment_method_id`, `amount`, `status` (pending/approved/rejected) | Request isi saldo |
+| **PasswordResetCode** | `password_reset_codes` | `email`, `code_hash`, `attempts`, `expires_at` | Kode OTP reset password (tanpa token email) |
 | **PaymentMethod** | `payment_methods` | `type` (bank_transfer/qris), `bank_name`, `qr_image` | Metode pembayaran topup |
 | **WithdrawalRequest** | `withdrawal_requests` | `user_id`, `amount`, `fee`, `net_amount`, `bank_name`, `account_number`, `account_holder_name`, `status` (pending/approved/rejected), `admin_note`, `processed_by`, `processed_at` | Request tarik saldo guest |
 | **WithdrawalSetting** | `withdrawal_settings` | `min_amount`, `fee_type` (flat/percent), `fee_value` | Setting penarikan (minimal, biaya admin) |
 | **CommissionSetting** | `commission_settings` | `percentage` (default 10) | Persentase potongan admin dari pendapatan pekerja (single active row) |
 | **DeviceToken** | `device_tokens` | `user_id`, `token` (unique), `platform` | FCM token untuk push notifikasi ke worker |
+| **WorkerPayout** | `worker_payouts` | `service_request_id`, `worker_id`, `amount`, `bank_name`, `account_number`, `account_holder_name`, `status` (pending/paid), `proof_path`, `admin_note`, `processed_by`, `paid_at` | Pencairan pendapatan pekerja per tugas selesai |
+| **PromoBanner** | `promo_banners` | `title`, `image`, `link_url`, `is_active`, `sort_order`, `posted_by` | Banner promosi di beranda guest |
+| **LegalDocument** | `legal_documents` | `type` (terms/privacy), `title`, `summary`, `content`, `version` | Dokumen hukum: Syarat & Ketentuan & Kebijakan Privasi |
 
 ### ServiceRequest AC Types
 - `ac-cleaning` — Cuci AC (fixed price upfront)
@@ -70,9 +74,9 @@ Sistem manajemen layanan apartemen dengan 3 role: **admin**, **pekerja** (worker
 ## User Roles & Access Control
 
 ### Middleware: `EnsureUserHasRole` (`role:admin,pekerja,guest`)
-- **admin**: Full CRUD pricing, assign pekerja (single/multi), approve/reject topup & harga MnR, manage workers, **kelola lokasi unit & tower**, **kelola user (CRUD)**, **setting komisi**, **manage FCM credentials**
-- **pekerja**: Terima tugas (ACC tawaran multi-assign), input survey/berat, complete tugas, upload foto after, **register device token FCM**
-- **guest**: Request jasa, topup saldo, lihat riwayat, feedback, redeem koin, marketplace, **edit profil lengkap (status, daerah, lokasi, tower)**, **penarikan saldo**
+- **admin**: Full CRUD pricing, assign pekerja (single/multi), approve/reject topup & harga MnR, manage workers, **kelola lokasi unit & tower**, **kelola user (CRUD)**, **setting komisi**, **manage FCM credentials**, **kelola banner promosi**, **kelola dokumen hukum**, **kelola pencairan pekerja**
+- **pekerja**: Terima tugas (ACC tawaran multi-assign), input survey/berat, complete tugas, upload foto after, **register device token FCM**, **ajukan pencairan pendapatan**, **edit profil & data rekening**
+- **guest**: Request jasa, topup saldo, lihat riwayat, feedback, redeem koin, marketplace, **edit profil lengkap (status, daerah, lokasi, tower)**, **penarikan saldo**, **setuju syarat & ketentuan saat register**
 
 ### Role Helpers (User model)
 ```php
@@ -90,6 +94,18 @@ $user->isGuest()    // role === 'guest'
 | `apartment_tower_id` | FK | Tower (required, relasi ke apartment_towers, must match location) |
 | `apartment_unit_number` | string | Nomor unit, optional |
 | `specialization` | string | **Khusus pekerja**: nama jasa (laundry/cleaning/ac/maintenance-repair), null = semua jasa |
+| `bank_name` | string | **Khusus pekerja**: nama bank untuk pencairan pendapatan |
+| `bank_account_number` | string | **Khusus pekerja**: nomor rekening pencairan |
+| `bank_account_holder` | string | **Khusus pekerja**: nama pemilik rekening |
+| `terms_version` | unsigned integer | Versi Syarat & Ketentuan yang disetujui |
+| `privacy_version` | unsigned integer | Versi Kebijakan Privasi yang disetujui |
+| `consented_at` | timestamp | Waktu persetujuan dokumen hukum |
+
+### User Model Helper Methods
+```php
+$user->hasBankAccount()  // true jika bank_name, bank_account_number, dan bank_account_holder semua terisi
+$user->workerPayouts()   // HasMany WorkerPayout (pekerja)
+```
 
 ---
 
@@ -99,17 +115,24 @@ $user->isGuest()    // role === 'guest'
 pending → assigned → in_progress → [waiting_approval (MnR/AC repair only)] → completed
                ↓              ↓
              rejected    waiting_payment (Laundry only) → in_progress → completed
+             
+Guest cancel (pending only):
+pending → cancelled
+
+Admin reject (pending only):
+pending → rejected (with cancel_reason/cancel_note from ADMIN_REJECT_REASONS)
 ```
 
 | Status | Meaning | Who Can Act |
 |--------|---------|-------------|
-| `pending` | Baru dibuat guest, menunggu admin assign | Admin assign |
+| `pending` | Baru dibuat guest, menunggu admin assign | Admin assign, Guest cancel |
 | `assigned` | Sudah di-assign/offer ke pekerja, menunggu ACC | Pekerja accept |
 | `in_progress` | Pekerja sudah ACC, sedang dikerjakan | Pekerja: survey/weigh/complete |
 | `waiting_approval` | **MnR/AC repair/full** - Harga final dikirim admin, menunggu guest approve | Guest: approve/reject price |
 | `waiting_payment` | **Laundry only** - Selesai dicuci, menunggu guest bayar sebelum diantar | Guest: bayar via `payLaundry` |
 | `completed` | Selesai, saldo dipotong, koin reward diberikan, **komisi di-snapshot** | - |
 | `rejected` | Dibatalkan (guest/admin) | - |
+| `cancelled` | Dibatalkan oleh guest saat masih pending | Guest (hanya status pending) |
 
 ---
 
@@ -128,6 +151,19 @@ pending → approved (admin transfer) → completed
 
 ---
 
+### Worker Payout Status Flow
+
+```
+pending → paid (admin transfer + bukti transfer)
+```
+
+| Status | Meaning | Who Can Act |
+|--------|---------|-------------|
+| `pending` | Pekerja ajukan pencairan, menunggu admin proses | Admin mark as paid |
+| `paid` | Admin sudah transfer + upload bukti, selesai | - |
+
+---
+
 ### ServiceRequest Helper Methods (Model)
 ```php
 // ServiceRequest.php
@@ -143,6 +179,13 @@ $serviceRequest->calculateTotalPrice()  // laundry: weight × rate; cleaning: ho
 $serviceRequest->calculateFinalPrice(array $doneAddonIds) // cleaning: hours × rate + HANYA addon yang is_done (dipanggil saat complete)
 $serviceRequest->commissionFor(float $gross) // static: hitung potongan admin dari CommissionSetting::current()
 $serviceRequest->hasCommission()    // commission_percent !== null
+$serviceRequest->canBeCancelledByGuest() // status === 'pending'
+$serviceRequest->canBeRejectedByAdmin()  // status === 'pending'
+$serviceRequest->isCancelled()      // status === 'cancelled'
+$serviceRequest->cancelReasonLabel() // label bahasa dari cancel_reason key
+$serviceRequest->statusLabel()      // label bahasa status (termasuk 'cancelled' → 'Dibatalkan')
+$serviceRequest->payout()           // HasOne WorkerPayout
+$serviceRequest->canRequestPayout() // completed + worker_id !== null + worker_earning > 0 + !payout()->exists()
 ```
 
 ---
@@ -161,8 +204,7 @@ $serviceRequest->hasCommission()    // commission_percent !== null
 - **Estimasi saat order**: Total = `cleaning_duration_hours` × `snapshot_cleaning_price_per_hour` + Σ `snapshot_price` SEMUA addon yang dipilih (disimpan di `total_price`)
 - **Pekerja checklist addon saat complete**: Pekerja mencentang addon yang benar-benar dikerjakan (form `Tandai Selesai` → `cleaning_addon_ids[]`). Pivot `is_done` diupdate. `total_price` dihitung ulang via `calculateFinalPrice($doneAddonIds)` → hanya addon `is_done = true` yang masuk harga final.
 - Guest bayar saat complete = **harga final** (bukan estimasi) — saldo dipotong di `TaskController@complete`, **komisi di-snapshot**
-- **Aturan bisnis**: Addon dipilih guest ≠ otomatis dikerjakan. Addon dichecklist pekerja = ditagihkan. Addon tidak dichecklist = tidak ditagihkan. Guest komplain lewat feedback jika addon yang dichecklist ternyata tidak dikerjakan.
-- **Validasi**: `cleaning_addon_ids` yang dikirim pekerja wajib subset dari addon yang ada di pivot order tersebut (tidak bisa menambah addon baru)
+- **Aturan bisnis**: Addon dipilih guest saat order = estimasi. Pekerja mencentang addon yang benar-benar dikerjakan saat `complete` (`cleaning_addon_ids[]`) → pivot `is_done` diupdate → `total_price` dihitung ulang via `calculateFinalPrice()` (hanya addon `is_done=true`). Guest hanya ditagih harga final. Validasi: ID yang dikirim pekerja wajib subset addon di pivot order (anti-inject addon baru). Komplain lewat feedback yang sudah ada.
 - Guest view menampilkan transparansi: status per addon (Dikerjakan/Tidak dikerjakan) + rincian harga final untuk order `completed`
 
 ### AC
@@ -246,6 +288,14 @@ for(User $user): string
 - Butuh `ADMIN_WHATSAPP` di `.env` (format 08xxx atau 628xxx)
 - Partial: `guest.partials.contact-admin`
 
+### UserWhatsappLink (NEW)
+```php
+for(?string $phone, ?string $message = null): ?string
+```
+- Generate wa.me link ke nomor telepon user. Return null kalau nomor kosong/tidak valid.
+- Konversi format: 08xxx → 628xxx, 8xxx → 628xxx, 62xxx tetap
+- Sanity check: nomor Indonesia 10-15 digit termasuk 62
+
 ---
 
 ## Routes Structure
@@ -254,9 +304,13 @@ for(User $user): string
 - `GET /` → redirect to login
 - `GET /product-listings` → public marketplace
 - `GET /lang/{locale}` → switch locale
+- `GET /syarat-dan-ketentuan` → LegalController@show (type=terms) → `legal.terms`
+- `GET /kebijakan-privasi` → LegalController@show (type=privacy) → `legal.privacy`
 
 ### Auth (routes/auth.php)
 - Standard Laravel Breeze: register, login, email verification, password reset, logout
+- **Password reset menggunakan kode OTP** (tidak via email token): `password_reset_codes` tabel
+- **Consent step sebelum register**: `/register/consent` (show + store) → harus setuju Syarat & Ketentuan dan Kebijakan Privasi
 
 ### Dashboard (role-based redirect)
 - `GET /dashboard` → redirect by role:
@@ -267,13 +321,14 @@ for(User $user): string
 ### Guest Routes (`guest.*`, prefix `/guest`, middleware `auth, role:guest`)
 | Route | Controller | Purpose |
 |-------|------------|---------|
-| `GET /home` | closure | Guest dashboard (3 properti terbaru slider + services grid) |
+| `GET /home` | closure | Guest dashboard (3 properti terbaru slider + services grid + **promo banners**) |
 | `GET /service-requests` | GuestServiceRequestController@index | List request guest |
 | `GET /service-requests/category/{category}` | @category | Category landing |
 | `GET /service-requests/create` | @create | Form buat request |
 | `POST /service-requests` | @store | Submit request (dengan validasi lokasi wajib) |
 | `GET /service-requests/{sr}` | @show | Detail request (termasuk lokasi, payment laundry, approve/reject MnR) |
 | `DELETE /service-requests/{sr}` | @destroy | Cancel (pending/assigned only) |
+| `POST /service-requests/{sr}/cancel` | @cancel | **Batalkan request (hanya status pending)** + cancel_reason/cancel_note |
 | `POST /service-requests/{sr}/approve-price` | @approvePrice | Approve harga MnR |
 | `POST /service-requests/{sr}/reject-price` | @rejectPrice | Reject harga MnR |
 | `POST /service-requests/{sr}/pay-laundry` | @payLaundry | **Bayar tagihan laundry (status waiting_payment)** |
@@ -318,6 +373,7 @@ for(User $user): string
 | `GET /service-requests` | ServiceRequestController@index | List all (filter by status, service) |
 | `GET /service-requests/{sr}` | @show | Detail + assign worker form (**eligible workers by specialization**) |
 | `POST /service-requests/{sr}/assign` | @assign | **Assign ke 1+ pekerja (multi-assign, siapa ACC dulu dapat)** + notif (DB + FCM) |
+| `POST /service-requests/{sr}/reject` | @reject | **Reject request (pending only, dengan alasan)** |
 | `POST /service-requests/{sr}/set-price` | @setPrice | Set harga MnR + notif guest |
 | `resource laundry-pricings` | LaundryPricingController | CRUD pricing laundry |
 | `GET /cleaning-pricings` | CleaningPricingController@edit | **Edit tarif cleaning per jam (single active rate)** |
@@ -340,6 +396,17 @@ for(User $user): string
 | `POST /coin-redemptions/{cr}/reject` | @reject | Reject redeem |
 | `GET /commission-settings` | CommissionSettingController@index | **View setting komisi** |
 | `PUT /commission-settings` | CommissionSettingController@update | **Update persentase potongan admin** |
+| `GET /worker-payouts` | WorkerPayoutController@index | **List pencairan pendapatan pekerja (filter status, paginate 20)** |
+| `POST /worker-payouts/{workerPayout}/pay` | WorkerPayoutController@pay | **Tandai sudah transfer + upload bukti transfer + notif pekerja** |
+| `GET /promo-banners` | PromoBannerController@index | **CRUD banner promosi beranda guest** |
+| `POST /promo-banners` | @store | Tambah banner |
+| `PUT /promo-banners/{banner}` | @update | Update banner |
+| `DELETE /promo-banners/{banner}` | @destroy | Hapus banner |
+| `GET /legal-documents` | LegalDocumentController@index | **Kelola dokumen hukum (Syarat & Ketentuan, Kebijakan Privasi)** |
+| `GET /legal-documents/{doc}/edit` | @edit | Edit dokumen |
+| `PUT /legal-documents/{doc}` | @update | Update dokumen (version naik otomatis jika isi berubah) |
+| `GET /coin-settings` | CoinSettingController@index | **View setting poin (increment_amount, points_per_increment)** |
+| `PUT /coin-settings` | CoinSettingController@update | **Update setting poin** |
 
 ### Worker Routes (`worker.*`, prefix `/worker`, middleware `auth, role:pekerja`)
 | Route | Controller | Purpose |
@@ -353,6 +420,19 @@ for(User $user): string
 | `POST /tasks/{sr}/ready-for-payment` | @readyForPayment | **Laundry selesai cuci → status waiting_payment** |
 | `POST /tasks/{sr}/confirm-delivered` | @confirmDelivered | **Konfirmasi laundry sudah diantar → completed + reward koin + snapshot komisi** |
 | `POST /tasks/{sr}/complete` | @complete | Selesai tugas non-laundry (potong saldo guest, reward koin, upload foto after, **snapshot komisi**). **Cleaning: terima `cleaning_addon_ids[]` (checklist pekerja) → validasi subset → update pivot `is_done` → hitung ulang `total_price` via `calculateFinalPrice()` sebelum potong saldo** |
+| `GET /payouts` | WorkerPayoutRequestController@index | **Riwayat pencairan pendapatan pekerja + tugas yang belum diajukan** |
+| `POST /tasks/{sr}/payout` | WorkerPayoutRequestController@store | **Ajukan pencairan pendapatan satu tugas (per service request)** |
+| `GET /profile` | WorkerProfileController@edit | **Profil pekerja (edit nama, email, phone)** |
+| `PATCH /profile` | @update | Update profil pekerja |
+| `PUT /profile/password` | @updatePassword | **Ganti password pekerja** |
+| `PUT /profile/bank` | @updateBank | **Update data rekening pencairan pendapatan** |
+
+### Generic Profile Routes (middleware `auth`)
+| Route | Controller | Purpose |
+|-------|------------|---------|
+| `GET /profile` | ProfileController@edit | Edit profil (admin → admin.profile.edit, guest → profile.edit) |
+| `PATCH /profile` | ProfileController@update | Update profil |
+| `DELETE /profile` | ProfileController@destroy | Hapus akun (with password confirmation) |
 
 ---
 
@@ -364,6 +444,7 @@ for(User $user): string
 | **PriceSetNotification** | Admin setPrice MnR | Guest | Database |
 | **SurveyReportedNotification** | Pekerja submit survey | Admin (assigned_by) | Database |
 | **FCM Push** | Admin assign pekerja | Pekerja (via DeviceToken) | Push (FCM v1) |
+| **WorkerPayoutPaidNotification** | Admin mark payout as paid | Pekerja | Email |
 
 ---
 
@@ -398,14 +479,19 @@ for(User $user): string
 27. **Balance Check Sebelum Order**: Guest `ServiceRequestController@store` memblokir order cleaning & AC upfront-price (ac-cleaning/ac-refill) kalau saldo < estimasi. Pesan error menampilkan estimasi total + kekurangan (`kurang RpX`).
 28. **Balance Check Saat Complete**: `TaskController@complete` tidak memakai `abort_if` (yang bikin HTTP 422). Memakai flag `$insufficientBalance` → transaksi dibatalkan tanpa memotong saldo / simpan foto → return pesan error yang jelas ke pekerja. Hanya ada satu titik pemotongan saldo (saat complete, berdasarkan harga final).
 29. **CleaningAddon Delete Protection**: Addon yang sudah pernah dipesan (`serviceRequests()->exists()`) tidak boleh dihapus (pivot cascade-delete akan hilangkan riwayat). Admin harus nonaktifkan (`is_active=false`) saja. `is_active` dibaca via `$request->boolean('is_active')` (checkbox tak dicentang = false).
+30. **Service Request Cancellation**: Guest hanya bisa membatalkan request dengan status `pending` (belum ada pekerja ditugaskan). Admin hanya bisa menolak request dengan status `pending`. Cancel menyimpan `cancel_reason` (dari GUEST_CANCEL_REASONS atau ADMIN_REJECT_REASONS), `cancel_note`, `cancelled_by`, `cancelled_at`. Status baru: `cancelled`.
+31. **Worker Payout System**: Pekerja bisa ajukan pencairan pendapatan per tugas selesai (`canRequestPayout()`). Pencairan tersimpan di `worker_payouts` dengan status `pending` → admin set `paid` + upload bukti transfer. Pekerja wajib punya data rekening (`hasBankAccount()`) sebelum mengajukan. Pencairan memberitahukan pekerja via FCM push + email (`WorkerPayoutPaidNotification`).
+32. **Legal Document & Consent**: Syarat & Ketentuan & Kebijakan Privasi dielola admin via `LegalDocument` (versioning otomatis). Guest harus menyetujui sebelum register (`ConsentController`). User menyimpan `terms_version`, `privacy_version`, `consented_at`. Jika isi dokumen berubah, version naik dan pengguna diminta setuju ulang.
+33. **Promo Banner**: Admin mengelola banner promosi di beranda guest (`PromoBanner`). Gambar harus rasio 3:1 (1200×400 px). Banner ditampilkan via `PromoBanner::shown()` di guest home.
+34. **Password Reset via OTP**: Reset password menggunakan kode OTP disimpan di `password_reset_codes` (email, code_hash, attempts, expires_at) tanpa reliance pada email token. Email view: `emails/password-reset-code.blade.php`.
 
 ---
 
 ## Key Files to Understand
 
 ### Controllers (Business Logic)
-- `app/Http/Controllers/Guest/ServiceRequestController.php` — Create request all services, approve/reject price MnR, **payLaundry, cascading dropdown lokasi, cleaning addons, balance check sebelum order (cleaning/AC upfront)**
-- `app/Http/Controllers/Admin/ServiceRequestController.php` — **Assign worker (multi-assign, filter by specialization), setPrice MnR, FCM notify via defer()**
+- `app/Http/Controllers/Guest/ServiceRequestController.php` — Create request all services, approve/reject price MnR, **payLaundry, cascading dropdown lokasi, cleaning addons, balance check sebelum order (cleaning/AC upfront), cancel request**
+- `app/Http/Controllers/Admin/ServiceRequestController.php` — **Assign worker (multi-assign, filter by specialization), setPrice MnR, FCM notify via defer(), reject request**
 - `app/Http/Controllers/Worker/TaskController.php` — **Accept (race condition handling, multi-assign), survey, weigh, readyForPayment, confirmDelivered, complete (payment + coin reward + commission snapshot + cleaning addon checklist/subset validation/calculateFinalPrice)**
 - `app/Http/Controllers/Admin/TopupController.php` — Approve/reject topup (saldo mutation)
 - `app/Http/Controllers/Guest/TopupController.php` — Guest topup + balance history
@@ -419,17 +505,27 @@ for(User $user): string
 - `app/Http/Controllers/Admin/UserController.php` — **Admin user management (index, show, create, store, edit, update, destroy dengan role & specialization)**
 - `app/Http/Controllers/Admin/CommissionSettingController.php` — **Admin setting komisi (percentage)**
 - `app/Http/Controllers/Worker/DeviceTokenController.php` — **Worker register FCM token**
+- `app/Http/Controllers/Admin/PromoBannerController.php` — **CRUD banner promosi beranda guest**
+- `app/Http/Controllers/Admin/WorkerPayoutController.php` — **Admin pencairan pekerja (index, pay dengan bukti transfer)**
+- `app/Http/Controllers/Admin/LegalDocumentController.php` — **Kelola dokumen hukum (index, edit, update dengan versioning)**
+- `app/Http/Controllers/Auth/ConsentController.php` — **Consent syarat & ketentuan sebelum register**
+- `app/Http/Controllers/LegalController.php` — **Halaman publik syarat & ketentuan / kebijakan privasi**
+- `app/Http/Controllers/Worker/PayoutController.php` — **Pencairan pendapatan pekerja (index, store)**
+- `app/Http/Controllers/Worker/ProfileController.php` — **Profil pekerja (edit, update, password, bank)**
+- `app/Http/Controllers/LocaleController.php` — **Switch locale**
+- `app/Http/Controllers/ProfileController.php` — **Generic profile (edit, update, destroy) untuk admin & guest**
 
 ### Services
 - `app/Services/RepairPaymentService.php` — Atomic charge untuk MnR
 - `app/Services/LaundryPaymentService.php` — **Atomic charge untuk laundry (idempotent, cek laundry_paid_at)**
 - `app/Services/CoinRewardService.php` — Reward poin berdasarkan increment (increment_amount → points_per_increment)
 - `app/Services/AdminWhatsappLink.php` — **Generate wa.me link ke admin dengan data user (nama, email, phone, status, lokasi, unit)**
+- `app/Services/UserWhatsappLink.php` — **Generate wa.me link ke nomor user (format Indonesia)**
 - `app/Services/FcmService.php` — **FCM v1 push notification ke worker (non-blocking, auto-cleanup invalid tokens)**
 
 ### Models (Relations & Helpers)
-- `app/Models/User.php` — Role helpers, all relationships, **apartment location/tower relations, specialization, withdrawalRequests(), deviceTokens()**
-- `app/Models/ServiceRequest.php` — Status helpers, service type checks, **`calculateTotalPrice()`** (estimasi: laundry + cleaning SEMUA addon), **`calculateFinalPrice($doneAddonIds)`** (final: cleaning hanya addon `is_done=true`), **lokasi relations, cleaningAddons (pivot snapshot_price + is_done), candidates(), commissionFor(), hasCommission()**
+- `app/Models/User.php` — Role helpers, all relationships, **apartment location/tower relations, specialization, bank fields, consent fields, withdrawalRequests(), deviceTokens(), workerPayouts(), hasBankAccount()**
+- `app/Models/ServiceRequest.php` — Status helpers, service type checks, **`calculateTotalPrice()`** (estimasi: laundry + cleaning SEMUA addon), **`calculateFinalPrice($doneAddonIds)`** (final: cleaning hanya addon `is_done=true`), **lokasi relations, cleaningAddons (pivot snapshot_price + is_done), candidates(), commissionFor(), hasCommission(), payout(), canRequestPayout(), canBeCancelledByGuest(), canBeRejectedByAdmin(), isCancelled(), cancelReasonLabel(), statusLabel()**
 - `app/Models/RepairPricing.php` — **PHP class (non-Eloquent) dengan constants: `CATEGORIES` & `SEVERITIES` untuk validasi form** — **no database table**
 - `app/Models/CoinSetting.php` — **Setting poin increment-based: `increment_amount`, `points_per_increment`, `is_active`. `current()` ambil/create single active row (pola CommissionSetting/WithdrawalSetting)**
 - `app/Models/ApartmentLocation.php` — **Master lokasi, relasi ke towers & users**
@@ -440,6 +536,17 @@ for(User $user): string
 - `app/Models/WithdrawalSetting.php` — **Setting penarikan (min_amount, fee_type, fee_value), calculateFee()**
 - `app/Models/CommissionSetting.php` — **Setting komisi (percentage), current(), percentage()**
 - `app/Models/DeviceToken.php` — **FCM device token (user_id, token unique, platform)**
+- `app/Models/LegalDocument.php` — **Dokumen hukum: terms/privacy, versioning otomatis, static terms() & privacy()**
+- `app/Models/PromoBanner.php` — **Banner promosi: title, image, link_url, is_active, sort_order, scopeShown()**
+- `app/Models/WorkerPayout.php` — **Pencairan pekerja: amount, bank details, status (pending/paid), proof_path, processed_by, paid_at, isPending(), isPaid(), proofUrl()**
+- `app/Models/ProductListing.php` — **Marketplace: price_max range, price_label, whatsapp_url accessors**
+- `app/Models/PasswordResetCode.php` — **Kode OTP reset password (email, code_hash, attempts, expires_at)**
+
+### Notifications
+- `app/Notifications/TaskAssignedNotification.php`
+- `app/Notifications/PriceSetNotification.php`
+- `app/Notifications/SurveyReportedNotification.php`
+- `app/Notifications/WorkerPayoutPaidNotification.php` — **Email notif saat pencairan pekerja dibayarkan**
 
 ### Middleware
 - `app/Http/Middleware/EnsureUserHasRole.php` — Role-based access
@@ -476,10 +583,14 @@ resources/views/
 │   ├── withdrawals/{index,settings}.blade.php  # **List penarikan + approve/reject + settings**
 │   ├── commission-settings/index.blade.php  # **Setting komisi admin**
 │   ├── payment-methods/index.blade.php
+│   ├── worker-payouts/index.blade.php  # **List pencairan pekerja + pay (bukti transfer)**
+│   ├── promo-banners/index.blade.php  # **CRUD banner promosi beranda guest**
+│   ├── legal-documents/{index,edit}.blade.php  # **Kelola dokumen hukum (Syarat & Ketentuan, Kebijakan Privasi)**
+│   ├── profile/edit.blade.php  # **Profil admin (generic ProfileController)**
 │   # repair-pricings/ DELETED — MnR pricing now fully manual
 │   # cleaning-areas/ DELETED — cleaning simplified to duration + addons only
 ├── guest/
-│   ├── home.blade.php           # **Hero + services grid + marketplace slider (3 properti terbaru) + steps + trust**
+│   ├── home.blade.php           # **Hero + services grid + marketplace slider (3 properti terbaru) + steps + trust + promo banners**
 │   ├── balance.blade.php        # **Dengan banner topup pending + tab riwayat penarikan**
 │   ├── profile.blade.php        # **Profil lengkap dengan cascading dropdown**
 │   ├── topups/{index,create}.blade.php
@@ -495,16 +606,39 @@ resources/views/
 │       ├── topup-balance.blade.php
 │       └── ui.blade.php
 ├── worker/
-│   └── tasks/{index,show}.blade.php  # **Detail tugas dengan lokasi, readyForPayment, confirmDelivered, multi-assign handling, checklist addon cleaning (checkbox di form Tandai Selesai)**
+│   ├── tasks/{index,show}.blade.php  # **Detail tugas dengan lokasi, readyForPayment, confirmDelivered, multi-assign handling, checklist addon cleaning (checkbox di form Tandai Selesai)**
+│   ├── payouts/index.blade.php  # **Riwayat pencairan + tugas belum diajukan**
+│   └── profile/edit.blade.php  # **Profil pekerja + data rekening + ganti password**
 ├── profile/
 │   └── partials/{update-profile-information-form,update-password-form,delete-user-form}.blade.php
 ├── auth/
 │   ├── login.blade.php          # **Custom login (oregonet-auth layout)**
 │   ├── register.blade.php       # **Custom register dengan cascading dropdown**
+│   ├── consent.blade.php        # **Setuju Syarat & Ketentuan & Kebijakan Privasi sebelum register**
 │   ├── forgot-password.blade.php
 │   ├── reset-password.blade.php
 │   ├── confirm-password.blade.php
 │   └── verify-email.blade.php
+├── legal/
+│   └── show.blade.php           # **Halaman publik Syarat & Ketentuan / Kebijakan Privasi**
+├── product-listings/
+├── emails/
+│   └── password-reset-code.blade.php  # **Email OTP reset password**
+├── components/
+│   ├── application-logo.blade.php
+│   ├── auth-session-status.blade.php
+│   ├── danger-button.blade.php
+│   ├── dropdown-link.blade.php
+│   ├── dropdown.blade.php
+│   ├── input-error.blade.php
+│   ├── input-label.blade.php
+│   ├── modal.blade.php
+│   ├── nav-link.blade.php
+│   ├── primary-button.blade.php
+│   ├── responsive-nav-link.blade.php
+│   ├── secondary-button.blade.php
+│   ├── text-input.blade.php
+│   └── wa-link.blade.php
 └── layouts/partials/
     └── push-token.blade.php     # **Script register FCM token di halaman worker**
 ```
@@ -556,15 +690,17 @@ resources/views/
 24. **FCM Push Notifications**: Non-blocking via `defer()`. Error hanya log. Auto-cleanup token `NOT_FOUND`. Config FCM di `config/oregonet.php` → `fcm.credentials`. Channel ID `tugas_baru` harus match Flutter app.
 25. **Locale Switching**: Route `/lang/{locale}` accessible tanpa auth. Session locale digunakan oleh `SetLocale` middleware.
 26. **ProductListing Price Range**: ProductListing sekarang mendukung `price_max` (opsional). Jika hanya `price` diisi → harga tunggal. Jika keduanya → range "RpX - RpY". Jika keduanya kosong → "Gratis/Negotiable". Accessor `price_label` digunakan di view. Validasi: `price_max >= price`, `price` wajib jika `price_max` diisi.
-
 27. **Admin User Management Full CRUD**: Admin sekarang bisa edit user (role, specialization, unit, password opsional), hapus user (soft delete, email direname `deleted_{id}_{email}`). Proteksi: admin tidak bisa hapus/ubah role akun sendiri, tidak bisa hapus admin terakhir, tidak bisa hapus user yang masih punya tugas aktif (status bukan completed/rejected).
-
 28. **Guest Marketplace WhatsApp Link**: `ProductListing::whatsapp_url` generate link wa.me dengan format nomor Indonesia (08xx/8xx → 628xx), pesan berisi judul, harga, kategori, deskripsi, link gambar. Nomor diambil dari `contact_info` input admin.
-
 29. **Worker Task Index**: Tampilkan badge "Tawaran" untuk multi-assign yang belum diambil (worker_id=null). Detail tugas menampilkan lokasi lengkap guest (daerah, lokasi, tower, unit).
 30. **Cleaning Addon Checklist**: Pivot `cleaning_addon_service_request` punya `is_done`. Worker centang addon via `cleaning_addon_ids[]` di form `complete`. Validasi subset wajib (tidak boleh inject ID addon baru). `calculateFinalPrice($doneAddonIds)` dipakai saat complete — hanya addon `is_done=true` yang ditagihkan. Jangan pakai `calculateTotalPrice()` untuk pemotongan saldo cleaning (itu masih menjumlah semua addon). Guest view menampilkan status per addon + rincian harga final. Checkbox worker di `worker/tasks/show.blade.php` ada di dalam form `Tandai Selesai`.
 31. **Balance Error Handling**: `TaskController@complete` pakai flag `$insufficientBalance` (bukan `abort_if`) supaya pekerja dapat pesan jelas, bukan halaman error 422. Guest `store` cek saldo untuk cleaning & AC upfront dan tampilkan kekurangan (`kurang RpX`).
 32. **Cleanup Seeder**: `CleaningDummyDataSeeder.php` dihapus (duplikat `CleaningPricingSeeder`). `CleaningPricingSeeder` & `CoinSettingSeeder` sudah disesuaikan ke schema baru (`price_per_hour` & `increment_amount`/`points_per_increment`).
+33. **Service Request Cancellation**: Guest hanya bisa membatalkan saat status `pending` (`canBeCancelledByGuest()`). Admin hanya bisa menolak saat status `pending` (`canBeRejectedByAdmin()`). Cancel menyimpan `cancel_reason`, `cancel_note`, `cancelled_by`, `cancelled_at`. Status `cancelled` ditambahkan ke ENUM via migration.
+34. **Worker Payout**: Pekerja ajukan pencairan per tugas selesai (`canRequestPayout()`). Admin tandai `paid` + upload bukti transfer via `WorkerPayoutController@pay`. Pekerja wajib `hasBankAccount()` sebelum mengajukan. Notifikasi via FCM push + email `WorkerPayoutPaidNotification`.
+35. **Legal Document & Consent**: `LegalDocument` mengelola Syarat & Ketentuan & Kebijakan Privasi dengan versioning otomatis. Guest harus setuju sebelum register via `ConsentController`. User menyimpan `terms_version`, `privacy_version`, `consented_at`. Jika isi berubah, version naik otomatis.
+36. **Promo Banner**: `PromoBanner::shown()` menampilkan banner aktif di beranda guest, urut berdasarkan `sort_order`. Gambar divalidasi rasio 3:1 (min 900×300 px).
+37. **Password Reset OTP**: Reset password menggunakan `password_reset_codes` (kode OTP) bukan email token. View email: `emails/password-reset-code.blade.php`.
 
 ---
 
@@ -589,8 +725,8 @@ resources/views/
 | `2026_09_16_000012_laundry_features.php` | Laundry fields (type, duration, price_per_kg, weight, total_price, collected_at, weighed_at) |
 | `2026_09_16_000013_create_cleaning_pricings_table.php` | Cleaning pricing (type, price) |
 | `2026_09_17_133707_add_cleaning_fields_to_service_requests_table.php` | Cleaning fields (cleaning_type, snapshot_cleaning_price) |
-| `2026_09_17_144927_add_ac_columns_to_service_requests_table.php` | AC fields (ac_type, snapshot_ac_price) |
 | `2026_09_17_144859_create_ac_pricings_table.php` | AC pricing (type, price) |
+| `2026_09_17_144927_add_ac_columns_to_service_requests_table.php` | AC fields (ac_type, snapshot_ac_price) |
 | `2026_09_18_140138_create_coin_settings_table.php` | Coin reward tiers (min_amount → coin_reward) — **MIGRATED**: sekarang increment-based (increment_amount → points_per_increment) via migration 2026_09_24_161029 |
 | `2026_09_18_140246_create_coin_mutations_table.php` | Coin mutation log |
 | `2026_09_18_140328_add_coin_balance_to_users_table.php` | Add `coin_balance` to users |
@@ -610,7 +746,8 @@ resources/views/
 | `2026_09_23_072835_create_cleaning_area_service_request_table.php` | Pivot: ServiceRequest ↔ CleaningArea |
 | `2026_09_23_072859_create_cleaning_addons_table.php` | CleaningAddon model (name, price, is_active) |
 | `2026_09_23_072929_create_cleaning_addon_service_request_table.php` | Pivot: ServiceRequest ↔ CleaningAddon (with snapshot_price) |
-| `2026_09_23_073006_update_cleaning_fields_on_service_requests_table.php` | ServiceRequest: drop cleaning_type/snapshot_cleaning_price → add cleaning_duration_hours, snapshot_cleaning_price_per_hour || `2026_09_23_201321_drop_cleaning_areas_tables.php` | Drop cleaning_areas table + cleaning_area_service_request pivot |
+| `2026_09_23_073006_update_cleaning_fields_on_service_requests_table.php` | ServiceRequest: drop cleaning_type/snapshot_cleaning_price → add cleaning_duration_hours, snapshot_cleaning_price_per_hour |
+| `2026_09_23_201321_drop_cleaning_areas_tables.php` | Drop cleaning_areas table + cleaning_area_service_request pivot |
 | `2026_09_23_210300_create_withdrawal_tables.php` | Create withdrawal_settings + withdrawal_requests tables |
 | `2026_09_23_225243_create_device_tokens_table.php` | **Device tokens untuk FCM push notifications** |
 | `2026_09_24_102641_add_specialization_to_users_table.php` | **Add `specialization` ke users (pekerja: nama jasa, null = semua)** |
@@ -619,6 +756,12 @@ resources/views/
 | `2026_09_24_161029_restructure_coin_settings_for_increment_based_rewards.php` | **Restruktur CoinSetting: tier-based (min_amount/coin_reward) → increment-based (increment_amount/points_per_increment), single active row** |
 | `2026_10_03_102252_add_price_max_to_product_listings_table.php` | **Tambah kolom `price_max` (decimal, nullable) ke product_listings untuk mendukung range harga (mis. 100jt - 200jt)** |
 | `2026_10_05_135211_add_is_done_to_cleaning_addon_service_request_table.php` | **Tambah kolom `is_done` (boolean, default false) ke pivot cleaning_addon_service_request — menandai addon yang benar-benar dikerjakan pekerja, hanya yang `is_done=true` ditagihkan** |
+| `2026_10_20_072600_create_password_reset_codes_table.php` | **Tabel kode OTP reset password (email, code_hash, attempts, expires_at)** |
+| `2026_10_20_075758_create_legal_documents_table.php` | **Tabel dokumen hukum: Syarat & Ketentuan & Kebijakan Privasi (type, title, summary, content, version)** |
+| `2026_10_20_075759_add_consent_to_users_table.php` | **Tambah kolom consent ke users: terms_version, privacy_version, consented_at** |
+| `2026_10_21_100000_add_cancellation_to_service_requests_table.php` | **Tambah cancel_reason, cancel_note, cancelled_by, cancelled_at ke service_requests + status `cancelled`** |
+| `2026_10_21_120000_create_worker_payouts_table.php` | **Tabel worker_payouts + kolom bank_name, bank_account_number, bank_account_holder ke users** |
+| `2026_10_21_140000_create_promo_banners_table.php` | **Tabel promo_banners untuk banner di beranda guest** |
 
 ---
 
@@ -633,5 +776,3 @@ resources/views/
 7. Add admin pricing CRUD if needed
 
 ---
-
-*Generated from codebase analysis on 2026-09-19; updated 2026-09-22 with apartment location/tower system, cascading dropdowns, updated auth views, laundry payment flow (waiting_payment status), and marketplace slider on home; updated 2026-09-23 with cleaning pricing per-hour, cleaning areas & addons, admin CRUD for cleaning config; updated 2026-09-23 with AC full-service, AC repair/AC full-service survey pricing flow, ServiceRequest helper methods, and complete migration list; updated 2026-09-24 with RepairPricing removed (now plain PHP class), MnR pricing fully manual, RepairPricingController & views deleted; updated 2026-09-24 with CleaningArea removed, cleaning simplified to duration + addons only; updated 2026-09-24 with Withdrawal system (WithdrawalRequest, WithdrawalSetting, admin approve/reject, fee calculation, balance mutation); updated 2026-09-24 with WhatsApp Contact Admin feature (AdminWhatsappLink service, config/oregonet.php, guest partial, ADMIN_WHATSAPP env); updated 2026-09-24 with Multi-assign workers, worker specialization, commission system, FCM push notifications, admin user management, locale switching; updated 2026-09-25 with Coin system restructured from tier-based (min_amount → coin_reward) to increment-based (increment_amount → points_per_increment), single active row via CoinSetting::current(), admin routes simplified to GET/PUT, UI terminology "Koin" → "Poin"; updated 2026-10-03 with ProductListing price_max (range harga), Admin UserController full CRUD (edit, update, destroy), admin users edit view, guest product-listings using price_label & whatsapp_url accessors, contact-admin partial redesign; updated 2026-10-05 with cleaning addon checklist (pivot is_done, calculateFinalPrice, worker checklist subset validation, guest transparency view), balance check sebelum order (cleaning/AC upfront) + saat complete (flag-based error), CleaningAddon delete protection & is_active fix, seeder cleanup (CleaningDummyDataSeeder dihapus, CleaningPricingSeeder & CoinSettingSeeder disesuaikan schema baru)*

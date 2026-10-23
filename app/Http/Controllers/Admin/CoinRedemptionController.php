@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Services\FcmService;
 use App\Models\CoinRedemption;
 use App\Models\CoinMutation;
 use App\Models\User;
@@ -53,6 +54,11 @@ class CoinRedemptionController extends Controller
             'admin_notes' => $request->input('admin_notes'),
         ]);
 
+        // Kirim notifikasi ke user tentang penukaran berhasil di-setujui
+        FcmService::pushUser($coinRedemption->user, 'Penukaran Poin Disetujui',
+            'Penukaran ' . $coinRedemption->product->name . ' sudah disetujui.',
+            route('guest.coin-redemptions.index', [], false));
+
         return redirect()->route('admin.coin-redemptions.index')
              ->with('success', 'Penukaran poin berhasil di-approve.');
     }
@@ -88,6 +94,11 @@ class CoinRedemptionController extends Controller
             'processed_at' => now(),
             'admin_notes' => $request->input('admin_notes'),
         ]);
+
+        // Kirim notifikasi ke user tentang penukaran ditolak
+        FcmService::pushUser($coinRedemption->user, 'Penukaran Poin Ditolak',
+            'Penukaran ditolak, poin dikembalikan ke akunmu.',
+            route('guest.coin-redemptions.index', [], false));
 
         return redirect()->route('admin.coin-redemptions.index')
             ->with('success', 'Penukaran poin ditolak, poin dikembalikan ke user.');

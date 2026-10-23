@@ -105,6 +105,16 @@ class ServiceRequestController extends Controller
             ));
         }
 
+        // Kirim notifikasi ke guest user
+        defer(fn () => app(FcmService::class)->pushUser(
+            $serviceRequest->user,
+            'Tugas Baru: ' . $serviceName,
+            $workers->count() > 1
+                ? 'Ada tugas baru. Siapa cepat ACC, dia yang dapat!'
+                : 'Kamu mendapat tugas baru. Ketuk untuk melihat detailnya.',
+            route('guest.service-requests.show', $serviceRequest, false),
+        ));
+
         $message = $workers->count() === 1
             ? "Tugas berhasil di-assign ke {$workers->first()->name}."
             : "Tugas ditawarkan ke {$workers->count()} pekerja. Yang pertama ACC akan mendapat tugas ini.";
@@ -153,6 +163,14 @@ class ServiceRequestController extends Controller
             report($e);
         }
 
+        // Kirim notifikasi push ke guest user
+        defer(fn () => app(FcmService::class)->pushUser(
+            $serviceRequest->user,
+            'Pesanan Ditolak',
+            'Pesanan kamu ditolak admin. Ketuk untuk melihat alasannya.',
+            route('guest.service-requests.show', $serviceRequest, false),
+        ));
+
         return back()->with('success', 'Request berhasil ditolak.');
     }
 
@@ -179,6 +197,14 @@ class ServiceRequestController extends Controller
         ]);
 
         $serviceRequest->user->notify(new PriceSetNotification($serviceRequest));
+
+        // Kirim notifikasi push ke guest user
+        defer(fn () => app(FcmService::class)->pushUser(
+            $serviceRequest->user,
+            'Harga Sudah Ditetapkan',
+            'Harga untuk pesananmu sudah keluar. Ketuk untuk menyetujui.',
+            route('guest.service-requests.show', $serviceRequest, false),
+        ));
 
         return back()->with('success', 'Harga berhasil dikirim, menunggu persetujuan guest.');
     }

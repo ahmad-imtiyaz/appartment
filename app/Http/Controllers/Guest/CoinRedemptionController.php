@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Guest;
 
 use App\Http\Controllers\Controller;
+use App\Services\FcmService;
 use App\Models\CoinMutation;
 use App\Models\CoinRedemption;
 use App\Models\CoinRedemptionProduct;
@@ -66,6 +67,11 @@ class CoinRedemptionController extends Controller
 
         // Decrease product stock
         $product->decrement('stock');
+
+        // Kirim notifikasi ke admin tentang request tukar poin baru
+        FcmService::pushAdmins('Request Tukar Poin',
+            $user->name . ' menukar poin dengan ' . $product->name . '.',
+            route('admin.coin-redemptions.show', $redemption, false));
 
         return redirect()->route('guest.coin-redemptions.index')
            ->with('success', 'Permintaan penukaran poin berhasil diajukan. Menunggu persetujuan admin.');
