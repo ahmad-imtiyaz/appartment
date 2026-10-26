@@ -36,7 +36,9 @@
 
     <template x-teleport="body">
         <div x-show="modal" x-cloak x-transition.opacity
-             style="position:fixed;inset:0;z-index:60;background:rgba(17,24,39,.55);display:flex;align-items:flex-end;justify-content:center;padding:16px">
+             style="position:fixed;inset:0;z-index:60;background:rgba(17,24,39,.55)">
+          {{-- x-show menghapus inline display, jadi flex-centering ditaruh di wrapper ini --}}
+          <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;padding:16px">
 
             <div @click.outside="modal = null"
                  style="position:relative;width:100%;max-width:420px;background:#fff;border-radius:20px;padding:20px;max-height:90vh;overflow-y:auto">
@@ -133,6 +135,7 @@
                     {{ __('guest.service_info.got_it') }}
                 </button>
             </div>
+          </div>
         </div>
     </template>
 </div>

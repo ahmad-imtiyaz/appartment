@@ -26,48 +26,6 @@
 
 
             {{-- ================= LAUNDRY ================= --}}
-            @if ($service->slug === 'laundry')
-                @include('guest.partials.service-info', [
-                    'lang'      => 'guest.laundry_info',
-                    'steps'     => config('guest-icons.laundry_steps'),
-                    'iconBg'    => '#FCE7F3',
-                    'iconColor' => '#DB2777',
-                    'points'    => ['min_order', 'final_price', 'duration', 'payment', 'notes'],
-                ])
-            @endif
-
-            @if ($service->slug === 'cleaning')
-                @include('guest.partials.service-info', [
-                    'lang'        => 'guest.cleaning_info',
-                    'steps'       => config('guest-icons.cleaning_steps'),
-                    'iconBg'      => '#FCE7F3',
-                    'iconColor'   => '#DC2626',
-                    'processNote' => true,
-                    'areas'       => config('guest-icons.cleaning_areas'),
-                ])
-            @endif
-
-            @if ($service->slug === 'ac')
-                @include('guest.partials.service-info', [
-                    'lang'        => 'guest.ac_info',
-                    'steps'       => config('guest-icons.ac_steps'),
-                    'iconBg'      => '#FCE7F3',
-                    'iconColor'   => '#DC2626',
-                    'processNote' => true,
-                    'grid'        => config('guest-icons.ac_types'),
-                ])
-            @endif
-
-            @if ($service->slug === 'maintenance-repair')
-                @include('guest.partials.service-info', [
-                    'lang'      => 'guest.repair_info',
-                    'steps'     => config('guest-icons.repair_steps'),
-                    'iconBg'    => '#FEE2E2',
-                    'iconColor' => '#DC2626',
-                    'grid'      => config('guest-icons.damage_categories'),
-                ])
-            @endif
-
             @if ($service->slug === 'laundry' && $laundryPricings->isNotEmpty())
                 <div class="ui-card ui-rise">
 
@@ -99,6 +57,16 @@
                                 </div>
                             </label>
                         @endforeach
+                    </div>
+
+                    <div style="margin-top:12px">
+                        @include('guest.partials.service-info', [
+                            'lang'      => 'guest.laundry_info',
+                            'steps'     => config('guest-icons.laundry_steps'),
+                            'iconBg'    => '#FCE7F3',
+                            'iconColor' => '#DB2777',
+                            'points'    => ['min_order', 'final_price', 'duration', 'payment', 'notes'],
+                        ])
                     </div>
 
                     <div class="ui-divider">
@@ -192,6 +160,17 @@
             <label for="custom-duration-input" class="ui-label">Jumlah jam</label>
             <input type="number" id="custom-duration-input" min="1" max="12" class="ui-input"
                    value="{{ $isCustomDuration ? $oldDuration : '' }}">
+        </div>
+
+        <div style="margin-top:12px">
+            @include('guest.partials.service-info', [
+                'lang'        => 'guest.cleaning_info',
+                'steps'       => config('guest-icons.cleaning_steps'),
+                'iconBg'      => '#FCE7F3',
+                'iconColor'   => '#DC2626',
+                'processNote' => true,
+                'areas'       => config('guest-icons.cleaning_areas'),
+            ])
         </div>
 
         <div class="ui-price" style="margin-top:16px">
@@ -291,6 +270,17 @@
         </label>
     @endforeach
 </div>
+
+        <div style="margin-top:12px">
+            @include('guest.partials.service-info', [
+                'lang'        => 'guest.ac_info',
+                'steps'       => config('guest-icons.ac_steps'),
+                'iconBg'      => '#FCE7F3',
+                'iconColor'   => '#DC2626',
+                'processNote' => true,
+                'grid'        => config('guest-icons.ac_types'),
+            ])
+        </div>
 
         {{-- Deskripsi cakupan khusus Full Service --}}
         <div id="ac-full-service-note" class="ui-alert hidden" style="background:#EFF6FF;color:#1E40AF;margin-top:10px">
@@ -404,6 +394,16 @@
                                 </div>
 
                                 <x-input-error :messages="$errors->get('damage_category')" class="mt-2" />
+
+                                <div style="margin-top:12px">
+                                    @include('guest.partials.service-info', [
+                                        'lang'      => 'guest.repair_info',
+                                        'steps'     => config('guest-icons.repair_steps'),
+                                        'iconBg'    => '#FEE2E2',
+                                        'iconColor' => '#DC2626',
+                                        'grid'      => config('guest-icons.damage_categories'),
+                                    ])
+                                </div>
                             </div>
 
                             <div>
